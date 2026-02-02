@@ -6,6 +6,7 @@ on:
     # 仅在以下路径发生变更时触发发布，忽略文档修改
     paths:
       - 'app/**'                # 监听 app 模块源码
+      - 'module/**'             # 监听 Magisk 模块
       - 'build.gradle.kts'      # 监听根目录构建脚本
       - 'settings.gradle.kts'   # 监听项目设置
       - 'gradle.properties'     # 监听 Gradle 属性
@@ -107,6 +108,27 @@ jobs:
           echo "offline_apk=${NEW_OFFLINE_APK_PATH}" >> $GITHUB_OUTPUT
           echo "package_installer_apk=${NEW_PACKAGE_INSTALLER_APK_PATH}" >> $GITHUB_OUTPUT
 
+      - name: Replace APK in module and pack Magisk module
+        id: pack_module
+        run: |
+          PACKAGE_INSTALLER_APK="${{ steps.rename_apks.outputs.package_installer_apk }}"
+          MODULE_APK_PATH="module/system/priv-app/PackageInstaller/PackageInstaller.apk"
+          cp "$PACKAGE_INSTALLER_APK" "$MODULE_APK_PATH"
+          echo "Replaced $MODULE_APK_PATH with built APK"
+
+          # 更新 module.prop 版本与本次构建一致
+          NEW_VERSION="${{ env.NEW_VERSION }}"
+          VERSION_CODE=$(date +%s)
+          sed -i "s/^version=.*/version=${NEW_VERSION}/" module/module.prop
+          sed -i "s/^versionCode=.*/versionCode=${VERSION_CODE}/" module/module.prop
+          echo "Updated module.prop: version=${NEW_VERSION}, versionCode=${VERSION_CODE}"
+
+          MODULE_ZIP_NAME="InstallerX-Revived_COS-v${NEW_VERSION}.zip"
+          cd module && zip -r "../${MODULE_ZIP_NAME}" . -x "*.git*"
+          cd ..
+          echo "module_zip=${MODULE_ZIP_NAME}" >> $GITHUB_OUTPUT
+          echo "Created ${MODULE_ZIP_NAME}"
+
       - name: Delete old alpha release and tag
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -188,6 +210,7 @@ jobs:
             ${{ steps.rename_apks.outputs.online_apk }}
             ${{ steps.rename_apks.outputs.offline_apk }}
             ${{ steps.rename_apks.outputs.package_installer_apk }}
+            ${{ steps.pack_module.outputs.module_zip }}
 
       # - name: Upload to Telegram
       #   env:
