@@ -101,7 +101,7 @@ jobs:
 
           mv "$ONLINE_APK_PATH" "$NEW_ONLINE_APK_PATH"
           mv "$OFFLINE_APK_PATH" "$NEW_OFFLINE_APK_PATH"
-          mv "$ONLINE_APK_PATH" "$NEW_PACKAGE_INSTALLER_APK_PATH"
+          cp "$NEW_ONLINE_APK_PATH" "$NEW_PACKAGE_INSTALLER_APK_PATH"
 
           echo "online_apk=${NEW_ONLINE_APK_PATH}" >> $GITHUB_OUTPUT
           echo "offline_apk=${NEW_OFFLINE_APK_PATH}" >> $GITHUB_OUTPUT
