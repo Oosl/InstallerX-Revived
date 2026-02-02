@@ -61,7 +61,7 @@ jobs:
         env:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: ./gradlew assembleOnlineStableRelease assembleOfflineStableRelease
+        run: ./gradlew assembleOnlineStableRelease assembleOfflineStableRelease -PAPP_ID="${{ vars.APP_ID }}"
 
       - name: Find and Rename Universal APKs
         id: rename_apk
