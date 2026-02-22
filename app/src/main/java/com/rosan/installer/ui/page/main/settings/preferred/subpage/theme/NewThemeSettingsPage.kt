@@ -25,6 +25,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.twotone.ArrowBack
 import androidx.compose.material.icons.filled.DarkMode
@@ -60,6 +62,7 @@ import com.rosan.installer.ui.icons.AppIcons
 import com.rosan.installer.ui.page.main.settings.preferred.PreferredViewAction
 import com.rosan.installer.ui.page.main.settings.preferred.PreferredViewModel
 import com.rosan.installer.ui.page.main.widget.card.ColorSwatchPreview
+import com.rosan.installer.ui.page.main.widget.dialog.BlurWarningDialog
 import com.rosan.installer.ui.page.main.widget.dialog.HideLauncherIconWarningDialog
 import com.rosan.installer.ui.page.main.widget.setting.AppBackButton
 import com.rosan.installer.ui.page.main.widget.setting.BaseWidget
@@ -92,6 +95,7 @@ fun NewThemeSettingsPage(
     var showHideLauncherIconDialog by remember { mutableStateOf(false) }
     var showPaletteDialog by remember { mutableStateOf(false) }
     var showThemeModeDialog by remember { mutableStateOf(false) }
+    var showBlurWarningDialog by remember { mutableStateOf(false) }
 
     if (showPaletteDialog) {
         PaletteStyleDialog(
@@ -125,6 +129,15 @@ fun NewThemeSettingsPage(
         onConfirm = {
             showHideLauncherIconDialog = false
             viewModel.dispatch(PreferredViewAction.ChangeShowLauncherIcon(false))
+        }
+    )
+
+    BlurWarningDialog(
+        show = showBlurWarningDialog,
+        onDismiss = { showBlurWarningDialog = false },
+        onConfirm = {
+            showBlurWarningDialog = false
+            viewModel.dispatch(PreferredViewAction.SetUseBlur(true))
         }
     )
 
@@ -223,7 +236,13 @@ fun NewThemeSettingsPage(
                             title = stringResource(R.string.theme_settings_use_blur),
                             description = stringResource(R.string.theme_settings_use_blur_desc),
                             checked = state.useBlur,
-                            onCheckedChange = { viewModel.dispatch(PreferredViewAction.SetUseBlur(it)) }
+                            onCheckedChange = { isChecked ->
+                                if (isChecked && Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) {
+                                    showBlurWarningDialog = true
+                                } else {
+                                    viewModel.dispatch(PreferredViewAction.SetUseBlur(isChecked))
+                                }
+                            }
                         )
                     }
                     item {
@@ -286,7 +305,7 @@ fun NewThemeSettingsPage(
             // --- Group 3: Theme Color (Manual Selection) ---
             item {
                 AnimatedVisibility(
-                    visible = !state.useDynamicColor,
+                    visible = !state.useDynamicColor || Build.VERSION.SDK_INT < Build.VERSION_CODES.S,
                     enter = fadeIn(animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)) +
                             expandVertically(animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing)),
                     exit = fadeOut(animationSpec = tween(durationMillis = 250, easing = FastOutSlowInEasing)) +
@@ -324,9 +343,8 @@ fun NewThemeSettingsPage(
                                                         currentStyle = state.paletteStyle,
                                                         textStyle = MaterialTheme.typography.labelMedium.copy(fontSize = 13.sp),
                                                         textColor = MaterialTheme.colorScheme.onSurface,
-                                                        isSelected = if (state.useDynamicColor && Build.VERSION.SDK_INT < Build.VERSION_CODES.S)
-                                                            state.seedColor == rawColor.color
-                                                        else !state.useDynamicColor && state.seedColor == rawColor.color,
+                                                        isSelected = state.seedColor == rawColor.color &&
+                                                                !(state.useDynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S),
                                                     ) {
                                                         viewModel.dispatch(PreferredViewAction.SetSeedColor(rawColor.color))
                                                     }
@@ -403,7 +421,7 @@ fun PaletteStyleDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.theme_settings_palette_style_desc)) },
         text = {
-            Column {
+            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                 PaletteStyle.entries.forEach { style ->
                     Row(
                         Modifier
@@ -440,7 +458,7 @@ fun ThemeModeDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.theme_settings_theme_mode_desc)) },
         text = {
-            Column {
+            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                 ThemeMode.entries.forEach { mode ->
                     val modeText = when (mode) {
                         ThemeMode.LIGHT -> stringResource(R.string.theme_settings_theme_mode_light)
