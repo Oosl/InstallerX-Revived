@@ -142,7 +142,7 @@ object ApkParser : KoinComponent {
             if (cookie == 0) {
                 throw AnalyseFailedAllFilesUnsupportedException("addAssetPath returned 0 for: $path")
             }
-            return Resources(assets, systemResources.displayMetrics, systemResources.configuration)
+            @Suppress("DEPRECATION") return Resources(assets, systemResources.displayMetrics, systemResources.configuration)
         }
     }
 

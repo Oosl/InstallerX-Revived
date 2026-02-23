@@ -40,7 +40,7 @@ android {
         minSdk = 26
         targetSdk = 36
         // Version control
-        // Github Actions will automatically use versionName A.B.C+1 when building preview releases
+        // GitHub Actions will automatically use versionName A.B.C+1 when building preview releases
         // update versionCode and versionName before manually trigger a stable release
         versionCode = 45
         versionName = project.findProperty("VERSION_NAME") as String?

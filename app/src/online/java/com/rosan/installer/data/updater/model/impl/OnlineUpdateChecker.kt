@@ -1,7 +1,6 @@
 package com.rosan.installer.data.updater.model.impl
 
 import android.content.Context
-import com.rosan.installer.BuildConfig
 import com.rosan.installer.build.RsConfig
 import com.rosan.installer.build.model.entity.Level
 import com.rosan.installer.data.app.model.entity.DataEntity
@@ -20,6 +19,7 @@ class OnlineUpdateChecker(
     companion object {
         private const val REPO_OWNER = "wxxsfxyzm"
         private const val REPO_NAME = "InstallerX-Revived"
+        private const val OFFICIAL_PACKAGE_NAME = "com.rosan.installer.x.revived"
     }
 
     override fun check(): UpdateChecker.CheckResult? {
@@ -35,9 +35,11 @@ class OnlineUpdateChecker(
             return null
         }
 
-        // Skip check for non-target app
-        if (context.packageName != BuildConfig.APPLICATION_ID) {
-            Timber.d("Update check skipped: Not the target app")
+        // Skip check if the runtime package name does not match the hardcoded official one.
+        // This effectively blocks update checks for both reverse-engineered apps with changed names
+        // and forward-compiled forks with modified applicationIds.
+        if (context.packageName != OFFICIAL_PACKAGE_NAME) {
+            Timber.d("Update check skipped: Unofficial package name")
             return null
         }
 
@@ -149,27 +151,22 @@ class OnlineUpdateChecker(
 
     /**
      * Split version string into numeric part and optional hash part.
-     * Example: "2.3.1.87e0cc9" -> Pair("2.3.1", "87e0cc9")
-     *          "2.3.1" -> Pair("2.3.1", null)
+     * Format strictly guaranteed as: major.minor.patch[.hash]
+     *
+     * Examples:
+     * - "2.3.3" -> Pair("2.3.3", null)
+     * - "2.3.3.d69b04f" -> Pair("2.3.3", "d69b04f")
+     * - "2.3.3.4365770" -> Pair("2.3.3", "4365770")
      */
     private fun splitVersion(version: String): Pair<String, String?> {
         val parts = version.split('.')
 
-        // Find the first non-numeric part (hash identifier)
-        val numericParts = mutableListOf<String>()
-        var hashPart: String? = null
+        // Extract exactly the first 3 parts for major.minor.patch
+        val numericVersion = parts.take(3).joinToString(".")
 
-        for (part in parts) {
-            if (part.toIntOrNull() != null) {
-                numericParts.add(part)
-            } else {
-                // Found non-numeric part, treat as hash
-                hashPart = part
-                break
-            }
-        }
+        // Extract the 4th part as hash if it exists
+        val hashPart = parts.getOrNull(3)
 
-        val numericVersion = numericParts.joinToString(".")
         return Pair(numericVersion, hashPart)
     }
 

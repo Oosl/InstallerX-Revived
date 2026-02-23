@@ -55,6 +55,7 @@ import com.rosan.installer.data.app.model.exception.UninstallFailedInternalError
 import com.rosan.installer.data.installer.model.exception.HttpNotAllowedException
 import com.rosan.installer.data.installer.model.exception.HttpRestrictedForLocalhostException
 import com.rosan.installer.data.installer.model.exception.ResolveException
+import com.rosan.installer.data.installer.model.exception.ResolveFailedLinkNotValidException
 import com.rosan.installer.data.installer.model.exception.ResolvedFailedNoInternetAccessException
 import com.rosan.installer.data.recycle.model.exception.AppProcessNotWorkException
 import com.rosan.installer.data.recycle.model.exception.DhizukuDeadServiceException
@@ -64,17 +65,19 @@ import com.rosan.installer.data.recycle.model.exception.ShizukuNotWorkException
 import java.util.zip.ZipException
 
 /**
- * 公共实现
+ * Common implementation.
  *
- * 一个私有的辅助函数，它作为唯一的真实来源，
- * 负责将一个 Throwable 映射到其对应的字符串资源 ID。
+ * A private helper function that serves as the single source of truth,
+ * responsible for mapping a {@link Throwable} to its corresponding
+ * string resource ID.
  *
  * @author iamr0s wxxsfxyzm
- * @return R.string 的资源 ID。
+ * @return The string resource ID defined in `R.string`.
  */
-private fun Throwable.getStringResourceId() =
+private fun Throwable.getStringRes() =
     when (this) {
         is ResolveException -> R.string.exception_resolve_failed
+        is ResolveFailedLinkNotValidException -> R.string.exception_resolve_failed_link_not_valid
         is ResolvedFailedNoInternetAccessException -> R.string.exception_resolve_failed_no_internet_access
         is AnalyseFailedAllFilesUnsupportedException -> R.string.exception_analyse_failed_all_files_unsupported
         is AuthenticationFailedException -> R.string.exception_authentication_failed
@@ -137,29 +140,32 @@ private fun Throwable.getStringResourceId() =
     }
 
 /**
- * [公开API - Composable]
+ * Returns a user-friendly error message for this [Throwable]
+ * in a Jetpack Compose environment.
  *
- * 用于在 Jetpack Compose UI 中获取用户友好的错误信息。
+ * This is the Compose-specific API and should be used inside
+ * composable functions.
+ *
+ * @receiver The [Throwable] to be converted into a readable message.
+ * @return A localized error message string.
+ *
  * @author iamr0s
  */
 @Composable
-fun Throwable.help(): String {
-    // 1. 调用私有函数获取资源 ID
-    val resourceId = this.getStringResourceId()
-    // 2. 使用 Composable 的方式获取字符串
-    return stringResource(resourceId)
-}
+fun Throwable.help() = stringResource(this.getStringRes())
 
 /**
- * [公开API - Non-Composable]
+ * Returns a user-friendly error message for this [Throwable]
+ * in a non-Compose environment.
  *
- * 用于在 Service, BroadcastReceiver, Handler 等非 Compose 环境中获取用户友好的错误信息。
+ * This function is intended for use in components such as
+ * Service, BroadcastReceiver, or other framework classes
+ * where Compose is not available.
+ *
+ * @receiver The [Throwable] to be converted into a readable message.
+ * @param context The [Context] used to resolve the string resource.
+ * @return A localized error message string.
  *
  * @author wxxsfxyzm
  */
-fun Throwable.getErrorMessage(context: Context): String {
-    // 1. 调用私有函数获取资源 ID
-    val resourceId = this.getStringResourceId()
-    // 2. 使用标准 Context 的方式获取字符串
-    return context.getString(resourceId)
-}
+fun Throwable.getErrorMessage(context: Context) = context.getString(this.getStringRes())

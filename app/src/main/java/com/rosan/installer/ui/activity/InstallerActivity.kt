@@ -359,7 +359,7 @@ class InstallerActivity : ComponentActivity(), KoinComponent {
                 // on non-string values (e.g. SESSION_ID is an Integer).
                 // Although get(key) is deprecated in newer APIs, it is the only way
                 // to generically log unknown types without suppressions or reflection.
-                val value = extras.get(key)
+                val value = @Suppress("DEPRECATION") extras.get(key)
                 Timber.d("$tag: Extra: $key = $value")
             }
         }
