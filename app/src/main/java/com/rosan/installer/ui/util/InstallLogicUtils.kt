@@ -9,6 +9,7 @@ import com.rosan.installer.build.model.entity.Architecture
 import com.rosan.installer.data.app.model.entity.AppEntity
 import com.rosan.installer.data.app.model.entity.PackageAnalysisResult
 import com.rosan.installer.data.app.model.enums.DataType
+import com.rosan.installer.data.app.model.enums.PackageIdentityStatus
 import com.rosan.installer.data.app.model.enums.SignatureMatchStatus
 import com.rosan.installer.ui.page.main.installer.dialog.inner.InstallStateResult
 import com.rosan.installer.ui.page.main.installer.dialog.inner.InstallWarningResources
@@ -155,6 +156,18 @@ object InstallLogicUtils {
                     )
                 )
             }
+        }
+
+        // 5. Check Package Identity
+        // Note: This relies on tagIdentical, textIdentical, and primaryColor being added to InstallWarningResources.
+        if (currentPackage.identityStatus == PackageIdentityStatus.IDENTICAL) {
+            warnings.add(
+                WarningModel(
+                    shortLabel = resources.tagIdentical,
+                    fullDescription = resources.textIdentical,
+                    color = resources.primaryColor // Use primary color since it's informational, not an error
+                )
+            )
         }
 
         return InstallStateResult(warnings, finalButtonTextId)

@@ -45,6 +45,7 @@ jobs:
         with:
           # 主分支构建允许更新缓存
           cache-read-only: false
+          cache-encryption-key: ${{ secrets.GRADLE_CACHE_ENCRYPTION_KEY }}
 
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew

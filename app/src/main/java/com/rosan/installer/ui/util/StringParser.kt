@@ -5,7 +5,7 @@ import androidx.compose.ui.res.stringResource
 import com.rosan.installer.R
 import com.rosan.installer.data.app.model.enums.DataType
 import com.rosan.installer.data.app.model.enums.MmzSelectionMode
-import com.rosan.installer.ui.theme.m3color.RawColor
+import com.rosan.installer.ui.theme.material.RawColor
 
 @Composable
 fun DataType.getSupportTitle() =

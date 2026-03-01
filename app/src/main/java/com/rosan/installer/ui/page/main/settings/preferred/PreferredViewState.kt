@@ -6,10 +6,11 @@ import com.rosan.installer.data.app.model.enums.RootImplementation
 import com.rosan.installer.data.settings.model.datastore.entity.NamedPackage
 import com.rosan.installer.data.settings.model.datastore.entity.SharedUid
 import com.rosan.installer.data.settings.model.room.entity.ConfigEntity
-import com.rosan.installer.ui.theme.m3color.PaletteStyle
-import com.rosan.installer.ui.theme.m3color.PresetColors
-import com.rosan.installer.ui.theme.m3color.RawColor
-import com.rosan.installer.ui.theme.m3color.ThemeMode
+import com.rosan.installer.ui.theme.material.PaletteStyle
+import com.rosan.installer.ui.theme.material.PresetColors
+import com.rosan.installer.ui.theme.material.RawColor
+import com.rosan.installer.ui.theme.material.ThemeColorSpec
+import com.rosan.installer.ui.theme.material.ThemeMode
 
 data class PreferredViewState(
     val progress: Progress = Progress.Loading,
@@ -44,11 +45,13 @@ data class PreferredViewState(
     val labRootImplementation: RootImplementation = RootImplementation.Magisk,
     val labRootShowModuleArt: Boolean = true,
     val labRootModuleAlwaysUseRoot: Boolean = false,
+    val labUseMiIsland: Boolean = false,
     val labHttpSaveFile: Boolean = false,
     val labHttpProfile: HttpProfile = HttpProfile.ALLOW_SECURE,
     val labSetInstallRequester: Boolean = false,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val paletteStyle: PaletteStyle = PaletteStyle.TonalSpot,
+    val colorSpec: ThemeColorSpec = ThemeColorSpec.SPEC_2025,
     val useDynamicColor: Boolean = true,
     val useMiuixMonet: Boolean = false,
     val seedColor: Color = PresetColors.first().color,

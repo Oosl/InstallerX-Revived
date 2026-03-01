@@ -1,4 +1,6 @@
-package com.rosan.installer.ui.theme.m3color
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2025-2026 InstallerX Revived contributors
+package com.rosan.installer.ui.theme.material
 
 import androidx.compose.ui.graphics.Color
 

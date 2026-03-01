@@ -10,7 +10,6 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -29,10 +28,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.SubcomposeLayout
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import com.rosan.installer.R
 import com.rosan.installer.build.RsConfig
@@ -119,8 +119,9 @@ fun InstallPrepareContent(
             !isModuleSelected
     val isSplitUpdateMode = (isBundleSplitUpdate || isPureSplit) && currentPackage.installedAppInfo != null
 
+    val primaryColor = MiuixTheme.colorScheme.primary
     val errorColor = MaterialTheme.colorScheme.error
-    val tertiaryColor = MiuixTheme.colorScheme.primary
+
     val tagDowngrade = stringResource(R.string.tag_downgrade)
     val downgradeWarning = stringResource(R.string.installer_prepare_type_downgrade)
     val tagSignature = stringResource(R.string.tag_signature)
@@ -132,8 +133,10 @@ fun InstallPrepareContent(
     val textArch32 = stringResource(R.string.installer_prepare_arch_32_notice)
     val tagEmulated = stringResource(R.string.tag_arch_emulated)
     val textArchMismatch = stringResource(R.string.installer_prepare_arch_mismatch_notice)
+    val tagIdentical = stringResource(R.string.tag_identical)
+    val textIdentical = stringResource(R.string.installer_prepare_identical_notice)
 
-    val installResources = remember(errorColor, tertiaryColor) {
+    val installResources = remember(errorColor, primaryColor) {
         InstallWarningResources(
             tagDowngrade = tagDowngrade,
             textDowngrade = downgradeWarning,
@@ -146,8 +149,11 @@ fun InstallPrepareContent(
             textArch32 = textArch32,
             tagEmulated = tagEmulated,
             textArchMismatchFormat = textArchMismatch,
+            tagIdentical = tagIdentical,
+            textIdentical = textIdentical,
             errorColor = errorColor,
-            tertiaryColor = tertiaryColor
+            tertiaryColor = primaryColor,
+            primaryColor = primaryColor
         )
     }
 
@@ -193,7 +199,7 @@ fun InstallPrepareContent(
                 )
             ) {
                 Column(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     when (primaryEntity) {
@@ -319,37 +325,35 @@ fun InstallPrepareContent(
                         contentColor = MiuixTheme.colorScheme.onSurface
                     )
                 ) {
-                    Column {
-                        // Permissions List
-                        if (rawBaseEntity?.permissions?.isNotEmpty() == true)
-                            MiuixNavigationItemWidget(
-                                title = stringResource(R.string.permission_list),
-                                description = stringResource(R.string.permission_list_desc),
-                                insideMargin = PaddingValues(12.dp),
-                                onClick = { viewModel.dispatch(InstallerViewAction.ShowMiuixPermissionList) },
-                            )
-
-                        // Install Options
-                        if (installer.config.authorizer != ConfigEntity.Authorizer.Dhizuku &&
-                            installer.config.authorizer != ConfigEntity.Authorizer.None
+                    // Permissions List
+                    if (rawBaseEntity?.permissions?.isNotEmpty() == true)
+                        MiuixNavigationItemWidget(
+                            title = stringResource(R.string.permission_list),
+                            description = stringResource(R.string.permission_list_desc),
+                            //insideMargin = PaddingValues(12.dp),
+                            onClick = { viewModel.dispatch(InstallerViewAction.ShowMiuixPermissionList) },
                         )
-                            MiuixNavigationItemWidget(
-                                title = stringResource(R.string.config_label_install_options),
-                                description = stringResource(R.string.config_label_install_options_desc),
-                                insideMargin = PaddingValues(12.dp),
-                                onClick = { viewModel.dispatch(InstallerViewAction.InstallExtendedMenu) }
-                            )
 
-                        // Select Splits
-                        val hasSplits = currentPackage.appEntities.size > 1
-                        if (hasSplits) {
-                            MiuixNavigationItemWidget(
-                                title = stringResource(R.string.installer_select_split),
-                                description = stringResource(R.string.installer_select_split_desc),
-                                insideMargin = PaddingValues(12.dp),
-                                onClick = { viewModel.dispatch(InstallerViewAction.InstallChoice) },
-                            )
-                        }
+                    // Install Options
+                    if (installer.config.authorizer != ConfigEntity.Authorizer.Dhizuku &&
+                        installer.config.authorizer != ConfigEntity.Authorizer.None
+                    )
+                        MiuixNavigationItemWidget(
+                            title = stringResource(R.string.config_label_install_options),
+                            description = stringResource(R.string.config_label_install_options_desc),
+                            //insideMargin = PaddingValues(12.dp),
+                            onClick = { viewModel.dispatch(InstallerViewAction.InstallExtendedMenu) }
+                        )
+
+                    // Select Splits
+                    val hasSplits = currentPackage.appEntities.size > 1
+                    if (hasSplits) {
+                        MiuixNavigationItemWidget(
+                            title = stringResource(R.string.installer_select_split),
+                            description = stringResource(R.string.installer_select_split_desc),
+                            //insideMargin = PaddingValues(12.dp),
+                            onClick = { viewModel.dispatch(InstallerViewAction.InstallChoice) },
+                        )
                     }
                 }
             }
@@ -415,17 +419,6 @@ fun InstallPrepareContent(
         // We show the button if rawBaseEntity exists (Bundle/APK) and settings allow it.
         val showExpandButton = rawBaseEntity != null && settings.showExtendedMenu
 
-        if (showExpandButton)
-            item {
-                TextButton(
-                    onClick = { isExpanded = !isExpanded },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp),
-                    text = if (isExpanded) stringResource(R.string.collapse) else stringResource(R.string.expand)
-                )
-            }
-
         item {
             Row(
                 modifier = Modifier
@@ -435,11 +428,18 @@ fun InstallPrepareContent(
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                TextButton(
-                    onClick = onCancel,
-                    text = stringResource(R.string.cancel),
-                    modifier = Modifier.weight(1f),
-                )
+                if (showExpandButton)
+                    TextButton(
+                        onClick = { isExpanded = !isExpanded },
+                        modifier = Modifier.weight(1f),
+                        text = if (isExpanded) stringResource(R.string.collapse) else stringResource(R.string.expand)
+                    )
+                else
+                    TextButton(
+                        onClick = onCancel,
+                        text = stringResource(R.string.cancel),
+                        modifier = Modifier.weight(1f),
+                    )
                 TextButton(
                     onClick = onInstall,
                     enabled = canInstall,
@@ -451,8 +451,6 @@ fun InstallPrepareContent(
         }
     }
 }
-
-private val InfoRowSpacing = 8.dp
 
 @Composable
 private fun AdaptiveInfoRow(
@@ -469,101 +467,153 @@ private fun AdaptiveInfoRow(
         else -> oldValue.orEmpty()
     }
 
-    SubcomposeLayout { constraints ->
-        val label = @Composable {
+    Layout(
+        content = {
+            // Index 0: Label
             Text(
                 text = stringResource(labelResId),
                 style = MiuixTheme.textStyles.body2,
                 fontWeight = FontWeight.SemiBold
             )
-        }
 
-        val valueContentSingleLine = @Composable {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                if (showComparison) {
-                    Text(oldTextContent, style = MiuixTheme.textStyles.body2)
-                    Icon(
-                        imageVector = AppIcons.ArrowIndicator,
-                        contentDescription = "to",
-                        modifier = Modifier
-                            .padding(horizontal = 4.dp)
-                            .size(16.dp)
-                    )
-                    Text(newValue, style = MiuixTheme.textStyles.body2)
-                } else {
-                    Text(newValue, style = MiuixTheme.textStyles.body2)
-                }
-            }
-        }
-
-        val labelPlaceable = subcompose("label", label).first().measure(constraints)
-        val valuePlaceable = subcompose("valueContent", valueContentSingleLine).first().measure(constraints)
-
-        val totalWidth = labelPlaceable.width + InfoRowSpacing.roundToPx() + valuePlaceable.width
-        val shouldWrap = totalWidth > constraints.maxWidth
-
-        if (shouldWrap && showComparison) {
-            val oldValueText = @Composable { Text(oldTextContent, style = MiuixTheme.textStyles.body2) }
-            val newValueTextWithArrow = @Composable {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = AppIcons.ArrowIndicator,
-                        contentDescription = "to",
-                        modifier = Modifier
-                            .padding(horizontal = 4.dp)
-                            .size(16.dp)
-                    )
-                    Text(newValue, style = MiuixTheme.textStyles.body2)
-                }
-            }
-
-            val oldTextPlaceable = subcompose("oldTextWrap", oldValueText).first().measure(constraints)
-            val newTextWithArrowPlaceable = subcompose("newTextWrap", newValueTextWithArrow).first().measure(constraints)
-
-            val firstRowHeight = maxOf(labelPlaceable.height, oldTextPlaceable.height)
-            val secondRowHeight = newTextWithArrowPlaceable.height
-            val totalHeight = firstRowHeight + InfoRowSpacing.roundToPx() + secondRowHeight
-
-            layout(constraints.maxWidth, totalHeight) {
-                labelPlaceable.placeRelative(0, Alignment.CenterVertically.align(labelPlaceable.height, firstRowHeight))
-                oldTextPlaceable.placeRelative(
-                    constraints.maxWidth - oldTextPlaceable.width,
-                    Alignment.CenterVertically.align(oldTextPlaceable.height, firstRowHeight)
+            if (showComparison) {
+                // Index 1: Old text
+                Text(
+                    text = oldTextContent,
+                    style = MiuixTheme.textStyles.body2,
+                    textAlign = TextAlign.End
                 )
-
-                val secondRowYOffset = firstRowHeight + InfoRowSpacing.roundToPx()
-                newTextWithArrowPlaceable.placeRelative(
-                    constraints.maxWidth - newTextWithArrowPlaceable.width,
-                    secondRowYOffset + Alignment.CenterVertically.align(newTextWithArrowPlaceable.height, secondRowHeight)
+                // Index 2: Arrow
+                Icon(
+                    imageVector = AppIcons.ArrowIndicator,
+                    contentDescription = "to",
+                    modifier = Modifier
+                        .padding(horizontal = 4.dp)
+                        .size(16.dp)
                 )
+                // Index 3: New text
+                Text(
+                    text = newValue,
+                    style = MiuixTheme.textStyles.body2,
+                    textAlign = TextAlign.End
+                )
+            } else {
+                // Index 1: Single text when no comparison
+                Text(
+                    text = newValue,
+                    style = MiuixTheme.textStyles.body2,
+                    textAlign = TextAlign.End
+                )
+            }
+        },
+        modifier = Modifier.fillMaxWidth()
+    ) { measurables, constraints ->
+        val spacing = 16.dp.roundToPx()
+
+        // Measure label exactly once
+        val labelPlaceable = measurables[0].measure(Constraints(minWidth = 0, maxWidth = constraints.maxWidth))
+
+        if (showComparison) {
+            val oldMeasurable = measurables[1]
+            val arrowMeasurable = measurables[2]
+            val newMeasurable = measurables[3]
+
+            // Use Intrinsic measurements to check required width WITHOUT calling measure() multiple times
+            val oldMaxWidthReq = oldMeasurable.maxIntrinsicWidth(constraints.maxHeight)
+            val arrowMaxWidthReq = arrowMeasurable.maxIntrinsicWidth(constraints.maxHeight)
+            val newMaxWidthReq = newMeasurable.maxIntrinsicWidth(constraints.maxHeight)
+
+            val totalSingleLineWidth = labelPlaceable.width + spacing + oldMaxWidthReq + arrowMaxWidthReq + newMaxWidthReq
+
+            if (totalSingleLineWidth <= constraints.maxWidth) {
+                // Single line mode: Space is sufficient. We can safely measure them now.
+                val oldPlaceable = oldMeasurable.measure(Constraints(minWidth = 0, maxWidth = oldMaxWidthReq))
+                val arrowPlaceable = arrowMeasurable.measure(Constraints(minWidth = 0, maxWidth = arrowMaxWidthReq))
+                val newPlaceable = newMeasurable.measure(Constraints(minWidth = 0, maxWidth = newMaxWidthReq))
+
+                val height = maxOf(labelPlaceable.height, oldPlaceable.height, arrowPlaceable.height, newPlaceable.height)
+
+                layout(constraints.maxWidth, height) {
+                    labelPlaceable.placeRelative(
+                        x = 0,
+                        y = Alignment.CenterVertically.align(labelPlaceable.height, height)
+                    )
+
+                    var currentX = constraints.maxWidth
+
+                    currentX -= newPlaceable.width
+                    newPlaceable.placeRelative(
+                        x = currentX,
+                        y = Alignment.CenterVertically.align(newPlaceable.height, height)
+                    )
+
+                    currentX -= arrowPlaceable.width
+                    arrowPlaceable.placeRelative(
+                        x = currentX,
+                        y = Alignment.CenterVertically.align(arrowPlaceable.height, height)
+                    )
+
+                    currentX -= oldPlaceable.width
+                    oldPlaceable.placeRelative(
+                        x = currentX,
+                        y = Alignment.CenterVertically.align(oldPlaceable.height, height)
+                    )
+                }
+            } else {
+                // Stacked mode: Space is insufficient. Two rows.
+
+                // Line 1: Old text shares the row with the Label
+                val oldMaxWidth = maxOf(0, constraints.maxWidth - labelPlaceable.width - spacing)
+                val oldPlaceable = oldMeasurable.measure(Constraints(minWidth = 0, maxWidth = oldMaxWidth))
+
+                // Line 2: New text takes full width minus the arrow
+                val arrowPlaceable = arrowMeasurable.measure(Constraints())
+                val newMaxWidth = maxOf(0, constraints.maxWidth - arrowPlaceable.width)
+                val newPlaceable = newMeasurable.measure(Constraints(minWidth = 0, maxWidth = newMaxWidth))
+
+                val verticalSpacing = 4.dp.roundToPx()
+                val line1Height = maxOf(labelPlaceable.height, oldPlaceable.height)
+                val line2Height = maxOf(arrowPlaceable.height, newPlaceable.height)
+                val totalHeight = line1Height + verticalSpacing + line2Height
+
+                layout(constraints.maxWidth, totalHeight) {
+                    // Place Line 1
+                    labelPlaceable.placeRelative(
+                        x = 0,
+                        y = Alignment.CenterVertically.align(labelPlaceable.height, line1Height)
+                    )
+                    oldPlaceable.placeRelative(
+                        x = constraints.maxWidth - oldPlaceable.width,
+                        y = Alignment.CenterVertically.align(oldPlaceable.height, line1Height)
+                    )
+
+                    // Place Line 2
+                    val line2Y = line1Height + verticalSpacing
+                    newPlaceable.placeRelative(
+                        x = constraints.maxWidth - newPlaceable.width,
+                        y = line2Y + Alignment.CenterVertically.align(newPlaceable.height, line2Height)
+                    )
+                    // Anchor arrow directly to the left of the new text
+                    arrowPlaceable.placeRelative(
+                        x = constraints.maxWidth - newPlaceable.width - arrowPlaceable.width,
+                        y = line2Y + Alignment.CenterVertically.align(arrowPlaceable.height, line2Height)
+                    )
+                }
             }
         } else {
+            // Single value mode
+            val valueMaxWidth = maxOf(0, constraints.maxWidth - labelPlaceable.width - spacing)
+            val valuePlaceable = measurables[1].measure(Constraints(minWidth = 0, maxWidth = valueMaxWidth))
+
             val height = maxOf(labelPlaceable.height, valuePlaceable.height)
             layout(constraints.maxWidth, height) {
-                labelPlaceable.placeRelative(0, Alignment.CenterVertically.align(labelPlaceable.height, height))
-                valuePlaceable.placeRelative(
-                    constraints.maxWidth - valuePlaceable.width,
-                    Alignment.CenterVertically.align(valuePlaceable.height, height)
+                labelPlaceable.placeRelative(
+                    x = 0,
+                    y = Alignment.CenterVertically.align(labelPlaceable.height, height)
                 )
-            }
-        }
-    }
-}
-
-@Composable
-private fun MiuixWarningTextBlock(warnings: List<Pair<String, Color>>) {
-    AnimatedVisibility(visible = warnings.isNotEmpty()) {
-        Column(
-            modifier = Modifier.padding(bottom = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            warnings.forEach { (text, color) ->
-                Text(
-                    text = text,
-                    color = color,
-                    style = MiuixTheme.textStyles.body2,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
+                valuePlaceable.placeRelative(
+                    x = constraints.maxWidth - valuePlaceable.width,
+                    y = Alignment.CenterVertically.align(valuePlaceable.height, height)
                 )
             }
         }

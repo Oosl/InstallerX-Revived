@@ -16,6 +16,7 @@ import android.content.pm.ResolveInfo
 import android.content.pm.UserInfo
 import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
+import android.net.IConnectivityManager
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
@@ -23,7 +24,6 @@ import android.os.IUserManager
 import android.os.RemoteException
 import android.os.ServiceManager
 import android.provider.Settings
-import android.util.Log
 import androidx.core.graphics.drawable.toBitmap
 import androidx.core.net.toUri
 import com.rosan.installer.ICommandOutputListener
@@ -46,7 +46,6 @@ import java.io.IOException
 import java.nio.charset.StandardCharsets
 import android.os.Process as AndroidProcess
 
-@SuppressLint("LogNotTimber")
 class DefaultPrivilegedService(
     private val isHookMode: Boolean,
     private val binderWrapper: ((IBinder) -> IBinder)? = null
@@ -59,44 +58,44 @@ class DefaultPrivilegedService(
 
     private val iPackageManager: IPackageManager by lazy {
         if (binderWrapper != null) {
-            Log.d(TAG, "Getting IPackageManager in Process Hook Mode.")
+            Timber.tag(TAG).d("Getting IPackageManager in Process Hook Mode.")
             val original = ServiceManager.getService("package")
             IPackageManager.Stub.asInterface(binderWrapper.invoke(original))
         } else if (isHookMode) {
-            Log.d(TAG, "Getting IPackageManager in Hook Mode (Directly).")
+            Timber.tag(TAG).d("Getting IPackageManager in Hook Mode (Directly).")
             ShizukuHook.hookedPackageManager
         } else {
-            if (OSUtils.isSystemApp) Log.d(TAG, "Getting IPackageManager in System Mode.")
-            else Log.d(TAG, "Getting IPackageManager in UserService Mode.")
+            if (OSUtils.isSystemApp) Timber.tag(TAG).d("Getting IPackageManager in System Mode.")
+            else Timber.tag(TAG).d("Getting IPackageManager in UserService Mode.")
             IPackageManager.Stub.asInterface(ServiceManager.getService("package"))
         }
     }
 
     private val iActivityManager: IActivityManager by lazy {
         if (binderWrapper != null) {
-            Log.d(TAG, "Getting IActivityManager in Process Hook Mode.")
+            Timber.tag(TAG).d("Getting IActivityManager in Process Hook Mode.")
             val original = ServiceManager.getService(Context.ACTIVITY_SERVICE)
             IActivityManager.Stub.asInterface(binderWrapper.invoke(original))
         } else if (isHookMode) {
             ShizukuHook.hookedActivityManager
         } else {
-            if (OSUtils.isSystemApp) Log.d(TAG, "Getting IActivityManager in System Mode.")
-            else Log.d(TAG, "Getting IActivityManager in UserService Mode.")
+            if (OSUtils.isSystemApp) Timber.tag(TAG).d("Getting IActivityManager in System Mode.")
+            else Timber.tag(TAG).d("Getting IActivityManager in UserService Mode.")
             IActivityManager.Stub.asInterface(ServiceManager.getService(Context.ACTIVITY_SERVICE))
         }
     }
 
     private val iUserManager: IUserManager by lazy {
         if (binderWrapper != null) {
-            Log.d(TAG, "Getting IUserManager in Process Hook Mode.")
+            Timber.tag(TAG).d("Getting IUserManager in Process Hook Mode.")
             val original = ServiceManager.getService(Context.USER_SERVICE)
             IUserManager.Stub.asInterface(binderWrapper.invoke(original))
         } else if (isHookMode) {
-            Log.d("", "Getting IUserManager in Hook Mode (From ShizukuHook Factory).")
+            Timber.tag(TAG).d("Getting IUserManager in Hook Mode (From ShizukuHook Factory).")
             ShizukuHook.hookedUserManager
         } else {
-            if (OSUtils.isSystemApp) Log.d(TAG, "Getting IUserManager in System Mode.")
-            else Log.d(TAG, "Getting IUserManager in UserService Mode.")
+            if (OSUtils.isSystemApp) Timber.tag(TAG).d("Getting IUserManager in System Mode.")
+            else Timber.tag(TAG).d("Getting IUserManager in UserService Mode.")
             IUserManager.Stub.asInterface(ServiceManager.getService(Context.USER_SERVICE))
         }
     }
@@ -105,15 +104,30 @@ class DefaultPrivilegedService(
         val original = reflect.resolveSettingsBinder()?.originalBinder
 
         if (binderWrapper != null) {
-            Log.d(TAG, "Getting Settings Binder in Process Hook Mode.")
+            Timber.tag(TAG).d("Getting Settings Binder in Process Hook Mode.")
             if (original != null) binderWrapper.invoke(original) else null
         } else if (isHookMode) {
-            Log.d(TAG, "Getting Settings Binder in Hook Mode (via ShizukuHook).")
+            Timber.tag(TAG).d("Getting Settings Binder in Hook Mode (via ShizukuHook).")
             ShizukuHook.hookedSettingsBinder
         } else {
-            if (OSUtils.isSystemApp) Log.d(TAG, "Getting Settings Binder in System Mode.")
-            else Log.d(TAG, "Getting Settings Binder in UserService Mode.")
+            if (OSUtils.isSystemApp) Timber.tag(TAG).d("Getting Settings Binder in System Mode.")
+            else Timber.tag(TAG).d("Getting Settings Binder in UserService Mode.")
             original
+        }
+    }
+
+    private val iConnectivityManager: IConnectivityManager by lazy {
+        if (binderWrapper != null) {
+            Timber.tag(TAG).d("Getting IConnectivityManager in Process Hook Mode.")
+            val original = ServiceManager.getService(Context.CONNECTIVITY_SERVICE)
+            IConnectivityManager.Stub.asInterface(binderWrapper.invoke(original))
+        } else if (isHookMode) {
+            Timber.tag(TAG).d("Getting IConnectivityManager in Hook Mode (via ShizukuHook).")
+            ShizukuHook.hookedConnectivityManager
+        } else {
+            if (OSUtils.isSystemApp) Timber.tag(TAG).d("Getting IConnectivityManager in System Mode.")
+            else Timber.tag(TAG).d("Getting IConnectivityManager in UserService Mode.")
+            IConnectivityManager.Stub.asInterface(ServiceManager.getService(Context.CONNECTIVITY_SERVICE))
         }
     }
 
@@ -156,7 +170,7 @@ class DefaultPrivilegedService(
     }
 
     override fun setDefaultInstaller(component: ComponentName, enable: Boolean) {
-        Log.d(TAG, "Hook Mode: $isHookMode")
+        Timber.tag(TAG).d("Hook Mode: $isHookMode")
         val uid = AndroidProcess.myUid()
         val userId = uid / 100000
 
@@ -240,7 +254,7 @@ class DefaultPrivilegedService(
         if (listener == null) {
             // If no listener is provided, we can't stream output.
             // You could either throw an exception or just execute without feedback.
-            Log.w(TAG, "execArrWithCallback called with a null listener.")
+            Timber.tag(TAG).w("execArrWithCallback called with a null listener.")
             return
         }
 
@@ -256,7 +270,7 @@ class DefaultPrivilegedService(
                     }
                 } catch (e: Exception) {
                     if (e is IOException || e is RemoteException) {
-                        Log.e(TAG, "Error reading stdout or sending callback", e)
+                        Timber.tag(TAG).e(e, "Error reading stdout or sending callback")
                     }
                 }
             }
@@ -269,7 +283,7 @@ class DefaultPrivilegedService(
                     }
                 } catch (e: Exception) {
                     if (e is IOException || e is RemoteException) {
-                        Log.e(TAG, "Error reading stderr or sending callback", e)
+                        Timber.tag(TAG).e(e, "Error reading stderr or sending callback")
                     }
                 }
             }
@@ -291,13 +305,13 @@ class DefaultPrivilegedService(
         } catch (e: Exception) {
             // If process creation itself fails
             val errorMessage = "Failed to execute command: ${e.message}"
-            Log.e(TAG, errorMessage, e)
+            Timber.tag(TAG).e(e, errorMessage)
             try {
                 listener.onError(errorMessage)
                 listener.onComplete(-1) // Send a failure exit code
             } catch (re: RemoteException) {
                 // The client might be dead, just log it.
-                Log.e(TAG, "Failed to send execution error to client.", re)
+                Timber.tag(TAG).e(e, "Failed to send execution error to client.")
             }
         } finally {
             process?.destroy()
@@ -385,20 +399,20 @@ class DefaultPrivilegedService(
         try {
             val userId = AndroidProcess.myUid() / 100000
 
-            Log.d(TAG, "Granting $permission for $packageName (UID: $userId)")
+            Timber.tag(TAG).d("Granting $permission for $packageName (UID: $userId)")
 
             iPackageManager.grantRuntimePermission(packageName, permission, userId)
 
-            Log.i(TAG, "Successfully granted $permission to $packageName")
+            Timber.tag(TAG).i("Successfully granted $permission to $packageName")
 
         } catch (e: Exception) {
-            Log.e(TAG, "ERROR granting permission", e)
+            Timber.tag(TAG).e(e, "ERROR granting permission")
             throw RemoteException("Failed to grant permission via system API: ${e.message}")
         }
     }
 
     override fun isPermissionGranted(packageName: String, permission: String): Boolean {
-        Log.d(TAG, "Checking permission '$permission' for package '$packageName'")
+        Timber.tag(TAG).d("Checking permission '$permission' for package '$packageName'")
         try {
             // Because this code runs in a privileged context with access to a full Context,
             // we can directly use the standard PackageManager API.
@@ -408,7 +422,7 @@ class DefaultPrivilegedService(
         } catch (e: Exception) {
             // Catch potential exceptions, e.g., if the package name is invalid,
             // though checkPermission typically returns PERMISSION_DENIED for that.
-            Log.e(TAG, "Failed to check permission '$permission' for '$packageName'", e)
+            Timber.tag(TAG).e(e, "Failed to check permission '$permission' for '$packageName'")
             // It's safer to return false on any error.
             return false
         }
@@ -443,11 +457,11 @@ class DefaultPrivilegedService(
             return result >= 0
         } catch (e: SecurityException) {
             // Log security exceptions specifically, as they indicate a permission issue.
-            Log.e(TAG, "startActivityPrivileged failed due to SecurityException", e)
+            Timber.tag(TAG).e(e, "startActivityPrivileged failed due to SecurityException")
             return false
         } catch (e: Exception) {
             // Catch other potential exceptions, such as RemoteException.
-            Log.e(TAG, "startActivityPrivileged failed with an exception", e)
+            Timber.tag(TAG).e(e, "startActivityPrivileged failed with an exception")
             return false
         }
     }
@@ -478,11 +492,11 @@ class DefaultPrivilegedService(
             return true
         } catch (e: SecurityException) {
             // Log security exceptions specifically, as they indicate a permission issue.
-            Log.e(TAG, "sendBroadcastPrivileged failed due to SecurityException", e)
+            Timber.tag(TAG).e(e, "sendBroadcastPrivileged failed due to SecurityException")
             return false
         } catch (e: Exception) {
             // Catch other potential exceptions, such as RemoteException.
-            Log.e(TAG, "sendBroadcastPrivileged failed with an exception", e)
+            Timber.tag(TAG).e(e, "sendBroadcastPrivileged failed with an exception")
             return false
         }
     }
@@ -496,20 +510,20 @@ class DefaultPrivilegedService(
                     reflect.invoke<IApplicationThread>(it, "getApplicationThread", activityThreadClass)
                 }
             } catch (e: Exception) {
-                Log.w(TAG, "Failed to get IApplicationThread", e)
+                Timber.tag(TAG).w(e, "Failed to get IApplicationThread")
                 null
             }
         }
 
     @SuppressLint("LogNotTimber")
     override fun getSessionDetails(sessionId: Int): Bundle? {
-        Log.d(TAG, "getSessionDetails: sessionId=$sessionId")
+        Timber.tag(TAG).d("getSessionDetails: sessionId=$sessionId")
         try {
             val packageInstaller = context.packageManager.packageInstaller
             val sessionInfo = packageInstaller.getSessionInfo(sessionId)
 
             if (sessionInfo == null) {
-                Log.w(TAG, "getSessionDetails: sessionInfo is null for id $sessionId")
+                Timber.tag(TAG).w("getSessionDetails: sessionInfo is null for id $sessionId")
                 return null
             }
 
@@ -531,10 +545,10 @@ class DefaultPrivilegedService(
                 if (stageDir != null && stageDir.exists() && stageDir.isDirectory) {
                     path = stageDir.listFiles { _, name -> name.endsWith(".apk") }
                         ?.firstOrNull()?.absolutePath
-                    Log.d(TAG, "Found APK path via stageDir: $path")
+                    Timber.tag(TAG).d("Found APK path via stageDir: $path")
                 }
             } else {
-                Log.d(TAG, "Reflected resolvedBaseCodePath: $path")
+                Timber.tag(TAG).d("Reflected resolvedBaseCodePath: $path")
             }
 
             // ---------------------------------------------------------
@@ -548,7 +562,7 @@ class DefaultPrivilegedService(
                     val sessionDir = File("/data/app/vmdl${sessionId}.tmp")
 
                     if (sessionDir.exists() && sessionDir.isDirectory) {
-                        Log.d(TAG, "Direct Access: Found session dir at ${sessionDir.absolutePath}")
+                        Timber.tag(TAG).d("Direct Access: Found session dir at ${sessionDir.absolutePath}")
 
                         // 1. Get list of all .apk files
                         val apkFiles = sessionDir.listFiles { _, name ->
@@ -561,18 +575,18 @@ class DefaultPrivilegedService(
                             val targetApk = apkFiles.find { it.name == "base.apk" } ?: apkFiles.first()
 
                             path = targetApk.absolutePath
-                            Log.d(TAG, "Direct Access: Found APK path: $path (Selected from ${apkFiles.size} files)")
+                            Timber.tag(TAG).d("Direct Access: Found APK path: $path (Selected from ${apkFiles.size} files)")
                         } else {
-                            Log.w(TAG, "Direct Access: Session dir exists but contains no APKs")
+                            Timber.tag(TAG).w("Direct Access: Session dir exists but contains no APKs")
                         }
                     } else {
                         // Rare cases or older versions might be in /data/local/tmp (mainly ADB push)
                         // Or /data/app/vmdl{sessionId}.tmp does not exist (Session hasn't written data yet)
-                        Log.d(TAG, "Direct Access: Session dir not found at standard path.")
+                        Timber.tag(TAG).d("Direct Access: Session dir not found at standard path.")
                     }
                 } catch (e: Exception) {
                     // Only happens if process lacks file read permissions (e.g. SELinux denial)
-                    Log.e(TAG, "Failed to perform direct file search", e)
+                    Timber.tag(TAG).e(e, "Failed to perform direct file search")
                 }
             }
 
@@ -580,7 +594,7 @@ class DefaultPrivilegedService(
             // Parse APK from path (if found)
             // ---------------------------------------------------------
             if (!path.isNullOrEmpty()) {
-                Log.d(TAG, "Loading info from APK path: $path")
+                Timber.tag(TAG).d("Loading info from APK path: $path")
                 try {
                     val pm = context.packageManager
                     val pkgInfo = pm.getPackageArchiveInfo(
@@ -596,7 +610,7 @@ class DefaultPrivilegedService(
                         try {
                             resolvedLabel = appInfo.loadLabel(pm)
                         } catch (e: Exception) {
-                            Log.e(TAG, "Failed to load label from APK", e)
+                            Timber.tag(TAG).e(e, "Failed to load label from APK")
                         }
 
                         // Load Icon
@@ -610,11 +624,11 @@ class DefaultPrivilegedService(
                                 drawable.toBitmap(width, height, Bitmap.Config.ARGB_8888)
                             }
                         } catch (e: Exception) {
-                            Log.e(TAG, "Failed to load icon from APK", e)
+                            Timber.tag(TAG).e(e, "Failed to load icon from APK")
                         }
                     }
                 } catch (e: Exception) {
-                    Log.e(TAG, "Failed to parse APK from path", e)
+                    Timber.tag(TAG).e(e, "Failed to parse APK from path")
                 }
             }
 
@@ -633,7 +647,7 @@ class DefaultPrivilegedService(
 
                         if (resolvedLabel == null) {
                             resolvedLabel = installedInfo.loadLabel(pm)
-                            Log.d(TAG, "Fallback: Loaded label from installed app")
+                            Timber.tag(TAG).d("Fallback: Loaded label from installed app")
                         }
 
                         if (resolvedIcon == null) {
@@ -645,13 +659,13 @@ class DefaultPrivilegedService(
                                 val height = if (drawable.intrinsicHeight > 0) drawable.intrinsicHeight else 1
                                 drawable.toBitmap(width, height, Bitmap.Config.ARGB_8888)
                             }
-                            Log.d(TAG, "Fallback: Loaded icon from installed app")
+                            Timber.tag(TAG).d("Fallback: Loaded icon from installed app")
                         }
                     }
                 } catch (e: PackageManager.NameNotFoundException) {
-                    Log.d(TAG, "App not installed, cannot use fallback info.")
+                    Timber.tag(TAG).d("App not installed, cannot use fallback info.")
                 } catch (e: Exception) {
-                    Log.e(TAG, "Failed to load info from installed app fallback", e)
+                    Timber.tag(TAG).e(e, "Failed to load info from installed app fallback")
                 }
             }
 
@@ -661,7 +675,7 @@ class DefaultPrivilegedService(
             val finalLabel = resolvedLabel ?: sessionInfo.appLabel ?: "N/A"
             val finalIcon = resolvedIcon ?: sessionInfo.appIcon
 
-            Log.d(TAG, "Final Data -> Label: '$finalLabel', Has Icon: ${finalIcon != null}")
+            Timber.tag(TAG).d("Final Data -> Label: '$finalLabel', Has Icon: ${finalIcon != null}")
 
             val bundle = Bundle()
             bundle.putCharSequence("appLabel", finalLabel)
@@ -673,18 +687,18 @@ class DefaultPrivilegedService(
                     val iconBytes = stream.toByteArray()
 
                     if (iconBytes.size > 500 * 1024) {
-                        Log.w(TAG, "WARNING: Icon size is large (${iconBytes.size} bytes).")
+                        Timber.tag(TAG).w("WARNING: Icon size is large (${iconBytes.size} bytes).")
                     }
                     bundle.putByteArray("appIcon", iconBytes)
                 } catch (e: Exception) {
-                    Log.e(TAG, "Failed to compress icon", e)
+                    Timber.tag(TAG).e(e, "Failed to compress icon")
                 }
             }
 
             return bundle
 
         } catch (e: Exception) {
-            Log.e(TAG, "getSessionDetails CRITICAL FAILURE", e)
+            Timber.tag(TAG).e(e, "getSessionDetails CRITICAL FAILURE")
             return null
         }
     }
@@ -703,7 +717,7 @@ class DefaultPrivilegedService(
                 }
 
             if (usersList == null) {
-                Log.e(TAG, "Failed to get user list, method returned null.")
+                Timber.tag(TAG).e("Failed to get user list, method returned null.")
                 return userMap
             }
 
@@ -711,15 +725,45 @@ class DefaultPrivilegedService(
                 userMap[userObject.id] = userObject.name ?: "Unknown User"
             }
 
-            Log.d(TAG, "Fetched users: $userMap")
+            Timber.tag(TAG).d("Fetched users: $userMap")
         } catch (e: SecurityException) {
-            Log.e(TAG, "Permission denied for getUsers, falling back to current user", e)
+            Timber.tag(TAG).e(e, "Permission denied for getUsers, falling back to current user")
             val userId = AndroidProcess.myUid() / 100000
             userMap[userId] = "Current User"
         } catch (e: Exception) {
-            Log.e(TAG, "Error getting users", e)
+            Timber.tag(TAG).e(e, "Error getting users")
         }
         return userMap
+    }
+
+    override fun setPackageNetworkingEnabled(uid: Int, enabled: Boolean) {
+        try {
+            val cm = this.iConnectivityManager
+
+            // The integer 3 actually means FIREWALL_CHAIN_POWERSAVE (Whitelist mode).
+            // We must use 9, which represents FIREWALL_CHAIN_OEM_DENY_3 (Blacklist mode).
+            val chain = 9
+
+            // FIREWALL_RULE_DEFAULT = 0, FIREWALL_RULE_ALLOW = 1, FIREWALL_RULE_DENY = 2
+            // For a DENY chain, use DENY (2) to block, and DEFAULT (0) to remove the block.
+            val rule = if (enabled) 0 else 2
+
+            if (!enabled) {
+                // Block network: Ensure the chain is enabled, then apply DENY rule to the UID
+                cm.setFirewallChainEnabled(chain, true)
+                cm.setUidFirewallRule(chain, uid, rule)
+                Timber.tag(TAG).i("Network BLOCKED for UID: $uid via OEM_DENY_3")
+            } else {
+                // Restore network: Reset the UID rule to DEFAULT to remove the restriction
+                cm.setUidFirewallRule(chain, uid, rule)
+                // WARNING: Do NOT disable the entire chain here, otherwise other apps blocked
+                // in this chain will also regain network access unexpectedly.
+                Timber.tag(TAG).i("Network RESTORED for UID: $uid via OEM_DENY_3")
+            }
+        } catch (e: Exception) {
+            Timber.tag(TAG).e(e, "Failed to set package networking via AIDL Stub")
+            throw RemoteException("AIDL Stub invocation failed: ${e.message}")
+        }
     }
 
     private fun addPreferredActivity(

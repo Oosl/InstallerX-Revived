@@ -58,6 +58,14 @@ fun StatusWidget(viewModel: PreferredViewModel) {
         Level.UNSTABLE -> stringResource(id = R.string.unstable)
     }
 
+    val versionInfoText = stringResource(
+        id = R.string.app_version_info_format,
+        internetAccessHint,
+        level,
+        RsConfig.VERSION_NAME,
+        RsConfig.VERSION_CODE
+    )
+
     CardWidget(
         colors = CardDefaults.elevatedCardColors(
             containerColor = containerColor,
@@ -65,8 +73,7 @@ fun StatusWidget(viewModel: PreferredViewModel) {
         ),
         icon = {
             Image(
-                modifier = Modifier
-                    .size(56.dp),
+                modifier = Modifier.size(56.dp),
                 painter = rememberDrawablePainter(
                     drawable = ContextCompat.getDrawable(
                         LocalContext.current,
@@ -90,7 +97,7 @@ fun StatusWidget(viewModel: PreferredViewModel) {
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
-                    text = "$internetAccessHint$level ${RsConfig.VERSION_NAME} (${RsConfig.VERSION_CODE})",
+                    text = versionInfoText,
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 if (state.hasUpdate)

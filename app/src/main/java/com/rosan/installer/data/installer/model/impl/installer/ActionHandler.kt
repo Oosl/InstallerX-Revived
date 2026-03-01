@@ -456,7 +456,7 @@ class ActionHandler(scope: CoroutineScope, installer: InstallerRepo) :
 
         val color = if (appDataStore.getBoolean(AppDataStore.UI_DYN_COLOR_FOLLOW_PKG_ICON, false).first()) {
             Timber.d("[id=$installerId] resolveUninstall: Dynamic color enabled, extracting color.")
-            iconColorExtractor.extractColorFromDrawable(icon)
+            with(iconColorExtractor) { icon.extractColor() }
         } else null
 
         installer.uninstallInfo.update {

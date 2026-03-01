@@ -26,7 +26,8 @@ data class InstalledAppInfo(
     val isSystemApp: Boolean = false,
     val isUninstalled: Boolean = false,
     val isArchived: Boolean = false,
-    val packageSize: Long = 0L
+    val packageSize: Long = 0L,
+    val sourceDir: String? = null
 ) {
     companion object : KoinComponent {
         fun buildByPackageName(packageName: String): InstalledAppInfo? {
@@ -81,7 +82,8 @@ data class InstalledAppInfo(
                     isSystemApp = flags.hasFlag(ApplicationInfo.FLAG_SYSTEM),
                     isUninstalled = isUninstalled,
                     isArchived = packageManager.isPackageArchivedCompat(packageName),
-                    packageSize = packageSize
+                    packageSize = packageSize,
+                    sourceDir = applicationInfo?.sourceDir
                 )
             } catch (_: PackageManager.NameNotFoundException) {
                 // This is an expected failure, no need to print stack trace in production.

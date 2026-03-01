@@ -28,7 +28,7 @@ object PrivilegedManager : KoinComponent {
     /**
      * Sets the app as the default installer.
      */
-    suspend fun setDefaultInstaller(
+    fun setDefaultInstaller(
         authorizer: ConfigEntity.Authorizer,
         component: ComponentName,
         enable: Boolean
@@ -69,7 +69,7 @@ object PrivilegedManager : KoinComponent {
     /**
      * Grants a runtime permission to a specific package.
      */
-    suspend fun grantRuntimePermission(
+    fun grantRuntimePermission(
         authorizer: ConfigEntity.Authorizer,
         packageName: String,
         permission: String
@@ -194,9 +194,9 @@ object PrivilegedManager : KoinComponent {
     }
 
     /**
-     * Send an broadcast using a privileged context.
+     * Send a broadcast using a privileged context.
      */
-    suspend fun sendBroadcastPrivileged(config: ConfigEntity, intent: Intent): Boolean {
+    fun sendBroadcastPrivileged(config: ConfigEntity, intent: Intent): Boolean {
         var success = false
         useUserService(
             authorizer = config.authorizer,
@@ -315,6 +315,33 @@ object PrivilegedManager : KoinComponent {
                 executePostInstallTasks(authorizer, customizeAuthorizer, config)
             }.onFailure { e ->
                 Timber.e(e, "Async post-install tasks failed")
+            }
+        }
+    }
+
+    /**
+     * Toggles network access for a specific package using the dedicated AIDL method.
+     */
+    fun setPackageNetworkingEnabled(
+        authorizer: ConfigEntity.Authorizer,
+        uid: Int,
+        enabled: Boolean
+    ) {
+        useUserService(
+            authorizer = authorizer,
+            useHookMode = true,
+            special = getSpecialAuth(authorizer)
+        ) { userService ->
+            try {
+                // Directly call the dedicated method defined in the AIDL interface
+                // This delegates the complex logic (like sequencing and FD handling) to the service side
+                userService.privileged.setPackageNetworkingEnabled(uid, enabled)
+
+                val status = if (enabled) "RESTORED" else "BLOCKED"
+                Timber.i("Network $status for UID: $uid")
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to set package networking via dedicated IPC method")
+                throw e
             }
         }
     }

@@ -139,9 +139,9 @@ fun LegacyInstallerGlobalSettingsPage(
                 )
             }
             if (BiometricManager
-                .from(context)
-                .canAuthenticate(BIOMETRIC_WEAK or BIOMETRIC_STRONG or DEVICE_CREDENTIAL) == BiometricManager.BIOMETRIC_SUCCESS)
-            {
+                    .from(context)
+                    .canAuthenticate(BIOMETRIC_WEAK or BIOMETRIC_STRONG or DEVICE_CREDENTIAL) == BiometricManager.BIOMETRIC_SUCCESS
+            ) {
                 item {
                     SwitchWidget(
                         icon = AppIcons.BiometricAuth,
@@ -266,22 +266,8 @@ fun LegacyInstallerGlobalSettingsPage(
                                 }
                             )
                         }
-                        AnimatedVisibility(visible = isDialogMode) {
-                            SwitchWidget(
-                                icon = AppIcons.NotificationDisabled,
-                                title = stringResource(id = R.string.disable_notification),
-                                description = stringResource(id = R.string.close_immediately_on_dialog_dismiss),
-                                checked = viewModel.state.disableNotificationForDialogInstall,
-                                isM3E = false,
-                                onCheckedChange = {
-                                    viewModel.dispatch(
-                                        PreferredViewAction.ChangeShowDisableNotification(it)
-                                    )
-                                }
-                            )
-                        }
                         AnimatedVisibility(
-                            visible = isNotificationMode && viewModel.state.showDialogWhenPressingNotification,
+                            visible = isDialogMode || viewModel.state.showDialogWhenPressingNotification,
                             enter = fadeIn(),
                             exit = fadeOut()
                         ) {

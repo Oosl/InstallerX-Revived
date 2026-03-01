@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2025-2026 InstallerX Revived contributors
 package com.rosan.installer.ui.theme
 
 import android.os.Build
@@ -17,19 +19,21 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.colorResource
 import androidx.core.view.WindowCompat
-import com.rosan.installer.ui.theme.m3color.PaletteStyle
-import com.rosan.installer.ui.theme.m3color.ThemeMode
-import com.rosan.installer.ui.theme.m3color.dynamicColorScheme
+import com.materialkolor.dynamiccolor.ColorSpec
+import com.rosan.installer.ui.theme.material.PaletteStyle
+import com.rosan.installer.ui.theme.material.ThemeColorSpec
+import com.rosan.installer.ui.theme.material.ThemeMode
+import com.rosan.installer.ui.theme.material.animateAsState
+import com.rosan.installer.ui.theme.material.dynamicColorScheme
 import top.yukonga.miuix.kmp.theme.ColorSchemeMode
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.theme.ThemeController
 
 val LocalIsDark = staticCompositionLocalOf { false }
-val LocalPaletteStyle = staticCompositionLocalOf { PaletteStyle.TonalSpot }
+val LocalPaletteStyle = staticCompositionLocalOf { PaletteStyle.Expressive }
+val LocalThemeColorSpec = staticCompositionLocalOf { ThemeColorSpec.SPEC_2025 }
 val LocalSeedColor = staticCompositionLocalOf { Color.Unspecified }
-val LocalInstallerColorScheme = staticCompositionLocalOf<ColorScheme> {
-    error("No ColorScheme provided")
-}
+val LocalInstallerColorScheme = staticCompositionLocalOf<ColorScheme> { error("No ColorScheme provided") }
 val LocalThemeMode = staticCompositionLocalOf { ThemeMode.SYSTEM }
 val LocalUseMiuixMonet = staticCompositionLocalOf { false }
 val LocalUseDynamicColor = staticCompositionLocalOf { false }
@@ -47,6 +51,9 @@ object InstallerTheme {
     val paletteStyle: PaletteStyle
         @Composable @ReadOnlyComposable get() = LocalPaletteStyle.current
 
+    val colorSpec: ThemeColorSpec
+        @Composable @ReadOnlyComposable get() = LocalThemeColorSpec.current
+
     val themeMode: ThemeMode
         @Composable @ReadOnlyComposable get() = LocalThemeMode.current
 
@@ -62,6 +69,7 @@ fun InstallerTheme(
     useMiuix: Boolean,
     themeMode: ThemeMode,
     paletteStyle: PaletteStyle,
+    colorSpec: ThemeColorSpec,
     useDynamicColor: Boolean,
     useMiuixMonet: Boolean,
     seedColor: Color,
@@ -77,18 +85,28 @@ fun InstallerTheme(
         colorResource(id = android.R.color.system_accent1_500)
     else seedColor
 
-    val colorScheme = remember(keyColor, isDark, paletteStyle) {
-        dynamicColorScheme(keyColor = keyColor, isDark = isDark, style = paletteStyle)
+    // 1. Generate the base scheme with spec support
+    val baseColorScheme = remember(keyColor, isDark, paletteStyle, colorSpec) {
+        dynamicColorScheme(
+            keyColor = keyColor,
+            isDark = isDark,
+            style = paletteStyle,
+            colorSpec = colorSpec
+        )
     }
+
+    // 2. Wrap it with smooth transitions
+    val animatedColorScheme = baseColorScheme.animateAsState()
 
     CompositionLocalProvider(
         LocalIsDark provides isDark,
         LocalPaletteStyle provides paletteStyle,
         LocalSeedColor provides seedColor,
-        LocalInstallerColorScheme provides colorScheme,
+        LocalInstallerColorScheme provides animatedColorScheme, // Use animated scheme here
         LocalThemeMode provides themeMode,
         LocalUseMiuixMonet provides useMiuixMonet,
-        LocalUseDynamicColor provides useDynamicColor
+        LocalUseDynamicColor provides useDynamicColor,
+        LocalThemeColorSpec provides colorSpec
     ) {
         if (useMiuix) {
             InstallerMiuixTheme(
@@ -97,12 +115,13 @@ fun InstallerTheme(
                 useDynamicColor = useDynamicColor,
                 useMiuixMonet = useMiuixMonet,
                 seedColor = seedColor,
+                colorSpec = colorSpec,
                 content = content
             )
         } else {
             InstallerMaterialExpressiveTheme(
                 darkTheme = isDark,
-                colorScheme = colorScheme,
+                colorScheme = animatedColorScheme,
                 content = content
             )
         }
@@ -143,6 +162,7 @@ fun InstallerMiuixTheme(
     useDynamicColor: Boolean = false,
     compatStatusBarColor: Boolean = true,
     seedColor: Color,
+    colorSpec: ThemeColorSpec,
     content: @Composable () -> Unit
 ) {
     if (compatStatusBarColor) {
@@ -167,10 +187,16 @@ fun InstallerMiuixTheme(
             ThemeMode.DARK -> ColorSchemeMode.MonetDark
         }
 
-        remember(colorSchemeMode, keyColor, darkTheme) {
+        val colorSpecVersion = when (colorSpec) {
+            ThemeColorSpec.SPEC_2021 -> ColorSpec.SpecVersion.SPEC_2021
+            ThemeColorSpec.SPEC_2025 -> ColorSpec.SpecVersion.SPEC_2025
+        }
+
+        remember(colorSchemeMode, keyColor, colorSpecVersion, darkTheme) {
             ThemeController(
                 colorSchemeMode = colorSchemeMode,
                 keyColor = keyColor,
+                colorSpec = colorSpecVersion,
                 isDark = darkTheme
             )
         }

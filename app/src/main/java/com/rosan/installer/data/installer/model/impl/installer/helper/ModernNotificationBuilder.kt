@@ -17,8 +17,8 @@ import com.rosan.installer.data.app.util.getInfo
 import com.rosan.installer.data.installer.model.entity.ProgressEntity
 import com.rosan.installer.data.installer.repo.InstallerRepo
 import com.rosan.installer.data.settings.model.room.entity.ConfigEntity
-import com.rosan.installer.ui.theme.m3color.PaletteStyle
-import com.rosan.installer.ui.theme.m3color.dynamicColorScheme
+import com.rosan.installer.ui.theme.material.PaletteStyle
+import com.rosan.installer.ui.theme.material.dynamicColorScheme
 import com.rosan.installer.ui.theme.primaryDark
 import com.rosan.installer.ui.theme.primaryLight
 import com.rosan.installer.util.getErrorMessage

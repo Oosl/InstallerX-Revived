@@ -292,8 +292,6 @@
     <string name="show_dialog_install_extended_menu">Afficher le menu étendu</string>
     <string name="show_dialog_install_extended_menu_desc">Afficher plus d\'options dans le dialogue d\'installation</string>
     <string name="extended_menu">Menu étendu</string>
-    <string name="disable_notification">Installation en premier plan sans notification</string>
-    <string name="close_immediately_on_dialog_dismiss">Le menu reste au premier plan pendant l\'installation. Cliquer sur une zone vide le quittera silencieusement</string>
     <string name="disable_notification_on_dismiss">Retirer la notification si le dialogue est ignoré</string>
     <string name="close_notification_immediately_on_dialog_dismiss">Ignorer le dialogue quittera silencieusement</string>
     <string name="set_countdown">Définir le compte à rebours</string>

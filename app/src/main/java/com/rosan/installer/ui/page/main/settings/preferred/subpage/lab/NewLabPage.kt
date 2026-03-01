@@ -59,6 +59,7 @@ fun NewLabPage(
     val hazeStyle = rememberMaterial3HazeStyle()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(topAppBarState)
     val showRootImplementationDialog = remember { mutableStateOf(false) }
+    val isMiIslandSupported = remember { OSUtils.isSupportMiIsland() }
 
     if (showRootImplementationDialog.value) {
         RootImplementationSelectionDialog(
@@ -166,6 +167,14 @@ fun NewLabPage(
                 SplicedColumnGroup(
                     title = stringResource(R.string.lab_unstable_features)
                 ) {
+                    if (isMiIslandSupported) item {
+                        SwitchWidget(
+                            title = stringResource(R.string.lab_mi_island),
+                            description = stringResource(R.string.lab_mi_island_desc),
+                            checked = state.labUseMiIsland,
+                            onCheckedChange = { viewModel.dispatch(PreferredViewAction.LabChangeUseMiIsland(it)) }
+                        )
+                    }
                     item {
                         SwitchWidget(
                             icon = AppIcons.InstallRequester,

@@ -51,6 +51,7 @@ class SettingsActivity : ComponentActivity(), KoinComponent {
                     useMiuix = state.showMiuixUI,
                     themeMode = state.themeMode,
                     paletteStyle = state.paletteStyle,
+                    colorSpec = state.colorSpec,
                     useDynamicColor = state.useDynamicColor,
                     useMiuixMonet = state.useMiuixMonet,
                     seedColor = state.seedColor

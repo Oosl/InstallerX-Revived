@@ -5,8 +5,8 @@ import android.graphics.Canvas
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import androidx.core.graphics.createBitmap
-import com.kyant.m3color.quantize.QuantizerCelebi
-import com.kyant.m3color.score.Score
+import com.materialkolor.quantize.QuantizerCelebi
+import com.materialkolor.score.Score
 import com.rosan.installer.data.app.model.entity.AppEntity
 import com.rosan.installer.data.app.repo.AppIconRepo
 import kotlinx.coroutines.Dispatchers
@@ -46,7 +46,7 @@ class IconColorExtractor : KoinComponent {
             )
 
             // Extract color from the obtained drawable
-            extractColorFromDrawable(iconDrawable)
+            iconDrawable.extractColor()
         } catch (e: Exception) {
             Timber.e(e, "Failed to extract color for package: $packageName")
             null
@@ -60,14 +60,13 @@ class IconColorExtractor : KoinComponent {
      * @param drawable The source drawable.
      * @return ARGB formatted seed color (Int), or null if the drawable is null or extraction fails.
      */
-    suspend fun extractColorFromDrawable(drawable: Drawable?): Int? {
-        if (drawable == null) {
+    suspend fun Drawable?.extractColor(): Int? {
+        if (this == null) {
             Timber.d("Drawable is null, cannot extract color.")
             return null
         }
         return try {
-            val bitmap = drawableToBitmap(drawable)
-            extractSeedColorFromBitmap(bitmap)
+            this.toBitmap().extractSeedColor()
         } catch (e: Exception) {
             Timber.e(e, "Failed to extract color from provided drawable.")
             null
@@ -77,33 +76,32 @@ class IconColorExtractor : KoinComponent {
     /**
      * Converts a Drawable to a Bitmap.
      */
-    private fun drawableToBitmap(drawable: Drawable): Bitmap {
-        if (drawable is BitmapDrawable && drawable.bitmap != null) {
-            return drawable.bitmap
+    private fun Drawable.toBitmap(): Bitmap {
+        if (this is BitmapDrawable && this.bitmap != null) {
+            return this.bitmap
         }
-        val bitmap = if (drawable.intrinsicWidth <= 0 || drawable.intrinsicHeight <= 0) {
+        val bitmap = if (this.intrinsicWidth <= 0 || this.intrinsicHeight <= 0) {
             createBitmap(1, 1, Bitmap.Config.ARGB_8888)
         } else {
-            createBitmap(drawable.intrinsicWidth, drawable.intrinsicHeight, Bitmap.Config.ARGB_8888)
+            createBitmap(this.intrinsicWidth, this.intrinsicHeight, Bitmap.Config.ARGB_8888)
         }
         val canvas = Canvas(bitmap)
-        drawable.setBounds(0, 0, canvas.width, canvas.height)
-        drawable.draw(canvas)
+        this.setBounds(0, 0, canvas.width, canvas.height)
+        this.draw(canvas)
         return bitmap
     }
 
     /**
      * Performs the actual color quantization and scoring.
      */
-    private suspend fun extractSeedColorFromBitmap(
-        bitmap: Bitmap,
+    private suspend fun Bitmap.extractSeedColor(
         maxColors: Int = 128,
         fallbackColorArgb: Int = -12417548 // 0xFF3F51B5 - Indigo 500
     ): Int = withContext(Dispatchers.Default) {
-        val width = bitmap.width
-        val height = bitmap.height
+        val width = this@extractSeedColor.width
+        val height = this@extractSeedColor.height
         val pixels = IntArray(width * height)
-        bitmap.getPixels(pixels, 0, width, 0, 0, width, height)
+        this@extractSeedColor.getPixels(pixels, 0, width, 0, 0, width, height)
 
         val colorToCountMap: Map<Int, Int> = QuantizerCelebi.quantize(pixels, maxColors)
         val sortedColors: List<Int> = Score.score(colorToCountMap, 1, fallbackColorArgb, true)

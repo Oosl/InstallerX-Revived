@@ -29,7 +29,6 @@ package com.rosan.installer.data.app.util
 
 import android.annotation.SuppressLint
 import android.os.Build
-import androidx.annotation.Keep
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -50,8 +49,7 @@ fun rememberInstallOptions(authorizer: ConfigEntity.Authorizer): List<InstallOpt
     }
 }
 
-private fun getInstallOptions(authorizer: ConfigEntity.Authorizer) = InstallOption::class.sealedSubclasses
-    .mapNotNull { it.objectInstance }
+private fun getInstallOptions(authorizer: ConfigEntity.Authorizer) = InstallOption.entries
     .filter {
         // First, check if the option is compatible with the current SDK version.
         val sdkVersionMatch = Build.VERSION.SDK_INT >= it.minSdk && Build.VERSION.SDK_INT <= it.maxSdk
@@ -77,7 +75,33 @@ sealed class InstallOption(
     @param:StringRes val labelResource: Int,
     @param:StringRes val descResource: Int,
 ) {
-    @Keep
+    companion object {
+        val entries = listOf(
+            ReplaceExisting,
+            AllowTest,
+            Internal,
+            External,
+            FromAdb,
+            AllUsers,
+            AllowDowngrade,
+            GrantAllRequestedPermissions,
+            InstantApp,
+            DontKillApp,
+            FullApp,
+            AllocateAggressive,
+            VirtualPreload,
+            Apex,
+            EnableRollback,
+            DisableVerification,
+            Staged,
+            DryRun,
+            DisableAllowedApexUpdateCheck,
+            BypassLowTargetSdkBlock,
+            RequestUpdateOwnerShip,
+            UnArchive
+        )
+    }
+
     data object ReplaceExisting : InstallOption(
         minSdk = Int.MAX_VALUE, // Don't show on List because handled elsewhere
         value = 0x00000002,
@@ -85,21 +109,18 @@ sealed class InstallOption(
         descResource = R.string.replace_existing_desc,
     )
 
-    @Keep
     data object AllowTest : InstallOption(
         value = 0x00000004,
         labelResource = R.string.config_allow_test,
         descResource = R.string.config_allow_test_desc,
     )
 
-    @Keep
     data object Internal : InstallOption(
         value = 0x00000010,
         labelResource = R.string.internal,
         descResource = R.string.internal_desc,
     )
 
-    @Keep
     data object External : InstallOption(
         value = 0x00000008,
         maxSdk = Build.VERSION_CODES.P,
@@ -107,21 +128,18 @@ sealed class InstallOption(
         descResource = R.string.external_desc,
     )
 
-    @Keep
     data object FromAdb : InstallOption(
         value = 0x00000020,
         labelResource = R.string.from_adb,
         descResource = R.string.from_adb_desc,
     )
 
-    @Keep
     data object AllUsers : InstallOption(
         value = 0x00000040,
         labelResource = R.string.config_all_users,
         descResource = R.string.config_all_users_desc,
     )
 
-    @Keep
     data object AllowDowngrade : InstallOption(
         value = 0x00000080 or
                 0x00100000,
@@ -132,7 +150,6 @@ sealed class InstallOption(
         descResource = R.string.config_allow_downgrade_desc,
     )
 
-    @Keep
     data object GrantAllRequestedPermissions : InstallOption(
         value = 0x00000100,
         minSdk = Build.VERSION_CODES.M,
@@ -156,7 +173,6 @@ sealed class InstallOption(
 //        descResource = R.string.force_permission_prompt_desc,
 //    )
 
-    @Keep
     data object InstantApp : InstallOption(
         value = 0x00000800,
         minSdk = Build.VERSION_CODES.N,
@@ -164,7 +180,6 @@ sealed class InstallOption(
         descResource = R.string.instant_app_desc,
     )
 
-    @Keep
     data object DontKillApp : InstallOption(
         value = 0x00001000,
         minSdk = Build.VERSION_CODES.N,
@@ -172,7 +187,6 @@ sealed class InstallOption(
         descResource = R.string.dont_kill_app_desc,
     )
 
-    @Keep
     data object FullApp : InstallOption(
         value = 0x00004000,
         minSdk = Build.VERSION_CODES.O,
@@ -180,7 +194,6 @@ sealed class InstallOption(
         descResource = R.string.full_app_desc,
     )
 
-    @Keep
     data object AllocateAggressive : InstallOption(
         value = 0x00008000,
         minSdk = Build.VERSION_CODES.O,
@@ -188,7 +201,6 @@ sealed class InstallOption(
         descResource = R.string.allocate_aggressive_desc,
     )
 
-    @Keep
     data object VirtualPreload : InstallOption(
         value = 0x00010000,
         minSdk = Build.VERSION_CODES.O_MR1,
@@ -196,7 +208,6 @@ sealed class InstallOption(
         descResource = R.string.virtual_preload_desc,
     )
 
-    @Keep
     data object Apex : InstallOption(
         value = 0x00020000,
         minSdk = Build.VERSION_CODES.Q,
@@ -204,7 +215,6 @@ sealed class InstallOption(
         descResource = R.string.apex_desc,
     )
 
-    @Keep
     data object EnableRollback : InstallOption(
         value = 0x00040000,
         minSdk = Build.VERSION_CODES.Q,
@@ -212,7 +222,6 @@ sealed class InstallOption(
         descResource = R.string.enable_rollback_desc,
     )
 
-    @Keep
     data object DisableVerification : InstallOption(
         value = 0x00080000,
         minSdk = Build.VERSION_CODES.Q,
@@ -220,7 +229,6 @@ sealed class InstallOption(
         descResource = R.string.disable_verification_desc,
     )
 
-    @Keep
     data object Staged : InstallOption(
         value = 0x00200000,
         minSdk = Build.VERSION_CODES.Q,
@@ -228,7 +236,6 @@ sealed class InstallOption(
         descResource = R.string.staged_desc,
     )
 
-    @Keep
     data object DryRun : InstallOption(
         value = 0x00800000,
         minSdk = Build.VERSION_CODES.Q,
@@ -246,7 +253,6 @@ sealed class InstallOption(
         descResource = R.string.config_all_whitelist_restricted_permissions_desc,
     )*/
 
-    @Keep
     data object DisableAllowedApexUpdateCheck : InstallOption(
         // Bug in AOSP from 12-13 where the APEX flag here shared a value with AllWhitelistRestrictedPermissions.
         value = 0x00800000,
@@ -255,7 +261,6 @@ sealed class InstallOption(
         descResource = R.string.disable_allowed_apex_update_check_desc,
     )
 
-    @Keep
     data object BypassLowTargetSdkBlock : InstallOption(
         value = 0x01000000,
         minSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE,
@@ -263,7 +268,6 @@ sealed class InstallOption(
         descResource = R.string.config_bypass_low_target_sdk_desc,
     )
 
-    @Keep
     data object RequestUpdateOwnerShip : InstallOption(
         value = 1 shl 25,
         minSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE,
@@ -271,7 +275,6 @@ sealed class InstallOption(
         descResource = R.string.config_request_update_ownership_desc,
     )
 
-    @Keep
     data object UnArchive : InstallOption(
         value = 1 shl 30,
         minSdk = Int.MAX_VALUE, // Don't show on List because handled elsewhere

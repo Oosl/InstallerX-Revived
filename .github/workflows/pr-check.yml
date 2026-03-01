@@ -36,13 +36,20 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: ./gradlew assembleOnlinePreviewDebug assembleOfflinePreviewDebug -PAPP_ID="${{ vars.APP_ID }}"
 
-      # 上传 APK 供人工测试
-      - name: Upload Debug APKs
-        uses: actions/upload-artifact@v6
+      # Upload the online debug unzipped APK for manual testing
+      - name: Upload Online Debug APK
+        uses: actions/upload-artifact@v7
         with:
-          # 使用 PR 的 SHA 作为名称后缀，方便区分
-          name: pr-debug-apks-${{ github.event.pull_request.head.sha }}
-          path: |
-            app/build/outputs/apk/onlinePreview/debug/*.apk
-            app/build/outputs/apk/offlinePreview/debug/*.apk
+          name: pr-online-debug-apk-${{ github.event.pull_request.head.sha }}
+          path: app/build/outputs/apk/onlinePreview/debug/*.apk
           retention-days: 7
+          archive: false
+
+      # Upload the offline debug unzipped APK for manual testing
+      - name: Upload Offline Debug APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: pr-offline-debug-apk-${{ github.event.pull_request.head.sha }}
+          path: app/build/outputs/apk/offlinePreview/debug/*.apk
+          retention-days: 7
+          archive: false

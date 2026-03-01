@@ -22,6 +22,7 @@
     <string name="lab">实验室</string>
     <string name="lab_desc">访问实验性或开发中的新功能</string>
     <string name="about_detail">关于 InstallerX Revived</string>
+    <string name="app_version_info_format">%1$s%2$s %3$s (%4$s)</string>
     <string name="updating">正在更新…</string>
     <string name="get_update_detail">检查软件更新和新功能</string>
     <string name="update_available">有可用更新：%1$s</string>
@@ -70,6 +71,8 @@
     <string name="theme_settings_theme_mode_system">跟随系统主题</string>
     <string name="theme_settings_palette_style">调色板样式</string>
     <string name="theme_settings_palette_style_desc">选择调色板样式</string>
+    <string name="theme_settings_color_spec">颜色规格</string>
+    <string name="theme_settings_color_spec_only_2021">当前调色板样式仅支持 Spec 2021</string>
     <string name="theme_settings_dynamic_color">动态颜色</string>
     <string name="theme_settings_dynamic_color_desc">基于壁纸的主题颜色</string>
     <string name="theme_settings_theme_color">主题颜色</string>
@@ -223,7 +226,7 @@
     <string name="config_auto_delete">自动删除</string>
     <string name="config_auto_delete_desc">安装成功后自动删除安装包</string>
     <string name="config_auto_delete_zip">删除压缩包</string>
-    <string name="config_auto_delete_zip_desc">除删除安装包之外，删除包含安装包的压缩文件</string>
+    <string name="config_auto_delete_zip_desc">不仅删除安装包，还删除包含安装包的压缩文件。</string>
     <string name="config_display_sdk_version">显示 SDK 信息</string>
     <string name="config_display_sdk_version_desc">在安装界面显示 target 与 min 信息</string>
     <string name="config_display_module_extra_info_desc">如果是模块则显示额外信息</string>
@@ -234,6 +237,7 @@
     <string name="config_label_install_options">安装选项</string>
     <string name="config_label_install_options_desc">配置安装参数，如安装来源，安装用户等</string>
     <string name="config_label_app_bundle_settings">拆分安装包</string>
+    <string name="config_label_preferences">偏好设置</string>
     <string name="config_dialog_title_invalid">有错误输入项</string>
     <string name="config_dialog_title_unsaved_changes">有未保存的修改</string>
     <string name="config_dialog_message_unsaved_changes">不保存就退出吗？</string>
@@ -329,6 +333,8 @@
     <string name="tag_arch_emulated">架构转译</string>
     <string name="installer_prepare_arch_32_notice">此应用将以 32 位模式运行。在 64 位设备上，这可能会增加内存消耗或降低性能</string>
     <string name="installer_prepare_arch_mismatch_notice">应用架构 (%1$s) 与本机 (%2$s) 不匹配，将需要转译。不保证能成功安装或运行，且可能会导致发热增加或闪退</string>
+    <string name="tag_identical">相同</string>
+    <string name="installer_prepare_identical_notice">当前安装包与已安装的应用文件完全一致，可以考虑跳过本次安装</string>
     <string name="installer_prepare_sdk_incompatible">系统 SDK 不满足应用要求</string>
     <string name="installer_prepare_type_new_install">准备安装新应用</string>
     <string name="installer_prepare_type_upgrade">准备升级应用</string>
@@ -444,6 +450,7 @@
     <string name="permission_unknown">未知权限</string>
     <string name="installer_running">InstallerX 运行中</string>
     <string name="installer_version_short">版本：%1$s (%2$s)</string>
+    <string name="version_with_prefix_format">%1$s%2$s</string>
     <string name="installer_version_name_label">版本名称：</string>
     <string name="installer_version_code_label">版本代码：</string>
     <string name="installer_version">版本：%1$s (%2$s)</string>
@@ -461,6 +468,7 @@
     <string name="exception_resolve_failed_link_not_valid">该链接不包含有效的文件</string>
     <string name="exception_resolve_failed_no_internet_access">该版本无法访问互联网，要使用此功能，请安装支持联网的版本</string>
     <string name="exception_analyse_failed_all_files_unsupported">不支持的文件格式</string>
+    <string name="installer_analyse_failed_corrupted_archive">损坏的压缩包</string>
     <string name="exception_authentication_failed">用户认证失败</string>
     <string name="exception_install_failed_already_exists">应用已安装（包名相同、版本相同），请先卸载再安装</string>
     <string name="exception_install_failed_blacklisted_package">你不允许该应用的安装！</string>
@@ -470,7 +478,7 @@
     <string name="exception_install_failed_duplicate_package">签名冲突（包名相同、签名不同），请先卸载原应用</string>
     <string name="exception_install_failed_no_shared_user">共享 UID 的程序不存在，请先下载主 UID 应用</string>
     <string name="exception_install_failed_update_incompatible">更新失败（签名或其他原因），请卸载后安装</string>
-    <string name="exception_install_failed_shared_user_incompatible">与共享 UID 的程序签名冲突</string>
+    <string name="exception_install_failed_shared_user_incompatible">与共享 UID 的程序签名不一致</string>
     <string name="exception_install_failed_missing_shared_library">缺失共享库</string>
     <string name="exception_install_failed_missing_install_permission">请授予未知安装来源权限然后重试</string>
     <string name="exception_install_failed_replace_couldnt_delete">无效的共享库</string>
@@ -535,10 +543,8 @@
     <string name="extended_menu">扩展菜单</string>
     <string name="auto_silent_install">自动静默安装</string>
     <string name="auto_silent_install_desc">对话框安装开始时自动静默安装</string>
-    <string name="disable_notification">安装过程保持前台显示</string>
-    <string name="close_immediately_on_dialog_dismiss">安装过程中对话框将保持前台显示，不弹出安装通知</string>
-    <string name="disable_notification_on_dismiss">对话框关闭时退出</string>
-    <string name="close_notification_immediately_on_dialog_dismiss">关闭对话框将静默退出</string>
+    <string name="disable_notification_on_dismiss">对话框隐藏时退出安装</string>
+    <string name="close_notification_immediately_on_dialog_dismiss">主动隐藏对话框将取消本次安装，而不是挂起到通知栏</string>
     <string name="set_countdown">设定倒计时</string>
     <string name="dhizuku_auto_close_countdown_desc">Dhizuku 安装成功后自动关闭的倒计时</string>
     <string name="dhizuku_cannot_set_package_source_desc">Dhizuku 模式不支持自定义软件包来源！</string>
@@ -576,6 +582,8 @@
     <string name="config_grant_all_permissions_desc">自动授予包请求的所有权限。请注意只适用于运行时权限，特殊权限如所有文件访问或无障碍不会自动授予</string>
     <string name="config_split_choose_all">默认选中所有分包</string>
     <string name="config_split_choose_all_desc">安装时默认选中所有分包而不是选中最合适的</string>
+    <string name="config_apk_choose_all">默认选择所有 APK</string>
+    <string name="config_apk_choose_all_desc">单次安装会话含有多个 APK 文件时默认勾选所有 APK 文件</string>
     <string name="force_volume_uuid">指定卷 UUID</string>
     <string name="force_volume_uuid_desc">允许指定卷 UUID 并将软件包安装到该卷</string>
     <string name="force_permission_prompt">强制权限提示</string>
@@ -698,4 +706,6 @@
     <string name="lab_unstable_features">不稳定功能</string>
     <string name="lab_set_install_requester">设置安装请求方</string>
     <string name="lab_set_install_requester_desc">向安装会话填写 OriginatingUid 字段来记录发起安装的应用，匹配系统包管理器行为</string>
+    <string name="lab_mi_island">小米超级岛</string>
+    <string name="lab_mi_island_desc">覆盖全局通知样式。仅当应用授权器设置为 Shizuku 时可绕过系统签名限制；Root 用户在手动关闭系统签名验证后可直接开启</string>
 </resources>

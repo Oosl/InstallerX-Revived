@@ -6,6 +6,7 @@ import com.rosan.installer.data.app.model.entity.DataEntity
 import com.rosan.installer.data.app.model.entity.PackageAnalysisResult
 import com.rosan.installer.data.app.model.enums.DataType
 import com.rosan.installer.data.app.model.enums.SessionMode
+import com.rosan.installer.data.app.model.exception.InstallerException
 import com.rosan.installer.data.app.model.impl.analyser.FileTypeDetector
 import com.rosan.installer.data.app.model.impl.analyser.UnifiedContainerAnalyser
 import com.rosan.installer.data.app.model.impl.processor.PackagePreprocessor
@@ -72,6 +73,7 @@ object AnalyserRepoImpl : AnalyserRepo {
         val finalResults = processedGroups.map { group ->
             val selectableEntities = SelectionStrategy.select(
                 splitChooseAll = config.splitChooseAll,
+                apkChooseAll = config.apkChooseAll,
                 entities = group.entities,
                 sessionDataType.sessionType
             )
@@ -82,9 +84,19 @@ object AnalyserRepoImpl : AnalyserRepo {
                 Timber.w("AnalyserRepo: WARNING! ${group.packageName} has 0 entities after selection!")
             }
 
+            val baseEntity = group.entities.firstOrNull { it is AppEntity.BaseEntity } as? AppEntity.BaseEntity
+
+            // Execute the signature check.
             val signatureStatus = PackagePreprocessor.checkSignature(
-                group.entities.firstOrNull { it is AppEntity.BaseEntity } as? AppEntity.BaseEntity,
+                baseEntity,
                 group.installedInfo
+            )
+
+            // Execute the identity check.
+            val identityStatus = PackagePreprocessor.checkPackageIdentity(
+                baseEntity,
+                group.installedInfo,
+                sessionDataType.sessionType
             )
 
             PackageAnalysisResult(
@@ -92,6 +104,7 @@ object AnalyserRepoImpl : AnalyserRepo {
                 appEntities = selectableEntities,
                 installedAppInfo = group.installedInfo,
                 signatureMatchStatus = signatureStatus,
+                identityStatus = identityStatus,
                 sessionMode = detectedMode
             )
         }

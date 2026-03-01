@@ -170,6 +170,31 @@ fun MiuixThemeSettingsPage(
                             }
                         )
                     }
+                    /*AnimatedVisibility(
+                        visible = state.useMiuixMonet,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically()
+                    ) {
+                        MiuixPaletteStyleWidget(
+                            currentPaletteStyle = state.paletteStyle,
+                            onPaletteStyleChange = { newStyle ->
+                                viewModel.dispatch(PreferredViewAction.SetPaletteStyle(newStyle))
+                            }
+                        )
+                    }*/
+                    /*AnimatedVisibility(
+                        visible = state.useMiuixMonet,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically()
+                    ) {
+                        MiuixColorSpecWidget(
+                            currentColorSpec = state.colorSpec,
+                            currentPaletteStyle = state.paletteStyle,
+                            onColorSpecChange = { newSpec ->
+                                viewModel.dispatch(PreferredViewAction.SetColorSpec(newSpec))
+                            }
+                        )
+                    }*/
                     AnimatedVisibility(
                         visible = state.useMiuixMonet,
                         enter = fadeIn() + expandVertically(),

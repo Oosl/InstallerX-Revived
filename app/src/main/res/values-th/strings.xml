@@ -15,7 +15,6 @@
     <string name="clear">ล้าง</string>
     <string name="clear_cache">ล้างแคช</string>
     <string name="close">ปิด</string>
-    <string name="close_immediately_on_dialog_dismiss">ไดอะล็อกยังคงอยู่เบื้องหน้าขณะติดตั้ง การคลิกพื้นที่ว่างจะออกจากโปรแกรมอย่างเงียบ ๆ</string>
     <string name="close_notification_immediately_on_dialog_dismiss">ปิดไดอะล็อกจะออกจากโปรแกรมอย่างเงียบ ๆ</string>
     <string name="config">โปรไฟล์</string>
     <string name="config_add_new_package">เพิ่มแพ็คเกจใหม่</string>
@@ -96,7 +95,6 @@
     <string name="disable_adb_install_verify_not_support_dhizuku_desc">ไม่รองรับ Dhizuku</string>
     <string name="disable_allowed_apex_update_check">ปิดใช้งานการตรวจสอบการอัปเดต APEX ที่อนุญาต</string>
     <string name="disable_allowed_apex_update_check_desc">ไม่ต้องตรวจสอบว่าสามารถอัปเดต APEX ที่ติดตั้งได้หรือไม่</string>
-    <string name="disable_notification">ติดตั้งเบื้องหน้าโดยไม่มีการแจ้งเตือน</string>
     <string name="disable_notification_on_dismiss">ปิดเมื่อปิดไดอะล็อก</string>
     <string name="disable_verification">ปิดใช้งานการยืนยัน</string>
     <string name="disable_verification_desc">ปิดใช้งานการยืนยันแพ็คเกจระหว่างการติดตั้ง นี่ไม่ใช่การยืนยันลายเซ็น</string>

@@ -46,6 +46,7 @@ fun LegacyLabPage(
     val state = viewModel.state
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val showRootImplementationDialog = remember { mutableStateOf(false) }
+    val isMiIslandSupported = remember { OSUtils.isSupportMiIsland() }
 
     if (showRootImplementationDialog.value) {
         RootImplementationSelectionDialog(
@@ -130,6 +131,15 @@ fun LegacyLabPage(
             }
             // --- Unstable Features Section ---
             item { LabelWidget(stringResource(R.string.lab_unstable_features)) }
+            if (isMiIslandSupported) item {
+                SwitchWidget(
+                    title = stringResource(R.string.lab_mi_island),
+                    description = stringResource(R.string.lab_mi_island_desc),
+                    isM3E = false,
+                    checked = state.labUseMiIsland,
+                    onCheckedChange = { viewModel.dispatch(PreferredViewAction.LabChangeUseMiIsland(it)) }
+                )
+            }
             item {
                 SwitchWidget(
                     icon = AppIcons.InstallRequester,

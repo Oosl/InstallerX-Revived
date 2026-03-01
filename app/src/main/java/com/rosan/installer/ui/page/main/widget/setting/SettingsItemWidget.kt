@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.twotone.DesignServices
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Button
@@ -73,6 +74,8 @@ import com.rosan.installer.ui.common.LocalSessionInstallSupported
 import com.rosan.installer.ui.icons.AppIcons
 import com.rosan.installer.ui.page.main.settings.preferred.PreferredViewAction
 import com.rosan.installer.ui.page.main.settings.preferred.PreferredViewModel
+import com.rosan.installer.ui.theme.material.PaletteStyle
+import com.rosan.installer.ui.theme.material.ThemeColorSpec
 import com.rosan.installer.ui.util.rememberCacheInfo
 import com.rosan.installer.util.hasFlag
 
@@ -518,13 +521,55 @@ fun SelectableSettingItem(
 }
 
 @Composable
+fun ColorSpecSelector(viewModel: PreferredViewModel) {
+    val state = viewModel.state
+
+    // Check if the current PaletteStyle supports SPEC_2025
+    val isSpec2025Supported = state.paletteStyle in listOf(
+        PaletteStyle.TonalSpot,
+        PaletteStyle.Neutral,
+        PaletteStyle.Vibrant,
+        PaletteStyle.Expressive
+    )
+
+    // Filter available specs based on support
+    val availableSpecs = if (isSpec2025Supported) {
+        ThemeColorSpec.entries
+    } else {
+        listOf(ThemeColorSpec.SPEC_2021)
+    }
+
+    // Determine the actual spec being applied to match the fallback logic
+    val activeSpec = if (!isSpec2025Supported) ThemeColorSpec.SPEC_2021 else state.colorSpec
+
+    // Use a static localized string for the unsupported state
+    val descriptionText = if (!isSpec2025Supported) {
+        stringResource(id = R.string.theme_settings_color_spec_only_2021)
+    } else {
+        activeSpec.displayName
+    }
+
+    DropDownMenuWidget(
+        icon = Icons.TwoTone.DesignServices,
+        title = stringResource(id = R.string.theme_settings_color_spec),
+        description = descriptionText,
+        enabled = isSpec2025Supported, // Disable interaction if not supported
+        choice = availableSpecs.indexOf(activeSpec).coerceAtLeast(0),
+        data = availableSpecs.map { it.displayName },
+        onChoiceChange = { index ->
+            val selectedSpec = availableSpecs[index]
+            viewModel.dispatch(PreferredViewAction.SetColorSpec(selectedSpec))
+        }
+    )
+}
+
+@Composable
 fun BottomSheetContent(
     title: String,
     hasUpdate: Boolean,
     canDirectUpdate: Boolean = true,
     onDirectUpdateClick: () -> Unit
 ) {
-    val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
     val haptic = LocalHapticFeedback.current
     Column(

@@ -8,6 +8,7 @@ import com.rosan.installer.ui.page.main.widget.chip.WarningModel
 
 // Encapsulate UI resources to keep the function signature clean
 data class InstallWarningResources(
+    // String
     val tagDowngrade: String,
     val textDowngrade: String,
     val tagSignature: String,
@@ -19,8 +20,13 @@ data class InstallWarningResources(
     val textArch32: String,
     val tagEmulated: String,
     val textArchMismatchFormat: String, // Expecting a string with 2 placeholders
+    val tagIdentical: String,
+    val textIdentical: String,
+
+    // Color
     val errorColor: Color,
-    val tertiaryColor: Color
+    val tertiaryColor: Color,
+    val primaryColor: Color
 )
 
 // Return type containing the list and the button ID

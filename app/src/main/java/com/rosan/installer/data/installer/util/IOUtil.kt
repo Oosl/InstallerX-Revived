@@ -3,9 +3,11 @@ package com.rosan.installer.data.installer.util
 import android.os.SystemClock
 import com.rosan.installer.data.installer.model.entity.ProgressEntity
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileDescriptor
 import java.io.FileInputStream
@@ -19,7 +21,6 @@ private const val COPY_BUFFER_SIZE = 1 * 1024 * 1024 // 1MB
 // Balance between sendfile() syscall efficiency and UI responsiveness
 private const val CHUNK_SIZE = 16 * 1024 * 1024L // 16MB
 
-
 /**
  * Copies data from InputStream to OutputStream with progress reporting.
  *
@@ -31,7 +32,7 @@ suspend fun InputStream.copyToWithProgress(
     output: OutputStream,
     totalSize: Long,
     progressFlow: MutableSharedFlow<ProgressEntity>
-) {
+) = withContext(Dispatchers.IO) { // Switch to IO dispatcher to prevent thread starvation
     var bytesCopied = 0L
     val buf = ByteArray(COPY_BUFFER_SIZE)
     val step = if (totalSize > 0) (totalSize * 0.01f).toLong().coerceAtLeast(128 * 1024) else Long.MAX_VALUE
@@ -40,7 +41,7 @@ suspend fun InputStream.copyToWithProgress(
 
     if (totalSize > 0) progressFlow.emit(ProgressEntity.InstallPreparing(0f))
 
-    var read = this.read(buf)
+    var read = this@copyToWithProgress.read(buf)
     while (read >= 0) {
         if (!currentCoroutineContext().isActive) throw CancellationException()
         output.write(buf, 0, read)
@@ -52,7 +53,7 @@ suspend fun InputStream.copyToWithProgress(
             lastEmitTime = now
             nextEmit = (bytesCopied / step + 1) * step
         }
-        read = this.read(buf)
+        read = this@copyToWithProgress.read(buf)
     }
     if (totalSize > 0) progressFlow.emit(ProgressEntity.InstallPreparing(1f))
 }
@@ -67,7 +68,7 @@ suspend fun transferWithProgress(
     destFile: File,
     totalSize: Long,
     progressFlow: MutableSharedFlow<ProgressEntity>
-) {
+) = withContext(Dispatchers.IO) { // Ensure file operations run on IO thread pool
     val sourceChannel = FileInputStream(sourceFd).channel
     val destChannel = FileOutputStream(destFile).channel
 

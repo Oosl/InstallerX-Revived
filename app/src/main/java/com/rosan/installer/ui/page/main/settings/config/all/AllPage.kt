@@ -123,11 +123,10 @@ fun AllPage(
             }
         },
         snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
-    ) {
-        Box(modifier = Modifier.padding(it)) {
-            when {
-                viewModel.state.data.progress is AllViewState.Data.Progress.Loading
-                        && viewModel.state.data.configs.isEmpty() -> {
+    ) { innerPadding ->
+        Box(modifier = Modifier.fillMaxSize()) {
+            when (viewModel.state.data.progress) {
+                is AllViewState.Data.Progress.Loading if viewModel.state.data.configs.isEmpty() -> {
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
@@ -147,22 +146,31 @@ fun AllPage(
                     }
                 }
 
-                viewModel.state.data.progress is AllViewState.Data.Progress.Loaded
-                        && viewModel.state.data.configs.isEmpty() -> {
+                is AllViewState.Data.Progress.Loaded if viewModel.state.data.configs.isEmpty() -> {
                     // TODO Add error handling
                     // Since we don't allow removing default profile,
                     // There is no need to handle an empty state.
                 }
 
                 else -> {
-                    Column(modifier = Modifier.fillMaxSize()) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(top = innerPadding.calculateTopPadding())
+                    ) {
                         if (!viewModel.state.userReadScopeTips) {
                             ScopeTipCard(viewModel = viewModel)
                             Spacer(modifier = Modifier.size(8.dp))
                         }
                         ShowDataWidget(
                             viewModel = viewModel,
-                            listState = listState
+                            listState = listState,
+                            contentPadding = PaddingValues(
+                                top = 16.dp,
+                                bottom = outerPadding.calculateBottomPadding() + 16.dp,
+                                start = 16.dp,
+                                end = 16.dp
+                            )
                         )
                     }
                 }

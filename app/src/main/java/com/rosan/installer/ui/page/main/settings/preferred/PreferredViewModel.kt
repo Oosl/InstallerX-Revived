@@ -35,10 +35,11 @@ import com.rosan.installer.data.settings.model.room.entity.converter.InstallMode
 import com.rosan.installer.data.updater.repo.AppUpdater
 import com.rosan.installer.data.updater.repo.UpdateChecker
 import com.rosan.installer.ui.activity.InstallerActivity
-import com.rosan.installer.ui.theme.m3color.PaletteStyle
-import com.rosan.installer.ui.theme.m3color.PresetColors
-import com.rosan.installer.ui.theme.m3color.RawColor
-import com.rosan.installer.ui.theme.m3color.ThemeMode
+import com.rosan.installer.ui.theme.material.PaletteStyle
+import com.rosan.installer.ui.theme.material.PresetColors
+import com.rosan.installer.ui.theme.material.RawColor
+import com.rosan.installer.ui.theme.material.ThemeColorSpec
+import com.rosan.installer.ui.theme.material.ThemeMode
 import com.rosan.installer.ui.util.doBiometricAuth
 import com.rosan.installer.util.addFlag
 import com.rosan.installer.util.removeFlag
@@ -172,12 +173,14 @@ class PreferredViewModel(
             is PreferredViewAction.LabChangeRootShowModuleArt -> labChangeRootShowModuleArt(action.enable)
             is PreferredViewAction.LabChangeRootModuleAlwaysUseRoot -> labChangeRootModuleAlwaysUseRoot(action.enable)
             is PreferredViewAction.LabChangeRootImplementation -> labChangeRootImplementation(action.implementation)
+            is PreferredViewAction.LabChangeUseMiIsland -> labChangeUseMiIsland(action.enable)
             is PreferredViewAction.LabChangeHttpProfile -> labChangeHttpProfile(action.profile)
             is PreferredViewAction.LabChangeHttpSaveFile -> labChangeHttpSaveFile(action.enable)
             is PreferredViewAction.LabChangeSetInstallRequester -> labChangeSetInstallRequester(action.enable)
 
             is PreferredViewAction.SetThemeMode -> setThemeMode(action.mode)
             is PreferredViewAction.SetPaletteStyle -> setPaletteStyle(action.style)
+            is PreferredViewAction.SetColorSpec -> setColorSpec(action.spec)
             is PreferredViewAction.SetUseDynamicColor -> setUseDynamicColor(action.use)
             is PreferredViewAction.SetUseMiuixMonet -> setUseMiuixMonet(action.use)
             is PreferredViewAction.SetSeedColor -> setSeedColor(action.color)
@@ -541,6 +544,11 @@ class PreferredViewModel(
             )
         }
 
+    private fun labChangeUseMiIsland(enabled: Boolean) =
+        viewModelScope.launch {
+            appDataStore.putBoolean(AppDataStore.SHOW_MI_ISLAND, enabled)
+        }
+
     private fun labChangeHttpProfile(profile: HttpProfile) =
         viewModelScope.launch {
             appDataStore.putString(AppDataStore.LAB_HTTP_PROFILE, profile.name)
@@ -601,6 +609,10 @@ class PreferredViewModel(
 
     private fun setPaletteStyle(style: PaletteStyle) = viewModelScope.launch {
         appDataStore.putString(AppDataStore.THEME_PALETTE_STYLE, style.name)
+    }
+
+    private fun setColorSpec(spec: ThemeColorSpec) = viewModelScope.launch {
+        appDataStore.putString(AppDataStore.THEME_COLOR_SPEC, spec.name)
     }
 
     private fun setUseDynamicColor(use: Boolean) = viewModelScope.launch {
@@ -743,6 +755,8 @@ class PreferredViewModel(
             val labRootImplementationFlow =
                 appDataStore.getString(AppDataStore.LAB_ROOT_IMPLEMENTATION)
                     .map { RootImplementation.fromString(it) }
+            val labUseMiIslandFlow =
+                appDataStore.getBoolean(AppDataStore.SHOW_MI_ISLAND, false)
             val labHttpProfileFlow =
                 appDataStore.getString(AppDataStore.LAB_HTTP_PROFILE)
                     .map { HttpProfile.fromString(it) }
@@ -756,6 +770,8 @@ class PreferredViewModel(
             val paletteStyleFlow =
                 appDataStore.getString(AppDataStore.THEME_PALETTE_STYLE, PaletteStyle.TonalSpot.name)
                     .map { runCatching { PaletteStyle.valueOf(it) }.getOrDefault(PaletteStyle.TonalSpot) }
+            val colorSpecFlow = appDataStore.getString(AppDataStore.THEME_COLOR_SPEC, ThemeColorSpec.SPEC_2025.name)
+                .map { runCatching { ThemeColorSpec.valueOf(it) }.getOrDefault(ThemeColorSpec.SPEC_2025) }
             val useDynamicColorFlow =
                 appDataStore.getBoolean(AppDataStore.THEME_USE_DYNAMIC_COLOR, true)
             val useMiuixMonetFlow =
@@ -804,12 +820,14 @@ class PreferredViewModel(
                 labRootShowModuleArtFlow,
                 labRootModuleAlwaysUseRootFlow,
                 labRootImplementationFlow,
+                labUseMiIslandFlow,
                 labHttpProfileFlow,
                 labHttpSaveFileFlow,
                 labSetInstallRequesterFlow,
                 enableFileLoggingFlow,
                 themeModeFlow,
                 paletteStyleFlow,
+                colorSpecFlow,
                 useDynamicColorFlow,
                 useMiuixMonetFlow,
                 seedColorFlow,
@@ -856,12 +874,14 @@ class PreferredViewModel(
                 val labRootShowModuleArt = values[idx++] as Boolean
                 val labRootModuleAlwaysUseRoot = values[idx++] as Boolean
                 val labRootImplementation = values[idx++] as RootImplementation
+                val labUseMiIsland = values[idx++] as Boolean
                 val labHttpProfile = values[idx++] as HttpProfile
                 val labHttpSaveFile = values[idx++] as Boolean
                 val labSetInstallRequester = values[idx++] as Boolean
                 val enableFileLogging = values[idx++] as Boolean
                 val themeMode = values[idx++] as ThemeMode
                 val paletteStyle = values[idx++] as PaletteStyle
+                val colorSpec = values[idx++] as ThemeColorSpec
                 val useDynamicColor = values[idx++] as Boolean
                 val useMiuixMonet = values[idx++] as Boolean
                 val manualSeedColor = values[idx++] as Color
@@ -930,11 +950,13 @@ class PreferredViewModel(
                     labRootShowModuleArt = labRootShowModuleArt,
                     labRootModuleAlwaysUseRoot = labRootModuleAlwaysUseRoot,
                     labRootImplementation = labRootImplementation,
+                    labUseMiIsland = labUseMiIsland,
                     labHttpProfile = labHttpProfile,
                     labHttpSaveFile = labHttpSaveFile,
                     labSetInstallRequester = labSetInstallRequester,
                     themeMode = themeMode,
                     paletteStyle = paletteStyle,
+                    colorSpec = colorSpec,
                     useDynamicColor = useDynamicColor,
                     useMiuixMonet = useMiuixMonet,
                     seedColor = effectiveSeedColor,

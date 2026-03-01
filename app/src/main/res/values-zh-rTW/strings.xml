@@ -334,6 +334,7 @@
     <string name="permission_unknown">未知權限</string>
     <string name="installer_running">InstallerX 執行中</string>
     <string name="installer_version_short">版本：%1$s (%2$s)</string>
+    <string name="version_with_prefix_format">%1$s%2$s</string>
     <string name="installer_version">版本：%1$s (%2$s)</string>
     <string name="installer_version2">%1$s (%2$s)</string>
     <string name="installer_package_name">套件名稱：%1$s</string>
@@ -402,8 +403,6 @@
     <string name="show_dialog_install_extended_menu">顯示擴展選單</string>
     <string name="show_dialog_install_extended_menu_desc">在安裝對話框中顯示更多操作選項</string>
     <string name="extended_menu">擴展選單</string>
-    <string name="disable_notification">安裝過程保持前台顯示</string>
-    <string name="close_immediately_on_dialog_dismiss">安裝過程中對話框將保持前景顯示，不彈出安裝通知</string>
     <string name="disable_notification_on_dismiss">對話框關閉時退出</string>
     <string name="close_notification_immediately_on_dialog_dismiss">關閉對話框將靜默退出</string>
     <string name="set_countdown">設定倒數計時</string>
@@ -635,7 +634,7 @@
     <string name="uninstall_call_uninstaller">呼叫解除安裝器</string>
     <string name="uninstall_call_uninstaller_manually">手動呼叫解除安裝器</string>
     <string name="uninstall_call_uninstaller_manually_desc">透過指定套件名稱解除安裝應用程式</string>
-    <string name="uninstall_progress_text">正在解除安裝...</string>
+    <string name="uninstall_progress_text">正在解除安裝…</string>
     <string name="uninstall_enter_package_name">輸入要解除安裝的應用程式套件名稱</string>
     <string name="permission_flashlight">控制閃光燈</string>
     <string name="permission_write_secure_settings">寫入安全設定</string>

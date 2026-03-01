@@ -254,24 +254,7 @@ fun MiuixInstallerGlobalSettingsPage(
                     }
 
                     AnimatedVisibility(
-                        visible = isDialogMode,
-                        enter = fadeIn() + expandVertically(),
-                        exit = fadeOut() + shrinkVertically()
-                    ) {
-                        MiuixSwitchWidget(
-                            title = stringResource(id = R.string.disable_notification),
-                            description = stringResource(id = R.string.close_immediately_on_dialog_dismiss),
-                            checked = viewModel.state.disableNotificationForDialogInstall,
-                            onCheckedChange = {
-                                viewModel.dispatch(
-                                    PreferredViewAction.ChangeShowDisableNotification(it)
-                                )
-                            }
-                        )
-                    }
-
-                    AnimatedVisibility(
-                        visible = isNotificationMode && viewModel.state.showDialogWhenPressingNotification,
+                        visible = isDialogMode || viewModel.state.showDialogWhenPressingNotification,
                         enter = fadeIn() + expandVertically(),
                         exit = fadeOut() + shrinkVertically()
                     ) {

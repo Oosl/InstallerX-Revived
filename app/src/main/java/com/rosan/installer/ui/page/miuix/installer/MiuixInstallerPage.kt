@@ -65,7 +65,8 @@ import com.rosan.installer.ui.theme.InstallerMiuixTheme
 import com.rosan.installer.ui.theme.InstallerTheme
 import com.rosan.installer.ui.theme.LocalInstallerColorScheme
 import com.rosan.installer.ui.theme.LocalPaletteStyle
-import com.rosan.installer.ui.theme.m3color.dynamicColorScheme
+import com.rosan.installer.ui.theme.LocalThemeColorSpec
+import com.rosan.installer.ui.theme.material.dynamicColorScheme
 import com.rosan.installer.ui.theme.miuixSheetColorDark
 import com.rosan.installer.ui.theme.miuixSheetColorLight
 import com.rosan.installer.ui.util.WindowBlurEffect
@@ -106,6 +107,7 @@ fun MiuixInstallerPage(installer: InstallerRepo) {
     val useDynamicColor = InstallerTheme.useDynamicColor
     val isDark = InstallerTheme.isDark
     val paletteStyle = LocalPaletteStyle.current
+    val colorSpec = LocalThemeColorSpec.current
     val globalColorScheme = LocalInstallerColorScheme.current
 
     val activeSeedColor = temporarySeedColor ?: globalSeedColor
@@ -179,6 +181,7 @@ fun MiuixInstallerPage(installer: InstallerRepo) {
     ) {
         InstallerMiuixTheme(
             seedColor = activeSeedColor,
+            colorSpec = colorSpec,
             darkTheme = isDark,
             themeMode = themeMode,
             useMiuixMonet = useMiuixMonet,

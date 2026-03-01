@@ -109,4 +109,6 @@ interface IPrivilegedService {
      * or null if the session is invalid or the query fails.
      */
     Bundle getSessionDetails(int sessionId);
+
+    void setPackageNetworkingEnabled(int uid, boolean enabled);
 }

@@ -5,9 +5,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import com.kieronquinn.monetcompat.core.MonetCompat
 import com.rosan.installer.data.settings.model.datastore.AppDataStore
-import com.rosan.installer.ui.theme.m3color.PaletteStyle
-import com.rosan.installer.ui.theme.m3color.PresetColors
-import com.rosan.installer.ui.theme.m3color.ThemeMode
+import com.rosan.installer.ui.theme.material.PaletteStyle
+import com.rosan.installer.ui.theme.material.PresetColors
+import com.rosan.installer.ui.theme.material.ThemeColorSpec
+import com.rosan.installer.ui.theme.material.ThemeMode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -24,6 +25,7 @@ data class ThemeUiState(
     val useMiuix: Boolean = false,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val paletteStyle: PaletteStyle = PaletteStyle.TonalSpot,
+    val colorSpec: ThemeColorSpec = ThemeColorSpec.SPEC_2025,
     val useDynamicColor: Boolean = true,
     val useMiuixMonet: Boolean = false,
     val seedColor: Color = PresetColors.first().color
@@ -41,6 +43,8 @@ fun createThemeUiStateFlow(dataStore: AppDataStore): Flow<ThemeUiState> {
         .map { runCatching { ThemeMode.valueOf(it) }.getOrDefault(ThemeMode.SYSTEM) }
     val paletteStyleFlow = dataStore.getString(AppDataStore.THEME_PALETTE_STYLE, PaletteStyle.TonalSpot.name)
         .map { runCatching { PaletteStyle.valueOf(it) }.getOrDefault(PaletteStyle.TonalSpot) }
+    val colorSpecFlow = dataStore.getString(AppDataStore.THEME_COLOR_SPEC, ThemeColorSpec.SPEC_2025.name)
+        .map { runCatching { ThemeColorSpec.valueOf(it) }.getOrDefault(ThemeColorSpec.SPEC_2025) }
     val useDynamicColorFlow = dataStore.getBoolean(AppDataStore.THEME_USE_DYNAMIC_COLOR, true)
     val useMiuixMonetFlow = dataStore.getBoolean(AppDataStore.UI_USE_MIUIX_MONET, false)
     val manualSeedColorFlow = dataStore.getInt(AppDataStore.THEME_SEED_COLOR, PresetColors.first().color.toArgb())
@@ -52,6 +56,7 @@ fun createThemeUiStateFlow(dataStore: AppDataStore): Flow<ThemeUiState> {
         useMiuixFlow,
         themeModeFlow,
         paletteStyleFlow,
+        colorSpecFlow,
         useDynamicColorFlow,
         useMiuixMonetFlow,
         manualSeedColorFlow,
@@ -61,6 +66,7 @@ fun createThemeUiStateFlow(dataStore: AppDataStore): Flow<ThemeUiState> {
         val useMiuix = values[idx++] as Boolean
         val themeMode = values[idx++] as ThemeMode
         val paletteStyle = values[idx++] as PaletteStyle
+        val colorSpec = values[idx++] as ThemeColorSpec
         val useDynamic = values[idx++] as Boolean
         val useMonet = values[idx++] as Boolean
         val manualSeedColor = values[idx++] as Color
@@ -80,6 +86,7 @@ fun createThemeUiStateFlow(dataStore: AppDataStore): Flow<ThemeUiState> {
             useMiuix = useMiuix,
             themeMode = themeMode,
             paletteStyle = paletteStyle,
+            colorSpec = colorSpec,
             useDynamicColor = useDynamic,
             useMiuixMonet = useMonet,
             seedColor = effectiveSeedColor // Pass the resolved color

@@ -503,8 +503,6 @@
     <string name="extended_menu">Bővített menü</string>
     <string name="auto_silent_install">Automatikus csendes telepítés</string>
     <string name="auto_silent_install_desc">Automatikus csendes telepítés a telepítési párbeszédpanel indításakor</string>
-    <string name="disable_notification">Előtér megtartása telepítés közben</string>
-    <string name="close_immediately_on_dialog_dismiss">A párbeszédpanel a telepítés során előtérben marad, értesítések nem jelennek meg</string>
     <string name="disable_notification_on_dismiss">Párbeszédpanel bezárása</string>
     <string name="close_notification_immediately_on_dialog_dismiss">A párbeszédpanel bezárása csendben kilép</string>
     <string name="set_countdown">Visszaszámlálás beállítása</string>

@@ -8,6 +8,7 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.content.pm.IPackageManager
 import android.content.pm.PackageManager
+import android.net.IConnectivityManager
 import android.os.Build
 import android.os.IBinder
 import android.os.IUserManager
@@ -114,7 +115,7 @@ object ShizukuHook : KoinComponent {
 
     val hookedUserManager: IUserManager by lazy {
         Timber.tag("ShizukuHook").d("Creating on-demand hooked IUserManager...")
-        val originalBinder = SystemServiceHelper.getSystemService("user")
+        val originalBinder = SystemServiceHelper.getSystemService(Context.USER_SERVICE)
         val originalUM = IUserManager.Stub.asInterface(originalBinder)
         val wrapper = ShizukuBinderWrapper(originalUM.asBinder())
         IUserManager.Stub.asInterface(wrapper).also {
@@ -133,6 +134,21 @@ object ShizukuHook : KoinComponent {
         } catch (e: Exception) {
             Timber.tag("ShizukuHook").e(e, "Failed to create hooked Settings Binder")
             null
+        }
+    }
+
+    val hookedConnectivityManager: IConnectivityManager by lazy {
+        Timber.tag("ShizukuHook").d("Creating on-demand hooked IConnectivityManager...")
+        try {
+            val originalBinder = SystemServiceHelper.getSystemService(Context.CONNECTIVITY_SERVICE)
+            val originalCM = IConnectivityManager.Stub.asInterface(originalBinder)
+            val wrapper = ShizukuBinderWrapper(originalCM.asBinder())
+            IConnectivityManager.Stub.asInterface(wrapper).also {
+                Timber.tag("ShizukuHook").i("On-demand hooked IConnectivityManager created.")
+            }
+        } catch (e: Exception) {
+            Timber.tag("ShizukuHook").e(e, "Failed to create hooked IConnectivityManager")
+            throw e
         }
     }
 }

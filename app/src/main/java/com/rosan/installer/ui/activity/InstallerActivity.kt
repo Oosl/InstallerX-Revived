@@ -326,6 +326,7 @@ class InstallerActivity : ComponentActivity(), KoinComponent {
                 useMiuix = uiState.useMiuix,
                 themeMode = uiState.themeMode,
                 paletteStyle = uiState.paletteStyle,
+                colorSpec = uiState.colorSpec,
                 useDynamicColor = uiState.useDynamicColor,
                 useMiuixMonet = uiState.useMiuixMonet,
                 seedColor = uiState.seedColor

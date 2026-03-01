@@ -66,13 +66,14 @@ import com.rosan.installer.ui.page.main.widget.dialog.BlurWarningDialog
 import com.rosan.installer.ui.page.main.widget.dialog.HideLauncherIconWarningDialog
 import com.rosan.installer.ui.page.main.widget.setting.AppBackButton
 import com.rosan.installer.ui.page.main.widget.setting.BaseWidget
+import com.rosan.installer.ui.page.main.widget.setting.ColorSpecSelector
 import com.rosan.installer.ui.page.main.widget.setting.SelectableSettingItem
 import com.rosan.installer.ui.page.main.widget.setting.SplicedColumnGroup
 import com.rosan.installer.ui.page.main.widget.setting.SwitchWidget
 import com.rosan.installer.ui.theme.getM3TopBarColor
 import com.rosan.installer.ui.theme.installerHazeEffect
-import com.rosan.installer.ui.theme.m3color.PaletteStyle
-import com.rosan.installer.ui.theme.m3color.ThemeMode
+import com.rosan.installer.ui.theme.material.PaletteStyle
+import com.rosan.installer.ui.theme.material.ThemeMode
 import com.rosan.installer.ui.theme.none
 import com.rosan.installer.ui.theme.rememberMaterial3HazeStyle
 import dev.chrisbanes.haze.HazeState
@@ -265,6 +266,7 @@ fun NewThemeSettingsPage(
                             onClick = { showPaletteDialog = true }
                         ) {}
                     }
+                    item { ColorSpecSelector(viewModel) }
                     item {
                         SwitchWidget(
                             icon = Icons.TwoTone.InvertColors,

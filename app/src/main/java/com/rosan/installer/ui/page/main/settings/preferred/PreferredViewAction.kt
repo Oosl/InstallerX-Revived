@@ -6,8 +6,9 @@ import com.rosan.installer.data.app.model.enums.RootImplementation
 import com.rosan.installer.data.settings.model.datastore.entity.NamedPackage
 import com.rosan.installer.data.settings.model.datastore.entity.SharedUid
 import com.rosan.installer.data.settings.model.room.entity.ConfigEntity
-import com.rosan.installer.ui.theme.m3color.PaletteStyle
-import com.rosan.installer.ui.theme.m3color.ThemeMode
+import com.rosan.installer.ui.theme.material.PaletteStyle
+import com.rosan.installer.ui.theme.material.ThemeColorSpec
+import com.rosan.installer.ui.theme.material.ThemeMode
 
 sealed class PreferredViewAction {
     data object Init : PreferredViewAction()
@@ -55,11 +56,13 @@ sealed class PreferredViewAction {
     data class LabChangeRootShowModuleArt(val enable: Boolean) : PreferredViewAction()
     data class LabChangeRootModuleAlwaysUseRoot(val enable: Boolean) : PreferredViewAction()
     data class LabChangeRootImplementation(val implementation: RootImplementation) : PreferredViewAction()
+    data class LabChangeUseMiIsland(val enable: Boolean) : PreferredViewAction()
     data class LabChangeHttpProfile(val profile: HttpProfile) : PreferredViewAction()
     data class LabChangeHttpSaveFile(val enable: Boolean) : PreferredViewAction()
     data class LabChangeSetInstallRequester(val enable: Boolean) : PreferredViewAction()
     data class SetThemeMode(val mode: ThemeMode) : PreferredViewAction()
     data class SetPaletteStyle(val style: PaletteStyle) : PreferredViewAction()
+    data class SetColorSpec(val spec: ThemeColorSpec) : PreferredViewAction()
     data class SetUseDynamicColor(val use: Boolean) : PreferredViewAction()
     data class SetUseMiuixMonet(val use: Boolean) : PreferredViewAction()
     data class SetSeedColor(val color: Color) : PreferredViewAction()

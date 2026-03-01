@@ -22,7 +22,7 @@ import com.rosan.installer.ui.theme.InstallerTheme
 import com.rosan.installer.ui.theme.LocalInstallerColorScheme
 import com.rosan.installer.ui.theme.LocalIsDark
 import com.rosan.installer.ui.theme.LocalPaletteStyle
-import com.rosan.installer.ui.theme.m3color.dynamicColorScheme
+import com.rosan.installer.ui.theme.material.dynamicColorScheme
 import com.rosan.installer.ui.util.WindowBlurEffect
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf

@@ -318,8 +318,6 @@
     <string name="show_dialog_install_extended_menu">Erweitertes Menü anzeigen</string>
     <string name="show_dialog_install_extended_menu_desc">Mehr Optionen im Installationsdialog anzeigen</string>
     <string name="extended_menu">Erweitertes Menü</string>
-    <string name="disable_notification">Während der Installation im Vordergrund behalten</string>
-    <string name="close_immediately_on_dialog_dismiss">Der Dialog bleibt während der Installation im Vordergrund, es werden keine Benachrichtigungen angezeigt</string>
     <string name="disable_notification_on_dismiss">Schließen beim Dialog schließen</string>
     <string name="close_notification_immediately_on_dialog_dismiss">Schließen des Dialogs schließt die Benachrichtigung</string>
     <string name="set_countdown">Countdown setzen</string>

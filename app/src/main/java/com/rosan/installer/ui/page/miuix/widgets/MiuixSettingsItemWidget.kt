@@ -50,7 +50,9 @@ import com.rosan.installer.ui.common.LocalSessionInstallSupported
 import com.rosan.installer.ui.icons.AppIcons
 import com.rosan.installer.ui.page.main.settings.preferred.PreferredViewAction
 import com.rosan.installer.ui.page.main.settings.preferred.PreferredViewModel
-import com.rosan.installer.ui.theme.m3color.ThemeMode
+import com.rosan.installer.ui.theme.material.PaletteStyle
+import com.rosan.installer.ui.theme.material.ThemeColorSpec
+import com.rosan.installer.ui.theme.material.ThemeMode
 import com.rosan.installer.ui.util.rememberCacheInfo
 import com.rosan.installer.util.hasFlag
 import top.yukonga.miuix.kmp.basic.BasicComponent
@@ -64,8 +66,8 @@ import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.basic.TextField
 import top.yukonga.miuix.kmp.extra.SuperArrow
-import top.yukonga.miuix.kmp.extra.SuperDialog
 import top.yukonga.miuix.kmp.extra.SuperSpinner
+import top.yukonga.miuix.kmp.extra.WindowDialog
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 data class AuthorizerInfo(
@@ -149,9 +151,6 @@ data class InstallModeInfo(
     val icon: ImageVector
 )
 
-/**
- * @author wxxsfxyzm
- */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun MiuixDataInstallModeWidget(
@@ -613,6 +612,96 @@ fun MiuixThemeModeWidget(
 }
 
 /**
+ * SuperSpinner widget for selecting the Palette Style.
+ */
+@Composable
+fun MiuixPaletteStyleWidget(
+    modifier: Modifier = Modifier,
+    currentPaletteStyle: PaletteStyle,
+    onPaletteStyleChange: (PaletteStyle) -> Unit
+) {
+    val options = remember { PaletteStyle.entries }
+    val spinnerEntries = remember(options) {
+        options.map { SpinnerEntry(title = it.displayName) }
+    }
+    val selectedIndex = remember(currentPaletteStyle, options) {
+        options.indexOf(currentPaletteStyle).coerceAtLeast(0)
+    }
+
+    SuperSpinner(
+        modifier = modifier,
+        title = stringResource(id = R.string.theme_settings_palette_style),
+        items = spinnerEntries,
+        selectedIndex = selectedIndex,
+        onSelectedIndexChange = { newIndex ->
+            val newStyle = options[newIndex]
+            if (currentPaletteStyle != newStyle) {
+                onPaletteStyleChange(newStyle)
+            }
+        }
+    )
+}
+
+/**
+ * SuperSpinner widget for selecting the Theme Color Spec.
+ * Includes fallback logic to gracefully handle styles that do not support SPEC_2025.
+ */
+@Composable
+fun MiuixColorSpecWidget(
+    modifier: Modifier = Modifier,
+    currentColorSpec: ThemeColorSpec,
+    currentPaletteStyle: PaletteStyle,
+    onColorSpecChange: (ThemeColorSpec) -> Unit
+) {
+    // 1. Check if the current PaletteStyle supports SPEC_2025
+    val isSpec2025Supported = currentPaletteStyle in listOf(
+        PaletteStyle.TonalSpot,
+        PaletteStyle.Neutral,
+        PaletteStyle.Vibrant,
+        PaletteStyle.Expressive
+    )
+
+    // 2. Filter available specs based on support
+    val availableSpecs = if (isSpec2025Supported) {
+        ThemeColorSpec.entries
+    } else {
+        listOf(ThemeColorSpec.SPEC_2021)
+    }
+
+    // 3. Determine the actual spec being applied to match the fallback logic
+    val activeSpec = if (!isSpec2025Supported) ThemeColorSpec.SPEC_2021 else currentColorSpec
+
+    // 4. Use a static localized string for the unsupported state
+    val descriptionText = if (!isSpec2025Supported) {
+        stringResource(id = R.string.theme_settings_color_spec_only_2021)
+    } else {
+        activeSpec.displayName
+    }
+
+    val spinnerEntries = remember(availableSpecs) {
+        availableSpecs.map { SpinnerEntry(title = it.displayName) }
+    }
+
+    val selectedIndex = remember(activeSpec, availableSpecs) {
+        availableSpecs.indexOf(activeSpec).coerceAtLeast(0)
+    }
+
+    SuperSpinner(
+        modifier = modifier,
+        title = stringResource(id = R.string.theme_settings_color_spec),
+        summary = descriptionText,
+        items = spinnerEntries,
+        selectedIndex = selectedIndex,
+        onSelectedIndexChange = { newIndex ->
+            val selectedSpec = availableSpecs[newIndex]
+            if (currentColorSpec != selectedSpec) {
+                onColorSpecChange(selectedSpec)
+            }
+        }
+    )
+}
+
+/**
  * A Miuix-style dialog for adding a new NamedPackage.
  *
  * @param onDismiss Callback invoked when the dialog is dismissed.
@@ -628,7 +717,7 @@ private fun MiuixAddPackageDialog(
     val isConfirmEnabled = name.isNotBlank() && packageName.isNotBlank()
     val showState = remember { mutableStateOf(true) }
 
-    SuperDialog(
+    WindowDialog(
         show = showState,
         onDismissRequest = onDismiss,
         title = stringResource(R.string.config_add_new_package),
@@ -689,7 +778,7 @@ private fun MiuixDeleteNamedPackageConfirmationDialog(
 ) {
     val showState = remember { mutableStateOf(true) }
 
-    SuperDialog(
+    WindowDialog(
         show = showState,
         onDismissRequest = onDismiss,
         title = stringResource(R.string.config_confirm_deletion),
@@ -847,7 +936,7 @@ private fun MiuixAddUidDialog(
     // Confirm button is enabled if both name and value are not blank and value is a valid integer.
     val isConfirmEnabled = uidName.isNotBlank() && uidValueString.toIntOrNull() != null
 
-    SuperDialog(
+    WindowDialog(
         show = showState,
         onDismissRequest = onDismiss,
         title = stringResource(R.string.config_add_new_shared_uid),
@@ -912,7 +1001,7 @@ private fun MiuixDeleteSharedUidConfirmationDialog(
 ) {
     val showState = remember { mutableStateOf(true) }
 
-    SuperDialog(
+    WindowDialog(
         show = showState,
         onDismissRequest = onDismiss,
         title = stringResource(R.string.config_confirm_deletion),

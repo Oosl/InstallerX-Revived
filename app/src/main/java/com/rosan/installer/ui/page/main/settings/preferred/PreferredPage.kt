@@ -163,9 +163,11 @@ fun PreferredPage(
 
             is PreferredViewState.Progress.Loaded -> {
                 LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues)
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(
+                        top = paddingValues.calculateTopPadding(),
+                        bottom = outerPadding.calculateBottomPadding()
+                    )
                 ) {
                     item { LabelWidget(stringResource(R.string.global)) }
                     item {

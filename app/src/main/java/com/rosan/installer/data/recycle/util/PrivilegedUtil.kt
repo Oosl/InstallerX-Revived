@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
-import android.util.Log
 import androidx.core.net.toUri
 import com.rosan.installer.SecretCodeReceiver
 import com.rosan.installer.data.recycle.model.impl.PrivilegedManager
@@ -26,14 +25,14 @@ const val SHELL_SH = "sh"
 const val SU_ARGS = "-M"
 
 private const val PRIVILEGED_START_TIMEOUT_MS = 2500L
+private const val DELETE_TAG = "DELETE_PATH"
 
-// Privileged Process is not Main Process, so we use Log.d instead of Timber
-@Suppress("LogNotTimber")
+
 fun deletePaths(paths: Array<out String>) {
     for (path in paths) {
         val file = File(path)
 
-        Log.d("DELETE_PATH", "Processing path for deletion: $path")
+        Timber.tag(DELETE_TAG).d("Processing path for deletion: $path")
 
         try {
             // Check if the file exists before attempting to delete.
@@ -41,25 +40,22 @@ fun deletePaths(paths: Array<out String>) {
                 // Call delete() and check its boolean return value.
                 if (file.delete()) {
                     // This is the true success case.
-                    Log.d("DELETE_PATH", "Successfully deleted file: $path")
+                    Timber.tag(DELETE_TAG).d("Successfully deleted file: $path")
                 } else {
                     // The file existed, but deletion failed.
                     // This is a critical case to log as a warning.
-                    Log.w(
-                        "DELETE_PATH",
-                        "Failed to delete file: $path. Check for permissions or if it is a non-empty directory."
-                    )
+                    Timber.tag(DELETE_TAG).w("Failed to delete file: $path. Check for permissions or if it is a non-empty directory.")
                 }
             } else {
                 // If the file doesn't exist, it's already in the desired state. No error needed.
-                Log.d("DELETE_PATH", "File does not exist, no action needed: $path")
+                Timber.tag(DELETE_TAG).d("File does not exist, no action needed: $path")
             }
         } catch (e: SecurityException) {
             // Specifically catch permission errors. This is crucial for debugging.
-            Log.e("DELETE_PATH", "SecurityException on deleting $path. Permission denied.", e)
+            Timber.tag(DELETE_TAG).e(e, "SecurityException on deleting $path. Permission denied.")
         } catch (e: Exception) {
             // Catch any other unexpected errors during the process.
-            Log.e("DELETE_PATH", "An unexpected error occurred while processing $path", e)
+            Timber.tag(DELETE_TAG).e(e, "An unexpected error occurred while processing $path")
         }
     }
 }

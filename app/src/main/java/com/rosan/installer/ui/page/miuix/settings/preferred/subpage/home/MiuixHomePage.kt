@@ -60,7 +60,7 @@ import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TopAppBar
-import top.yukonga.miuix.kmp.extra.SuperDialog
+import top.yukonga.miuix.kmp.extra.WindowDialog
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.overScrollVertical
 import top.yukonga.miuix.kmp.utils.scrollEndHaptic
@@ -80,11 +80,20 @@ fun MiuixHomePage(
 
     val internetAccessHint = if (RsConfig.isInternetAccessEnabled) stringResource(R.string.internet_access_enabled)
     else stringResource(R.string.internet_access_disabled)
+
     val level = when (RsConfig.LEVEL) {
         Level.STABLE -> stringResource(id = R.string.stable)
         Level.PREVIEW -> stringResource(id = R.string.preview)
         Level.UNSTABLE -> stringResource(id = R.string.unstable)
     }
+
+    val versionInfoText = stringResource(
+        id = R.string.app_version_info_format,
+        internetAccessHint,
+        level,
+        RsConfig.VERSION_NAME,
+        RsConfig.VERSION_CODE
+    )
 
     MiuixUpdateDialog(
         showState = showUpdateDialog,
@@ -162,7 +171,7 @@ fun MiuixHomePage(
                         style = MiuixTheme.textStyles.title2,
                     )
                     Text(
-                        text = "$internetAccessHint$level ${RsConfig.VERSION_NAME} (${RsConfig.VERSION_CODE})",
+                        text = versionInfoText,
                         style = MiuixTheme.textStyles.subtitle,
                         color = MiuixTheme.colorScheme.onSurfaceVariantSummary
                     )
@@ -238,7 +247,7 @@ fun MiuixHomePage(
         }
     }
 
-    SuperDialog(
+    WindowDialog(
         show = showLoadingDialog
     ) {
         Row(

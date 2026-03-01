@@ -299,19 +299,8 @@ fun NewInstallerGlobalSettingsPage(
                             )
                         }
 
-                        // 7. Disable Notification (Dialog Mode)
-                        item(visible = isDialogMode) {
-                            SwitchWidget(
-                                icon = AppIcons.NotificationDisabled,
-                                title = stringResource(id = R.string.disable_notification),
-                                description = stringResource(id = R.string.close_immediately_on_dialog_dismiss),
-                                checked = state.disableNotificationForDialogInstall,
-                                onCheckedChange = { viewModel.dispatch(PreferredViewAction.ChangeShowDisableNotification(it)) }
-                            )
-                        }
-
-                        // 8. Disable Notification (Notification Mode + Show Dialog)
-                        item(visible = isNotificationMode && state.showDialogWhenPressingNotification) {
+                        // 7. Disable Notification
+                        item(visible = isDialogMode || state.showDialogWhenPressingNotification) {
                             SwitchWidget(
                                 icon = AppIcons.NotificationDisabled,
                                 title = stringResource(id = R.string.disable_notification_on_dismiss),

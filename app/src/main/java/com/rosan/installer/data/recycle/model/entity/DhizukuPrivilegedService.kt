@@ -29,7 +29,6 @@ class DhizukuPrivilegedService : BasePrivilegedService() {
         try {
             val ownerComponent = Dhizuku.getOwnerComponent()
 
-            // 可以在这里添加日志，检查 ownerComponent 是否为 null
             Timber.tag("DhizukuPrivilegedService").d("Owner component: $ownerComponent")
 
             devicePolicyManager.clearPackagePersistentPreferredActivities(
@@ -150,6 +149,10 @@ class DhizukuPrivilegedService : BasePrivilegedService() {
     }
 
     override fun getSessionDetails(sessionId: Int): Bundle {
+        throw UnsupportedOperationException("Not supported in DhizukuPrivilegedService")
+    }
+
+    override fun setPackageNetworkingEnabled(uid: Int, enabled: Boolean) {
         throw UnsupportedOperationException("Not supported in DhizukuPrivilegedService")
     }
 }

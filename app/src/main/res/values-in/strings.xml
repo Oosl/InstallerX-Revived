@@ -455,8 +455,6 @@
     <string name="extended_menu">Menu Lengkap</string>
     <string name="auto_silent_install">Instalasi Otomatis Senyap</string>
     <string name="auto_silent_install_desc">Instalasi senyap otomatis pada dialog awal instalasi</string>
-    <string name="disable_notification">Tetap di Latar Depan Selama Instalasi</string>
-    <string name="close_immediately_on_dialog_dismiss">Dialog tetap berada di latar depan selama instalasi, tidak menampilkan notifikasi</string>
     <string name="disable_notification_on_dismiss">Tutup Dialog Abaikan</string>
     <string name="close_notification_immediately_on_dialog_dismiss">Tutup Dialog akan keluar tanpa menampilkan pesan kesalahan</string>
     <string name="set_countdown">Atur hitung mundur</string>

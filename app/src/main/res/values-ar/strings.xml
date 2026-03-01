@@ -288,8 +288,6 @@
     <string name="show_dialog_install_extended_menu">عرض القائمة الموسعة</string>
     <string name="show_dialog_install_extended_menu_desc">عرض المزيد من الخيارات في نافذة التثبيت</string>
     <string name="extended_menu">القائمة الموسعة</string>
-    <string name="disable_notification">تثبيت في الواجهة بدون إشعار</string>
-    <string name="close_immediately_on_dialog_dismiss">تبقى نافذة الحوار في الواجهة أثناء التثبيت، والضغط على المنطقة الفارغة سيؤدي إلى الخروج الصامت</string>
     <string name="disable_notification_on_dismiss">إغلاق عند إغفال نافذة الحوار</string>
     <string name="close_notification_immediately_on_dialog_dismiss">إغفال نافذة الحوار سيؤدي إلى الخروج الصامت</string>
     <string name="set_countdown">ضبط العد التنازلي</string>

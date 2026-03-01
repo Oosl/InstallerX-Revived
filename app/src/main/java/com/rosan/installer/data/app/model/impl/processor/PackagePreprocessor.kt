@@ -4,6 +4,7 @@ import com.rosan.installer.data.app.model.entity.AppEntity
 import com.rosan.installer.data.app.model.entity.DataEntity
 import com.rosan.installer.data.app.model.entity.InstalledAppInfo
 import com.rosan.installer.data.app.model.enums.DataType
+import com.rosan.installer.data.app.model.enums.PackageIdentityStatus
 import com.rosan.installer.data.app.model.enums.SignatureMatchStatus
 import com.rosan.installer.data.app.util.calculateSHA256
 import com.rosan.installer.data.app.util.sourcePath
@@ -134,12 +135,74 @@ object PackagePreprocessor {
                     ZipFile(data.parent.path).use { zip ->
                         zip.getEntry(data.name)?.let { "${it.crc}|${it.size}" }
                     } ?: "${data.name}_${entity.versionCode}"
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     "${data.name}_${entity.versionCode}"
                 }
             }
 
             else -> "${entity.packageName}_${entity.versionCode}"
         }
+    }
+
+    /**
+     * Checks if the incoming base APK is identical to the installed APK.
+     * Only works for DataType.APK and assumes the data is a FileEntity.
+     */
+    suspend fun checkPackageIdentity(
+        baseEntity: AppEntity.BaseEntity?,
+        installedInfo: InstalledAppInfo?,
+        sessionType: DataType
+    ): PackageIdentityStatus = coroutineScope {
+        // 1. Fast applicability checks
+        if (sessionType != DataType.APK) {
+            return@coroutineScope PackageIdentityStatus.NOT_APPLICABLE
+        }
+
+        if (baseEntity == null || installedInfo == null) {
+            return@coroutineScope PackageIdentityStatus.NOT_APPLICABLE
+        }
+
+        if (baseEntity.versionCode != installedInfo.versionCode ||
+            baseEntity.versionName != installedInfo.versionName
+        ) {
+            return@coroutineScope PackageIdentityStatus.NOT_APPLICABLE
+        }
+
+        // 2. Validate installed APK path.
+        val installedApkPath = installedInfo.sourceDir
+        if (installedApkPath.isNullOrBlank()) {
+            return@coroutineScope PackageIdentityStatus.ERROR
+        }
+        val installedApkFile = File(installedApkPath)
+        if (!installedApkFile.exists() || !installedApkFile.isFile) {
+            return@coroutineScope PackageIdentityStatus.ERROR
+        }
+
+        // 3. Extract the new APK file.
+        // Safely cast to FileEntity as guaranteed by the caller constraints.
+        val fileData = baseEntity.data as? DataEntity.FileEntity
+            ?: return@coroutineScope PackageIdentityStatus.ERROR
+
+        val newApkFile = File(fileData.path)
+
+        // 4. Fast-fail optimization: compare file sizes first.
+        if (newApkFile.length() != installedApkFile.length()) {
+            return@coroutineScope PackageIdentityStatus.DIFFERENT
+        }
+
+        // 5. Heavy validation: Full SHA-256 Hash Comparison.
+        val newAppHashDeferred = async(Dispatchers.IO) { newApkFile.calculateSHA256() }
+        val installedAppHashDeferred = async(Dispatchers.IO) { installedApkFile.calculateSHA256() }
+
+        val newAppHash = newAppHashDeferred.await()
+        val installedAppHash = installedAppHashDeferred.await()
+
+        if (newAppHash != null && newAppHash == installedAppHash) {
+            return@coroutineScope PackageIdentityStatus.IDENTICAL
+        } else if (newAppHash != null && installedAppHash != null) {
+            return@coroutineScope PackageIdentityStatus.DIFFERENT
+        }
+
+        return@coroutineScope PackageIdentityStatus.ERROR
     }
 }

@@ -70,7 +70,6 @@ class InstallerService : Service() {
         if (activeSessions.isNotEmpty()) {
             Timber.i("InstallerService: Restoring ${activeSessions.size} active sessions from Manager.")
             activeSessions.forEach { setupInstallerScope(it) }
-            updateForegroundState()
         }
     }
 
@@ -80,10 +79,18 @@ class InstallerService : Service() {
 
         Timber.d("onStartCommand: Action=$actionString, ID=$id")
 
-        // If intent is null, system restarted the service (START_STICKY).
+        // Unconditionally fulfill the Android foreground service contract.
+        // Even if the intent is invalid or the session was canceled,
+        // we MUST call startForeground() to prevent the strict 5-second crash.
+        promoteToForeground()
+
+        // If intent is null, system restarted the service.
         if (intent == null) {
             restoreSessions()
-            return START_STICKY
+            checkIdleState()
+            // Return START_NOT_STICKY because our session state is in-memory.
+            // If the process is killed, we cannot recover the installation state anyway.
+            return START_NOT_STICKY
         }
 
         when (Action.from(actionString)) {
@@ -92,7 +99,6 @@ class InstallerService : Service() {
                 if (id != null) {
                     sessionManager.get(id)?.let { repo ->
                         setupInstallerScope(repo)
-                        updateForegroundState()
                     } ?: run {
                         Timber.w("Received Ready action for ID $id but Repo not found in Manager.")
                     }
@@ -103,13 +109,14 @@ class InstallerService : Service() {
             }
         }
 
-        return START_STICKY
+        // Always check if we need to schedule a shutdown.
+        // If the Repo wasn't found (race condition), this will ensure the service stops cleanly.
+        checkIdleState()
+
+        // Return START_NOT_STICKY to avoid zombie restarts
+        return START_NOT_STICKY
     }
 
-    /**
-     * Idempotent method to setup handlers for a specific installer.
-     * Safe to call multiple times for the same ID.
-     */
     private fun setupInstallerScope(installer: InstallerRepo) {
         val id = installer.id
 
@@ -120,13 +127,11 @@ class InstallerService : Service() {
             }
 
             Timber.d("[id=$id] Creating new execution scope and handlers.")
-            // Cancel any pending shutdown since we have work to do
             idleTimeoutJob?.cancel()
 
             val scope = CoroutineScope(Dispatchers.IO + Job())
             installerScopes[id] = scope
 
-            // Initialize Handlers
             val handlers = listOf(
                 ActionHandler(scope, installer),
                 ProgressHandler(scope, installer),
@@ -138,7 +143,6 @@ class InstallerService : Service() {
                 Timber.d("[id=$id] Starting handlers.")
                 handlers.forEach { it.onStart() }
 
-                // Monitor Repo progress to determine when to clean up THIS scope
                 installer.progress.collect { progress ->
                     if (progress is ProgressEntity.Finish) {
                         Timber.d("[id=$id] Finished. Cleaning up handlers.")
@@ -150,26 +154,10 @@ class InstallerService : Service() {
         }
     }
 
-    /**
-     * Removes the scope for a specific installer but keeps the Service alive momentarily
-     * to check if other installers are running.
-     */
-    private fun detachInstaller(id: String) {
-        synchronized(installerScopes) {
-            installerScopes.remove(id)?.cancel()
-            Timber.d("[id=$id] Scope removed and cancelled.")
-        }
-
-        // We do NOT remove from SessionManager here.
-        // The Repo's own close() logic (via ActionHandler or UI) triggers Manager removal.
-        // We only care that *we* are done processing it.
-
-        checkIdleState()
-    }
-
     private fun checkIdleState() {
         synchronized(installerScopes) {
-            updateForegroundState()
+            // Note: updateForegroundState() is completely removed.
+            // We already promoted to foreground at the top of onStartCommand.
 
             if (installerScopes.isEmpty()) {
                 Timber.d("No active scopes. Scheduling shutdown in $IDLE_TIMEOUT_MS ms.")
@@ -183,29 +171,7 @@ class InstallerService : Service() {
         }
     }
 
-    private fun updateForegroundState() {
-        val isRunning = installerScopes.isNotEmpty()
-        if (isRunning) {
-            startForegroundService()
-        } else {
-            // If empty, we wait for timeout to stopSelf(), but we can downgrade notification priority or remove it
-            // However, stopForeground(true) usually happens inside stopSelf or when we want to hide it.
-            // Keeping it simple: if running, ensure foreground.
-        }
-    }
-
-    private fun createNotificationChannel() {
-        val channel = NotificationChannelCompat.Builder(
-            CHANNEL_ID,
-            NotificationManagerCompat.IMPORTANCE_LOW
-        ).setName(getString(R.string.installer_background_channel_name))
-            .setDescription(getString(R.string.installer_notification_desc))
-            .build()
-
-        NotificationManagerCompat.from(this).createNotificationChannel(channel)
-    }
-
-    private fun startForegroundService() {
+    private fun promoteToForeground() {
         val cancelIntent = Intent(this, InstallerService::class.java).apply {
             action = Action.Destroy.value
         }
@@ -214,7 +180,6 @@ class InstallerService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        // Open Notification Settings on click
         val settingsIntent = Intent(android.provider.Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS).apply {
             putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, packageName)
             putExtra(android.provider.Settings.EXTRA_CHANNEL_ID, CHANNEL_ID)
@@ -234,24 +199,50 @@ class InstallerService : Service() {
             .setOngoing(true)
             .build()
 
+        // Use 0 for API 33 and below to avoid manifest mismatch crashes.
+        // Android 14+ requires explicit foreground service types.
         val foregroundServiceType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
         } else {
             0
         }
 
-        try {
-            ServiceCompat.startForeground(
-                this,
-                NOTIFICATION_ID,
-                notification,
-                foregroundServiceType
-            )
-        } catch (e: Exception) {
-            Timber.e(e, "Failed to start foreground service.")
+        // DO NOT wrap this in a try-catch block.
+        // Swallowing exceptions here breaks the OS contract and causes delayed, confusing timeout crashes.
+        ServiceCompat.startForeground(
+            this,
+            NOTIFICATION_ID,
+            notification,
+            foregroundServiceType
+        )
+    }
+
+    /**
+     * Removes the scope for a specific installer but keeps the Service alive momentarily
+     * to check if other installers are running.
+     */
+    private fun detachInstaller(id: String) {
+        synchronized(installerScopes) {
+            installerScopes.remove(id)?.cancel()
+            Timber.d("[id=$id] Scope removed and cancelled.")
         }
+
+        // We do NOT remove from SessionManager here.
+        // The Repo's own close() logic (via ActionHandler or UI) triggers Manager removal.
+        // We only care that *we* are done processing it.
+
+        checkIdleState()
+    }
+
+    private fun createNotificationChannel() {
+        val channel = NotificationChannelCompat.Builder(
+            CHANNEL_ID,
+            NotificationManagerCompat.IMPORTANCE_LOW
+        ).setName(getString(R.string.installer_background_channel_name))
+            .setDescription(getString(R.string.installer_notification_desc))
+            .build()
+
+        NotificationManagerCompat.from(this).createNotificationChannel(channel)
     }
 
     private fun stopServiceForcefully() {

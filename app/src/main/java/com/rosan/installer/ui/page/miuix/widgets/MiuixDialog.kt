@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
@@ -23,7 +22,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -42,7 +40,6 @@ import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.basic.TextField
 import top.yukonga.miuix.kmp.extra.SuperBottomSheet
-import top.yukonga.miuix.kmp.extra.SuperDialog
 import top.yukonga.miuix.kmp.extra.WindowDialog
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.basic.Check
@@ -51,11 +48,10 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 /**
  * A dialog to confirm an action, dynamically showing specific errors or a generic message.
- * Refactored to use SuperDialog.
  *
  * @param showState A MutableState controlling the visibility of the dialog.
  * @param onDismiss Request to close the dialog.
- * @param onConfirm Request to perform the confirm action (e.g., discard and exit).
+ * @param onConfirm Request to perform the confirmation action (e.g., discard and exit).
  * @param errorMessages A list of specific error messages to display. If empty, a generic message is shown.
  */
 @Composable
@@ -74,10 +70,7 @@ fun MiuixUnsavedChangesDialog(
         stringResource(R.string.config_dialog_title_unsaved_changes)
     }
 
-    // Call SuperDialog instead of AlertDialog
-    SuperDialog(
-        // SuperDialog expects a MutableState. We create a temporary one that resets when 'show' changes.
-        // onDismiss callback will trigger recomposition by changing the external state that controls 'show'.
+    WindowDialog(
         show = showState,
         onDismissRequest = onDismiss,
         title = dialogTitle,
@@ -131,7 +124,7 @@ fun MiuixHideLauncherIconWarningDialog(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
 ) {
-    SuperDialog(
+    WindowDialog(
         show = showState,
         onDismissRequest = onDismiss,
         title = stringResource(R.string.warning),
@@ -176,10 +169,9 @@ fun MiuixUpdateDialog(
     showState: MutableState<Boolean>,
     onDismiss: () -> Unit
 ) {
-    val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
 
-    SuperDialog(
+    WindowDialog(
         show = showState,
         onDismissRequest = onDismiss,
         title = stringResource(R.string.get_update),
@@ -234,7 +226,7 @@ fun MiuixUpdateDialog(
  *
  * @param showState A MutableState controlling the visibility of the dialog.
  * @param onDismiss Request to close the dialog.
- * @param onConfirm Request to perform the uninstall action.
+ * @param onConfirm Request to perform the uninstallation action.
  * @param keepData Indicates whether user data should be kept during uninstallation.
  */
 @Composable
@@ -255,7 +247,10 @@ fun MiuixUninstallConfirmationDialog(
                 else
                     stringResource(R.string.suggestion_uninstall_alert_dialog_confirm_uninstall_no_data_message)
 
-                Text(text = message)
+                Text(
+                    text = message,
+                    color = MiuixTheme.colorScheme.onSurface
+                )
 
                 Spacer(modifier = Modifier.height(24.dp))
 
@@ -276,7 +271,8 @@ fun MiuixUninstallConfirmationDialog(
                         onClick = onConfirm,
                         text = stringResource(R.string.confirm),
                         colors = ButtonDefaults.textButtonColors(
-                            textColor = MaterialTheme.colorScheme.error
+                            color = MiuixTheme.colorScheme.errorContainer,
+                            textColor = MiuixTheme.colorScheme.error
                         )
                     )
                 }
@@ -385,7 +381,7 @@ fun MiuixRootImplementationDialog(
 
     var selectedImpl by remember { mutableStateOf(rootImplementations.first()) }
 
-    SuperDialog(
+    WindowDialog(
         show = showState,
         onDismissRequest = onDismiss,
         title = stringResource(R.string.lab_module_select_root_impl),
@@ -474,7 +470,7 @@ fun MiuixUninstallPackageDialog(
     var packageName by remember { mutableStateOf("") }
     val isConfirmEnabled = packageName.isNotBlank()
 
-    SuperDialog(
+    WindowDialog(
         show = showState,
         onDismissRequest = onDismiss,
         title = stringResource(R.string.uninstall_enter_package_name),
@@ -524,7 +520,7 @@ fun MiuixBlurWarningDialog(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
 ) {
-    SuperDialog(
+    WindowDialog(
         show = showState,
         onDismissRequest = onDismiss,
         title = stringResource(R.string.warning),

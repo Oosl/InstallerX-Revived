@@ -18,7 +18,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
@@ -58,6 +57,7 @@ fun MiuixLabPage(
     val hazeState = if (state.useBlur) remember { HazeState() } else null
     val hazeStyle = rememberMiuixHazeStyle()
     val showRootImplementationDialog = remember { mutableStateOf(false) }
+    val isMiIslandSupported = remember { OSUtils.isSupportMiIsland() }
 
     MiuixRootImplementationDialog(
         showState = showRootImplementationDialog,
@@ -174,6 +174,13 @@ fun MiuixLabPage(
                         .padding(horizontal = 12.dp)
                         .padding(bottom = 12.dp)
                 ) {
+                    if (isMiIslandSupported)
+                        MiuixSwitchWidget(
+                            title = stringResource(R.string.lab_mi_island),
+                            description = stringResource(R.string.lab_mi_island_desc),
+                            checked = state.labUseMiIsland,
+                            onCheckedChange = { viewModel.dispatch(PreferredViewAction.LabChangeUseMiIsland(it)) }
+                        )
                     MiuixSwitchWidget(
                         title = stringResource(R.string.lab_set_install_requester),
                         description = stringResource(R.string.lab_set_install_requester_desc),
@@ -197,8 +204,6 @@ fun MiuixLabPage(
                             checked = state.labHttpSaveFile,
                             onCheckedChange = { viewModel.dispatch(PreferredViewAction.LabChangeHttpSaveFile(it)) }
                         )*/
-
-                        val context = LocalContext.current
                         val currentProfile = state.labHttpProfile
                         val allowSecureString = stringResource(R.string.lab_http_profile_secure)
                         val allowLocalString = stringResource(R.string.lab_http_profile_local)
