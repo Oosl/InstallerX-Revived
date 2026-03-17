@@ -1,8 +1,8 @@
 package com.rosan.installer.data.privileged.repository.recycler
 
 import com.rosan.app_process.AppProcess
-import com.rosan.installer.data.privileged.model.exception.AppProcessNotWorkException
-import com.rosan.installer.data.privileged.model.exception.RootNotWorkException
+import com.rosan.installer.data.privileged.exception.AppProcessNotWorkException
+import com.rosan.installer.data.privileged.exception.RootNotWorkException
 import com.rosan.installer.data.privileged.repository.recyclable.Recycler
 import com.rosan.installer.data.privileged.util.SHELL_ROOT
 

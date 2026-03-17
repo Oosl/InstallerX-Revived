@@ -6,6 +6,7 @@ import com.rosan.installer.domain.settings.model.HttpProfile
 import com.rosan.installer.domain.settings.model.RootImplementation
 
 data class LabSettingsState(
+    val isLoading: Boolean = true,
     val useBlur: Boolean = true,
     val labRootEnableModuleFlash: Boolean = false,
     val labRootShowModuleArt: Boolean = true,

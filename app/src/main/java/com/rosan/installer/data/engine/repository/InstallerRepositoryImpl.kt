@@ -9,7 +9,7 @@ import com.rosan.installer.data.engine.executor.appInstaller.NoneInstallerRepoIm
 import com.rosan.installer.data.engine.executor.appInstaller.ProcessInstallerRepoImpl
 import com.rosan.installer.data.engine.executor.appInstaller.ShizukuInstallerRepoImpl
 import com.rosan.installer.data.engine.executor.appInstaller.SystemInstallerRepoImpl
-import com.rosan.installer.data.privileged.model.exception.ShizukuNotWorkException
+import com.rosan.installer.data.privileged.exception.ShizukuNotWorkException
 
 import com.rosan.installer.domain.device.provider.DeviceCapabilityProvider
 import com.rosan.installer.domain.engine.model.InstallEntity

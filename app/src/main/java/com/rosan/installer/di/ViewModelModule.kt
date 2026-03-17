@@ -38,7 +38,7 @@ val viewModelModule = module {
     }
 
     viewModel { (id: Long) ->
-        ApplyViewModel(get(), get(), get(), get(), id)
+        ApplyViewModel(get(), get(), get(), get(), get(), id)
     }
 
     viewModel { (id: Long?) ->

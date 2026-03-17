@@ -1,12 +1,17 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2025-2026 InstallerX Revived contributors
 package com.rosan.installer.ui.page.miuix.settings.preferred.subpage.about
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -141,111 +146,125 @@ fun MiuixAboutPage(
             )
         },
     ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .then(hazeState?.let { Modifier.hazeSource(it) } ?: Modifier)
-                .scrollEndHaptic()
-                .overScrollVertical()
-                .nestedScroll(scrollBehavior.nestedScrollConnection)
-                .padding(top = paddingValues.calculateTopPadding())
-        ) {
-            item {
-                Column(
+        Crossfade(
+            targetState = uiState.isLoading,
+            label = "MiuixAboutPageContent",
+            animationSpec = tween(durationMillis = 150)
+        ) { isLoading ->
+            if (isLoading) {
+                Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 48.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Image(
-                        modifier = Modifier.size(80.dp),
-                        painter = rememberDrawablePainter(
-                            drawable = ContextCompat.getDrawable(
-                                LocalContext.current,
-                                R.mipmap.ic_launcher
-                            )
-                        ),
-                        contentDescription = stringResource(id = R.string.app_name)
-                    )
-                    Text(
-                        text = stringResource(id = R.string.app_name),
-                        style = MiuixTheme.textStyles.title2,
-                    )
-                    Text(
-                        text = versionInfoText,
-                        style = MiuixTheme.textStyles.subtitle,
-                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary
-                    )
-                    if (uiState.hasUpdate)
-                        Text(
-                            text = stringResource(R.string.update_available, uiState.remoteVersion),
-                            style = MiuixTheme.textStyles.subtitle,
-                            color = MiuixTheme.colorScheme.primary
-                        )
-                    Spacer(modifier = Modifier.size(12.dp))
-                }
-            }
-            item { Spacer(modifier = Modifier.size(12.dp)) }
-            item { SmallTitle(stringResource(R.string.about)) }
-            item {
-                Card(
+                        .fillMaxSize()
+                        .padding(paddingValues)
+                )
+            } else {
+                LazyColumn(
                     modifier = Modifier
-                        .padding(horizontal = 12.dp)
-                        .padding(bottom = 12.dp)
+                        .fillMaxSize()
+                        .then(hazeState?.let { Modifier.hazeSource(it) } ?: Modifier)
+                        .scrollEndHaptic()
+                        .overScrollVertical()
+                        .nestedScroll(scrollBehavior.nestedScrollConnection)
+                        .padding(top = paddingValues.calculateTopPadding())
                 ) {
-                    MiuixNavigationItemWidget(
-                        title = stringResource(R.string.get_source_code),
-                        description = stringResource(R.string.get_source_code_detail),
-                        onClick = { uriHandler.openUri("https://github.com/wxxsfxyzm/InstallerX-Revived") }
-                    )
-                    MiuixNavigationItemWidget(
-                        title = stringResource(R.string.open_source_license),
-                        description = stringResource(R.string.open_source_license_settings_description),
-                        onClick = { navController.navigate(MiuixSettingsScreen.MiuixOpenSourceLicense.route) }
-                    )
-                    MiuixNavigationItemWidget(
-                        title = stringResource(R.string.get_update),
-                        description = stringResource(R.string.get_update_detail),
-                        onClick = { showUpdateDialog.value = true }
-                    )
-                    if (uiState.hasUpdate)
-                        MiuixNavigationItemWidget(
-                            title = stringResource(R.string.get_update_directly),
-                            description = stringResource(R.string.get_update_directly_desc),
-                            onClick = { viewModel.dispatch(AboutAction.PerformUpdate) }
-                        )
-                }
-            }
-            if (AppConfig.isLogEnabled && context.packageName == BuildConfig.APPLICATION_ID) {
-                item { SmallTitle(stringResource(R.string.debug)) }
-                item {
-                    Card(
-                        modifier = Modifier
-                            .padding(horizontal = 12.dp)
-                            .padding(bottom = 12.dp)
-                    ) {
-                        MiuixSwitchWidget(
-                            title = stringResource(R.string.save_logs),
-                            description = stringResource(R.string.save_logs_desc),
-                            checked = uiState.enableFileLogging,
-                            onCheckedChange = { viewModel.dispatch(AboutAction.SetEnableFileLogging(it)) }
-                        )
-                        AnimatedVisibility(
-                            visible = uiState.enableFileLogging,
-                            enter = fadeIn() + expandVertically(),
-                            exit = fadeOut() + shrinkVertically()
+                    item {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 48.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            BasicComponent(
-                                title = stringResource(R.string.export_logs),
-                                summary = stringResource(R.string.export_logs_desc),
-                                onClick = { viewModel.dispatch(AboutAction.ShareLog) }
+                            Image(
+                                modifier = Modifier.size(80.dp),
+                                painter = rememberDrawablePainter(
+                                    drawable = ContextCompat.getDrawable(
+                                        LocalContext.current,
+                                        R.mipmap.ic_launcher
+                                    )
+                                ),
+                                contentDescription = stringResource(id = R.string.app_name)
                             )
+                            Text(
+                                text = stringResource(id = R.string.app_name),
+                                style = MiuixTheme.textStyles.title2,
+                            )
+                            Text(
+                                text = versionInfoText,
+                                style = MiuixTheme.textStyles.subtitle,
+                                color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+                            )
+                            if (uiState.hasUpdate)
+                                Text(
+                                    text = stringResource(R.string.update_available, uiState.remoteVersion),
+                                    style = MiuixTheme.textStyles.subtitle,
+                                    color = MiuixTheme.colorScheme.primary
+                                )
+                            Spacer(modifier = Modifier.size(12.dp))
                         }
                     }
+                    item { Spacer(modifier = Modifier.size(12.dp)) }
+                    item { SmallTitle(stringResource(R.string.about)) }
+                    item {
+                        Card(
+                            modifier = Modifier
+                                .padding(horizontal = 12.dp)
+                                .padding(bottom = 12.dp)
+                        ) {
+                            MiuixNavigationItemWidget(
+                                title = stringResource(R.string.get_source_code),
+                                description = stringResource(R.string.get_source_code_detail),
+                                onClick = { uriHandler.openUri("https://github.com/wxxsfxyzm/InstallerX-Revived") }
+                            )
+                            MiuixNavigationItemWidget(
+                                title = stringResource(R.string.open_source_license),
+                                description = stringResource(R.string.open_source_license_settings_description),
+                                onClick = { navController.navigate(MiuixSettingsScreen.MiuixOpenSourceLicense.route) }
+                            )
+                            MiuixNavigationItemWidget(
+                                title = stringResource(R.string.get_update),
+                                description = stringResource(R.string.get_update_detail),
+                                onClick = { showUpdateDialog.value = true }
+                            )
+                            if (uiState.hasUpdate)
+                                MiuixNavigationItemWidget(
+                                    title = stringResource(R.string.get_update_directly),
+                                    description = stringResource(R.string.get_update_directly_desc),
+                                    onClick = { viewModel.dispatch(AboutAction.PerformUpdate) }
+                                )
+                        }
+                    }
+                    if (AppConfig.isLogEnabled && context.packageName == BuildConfig.APPLICATION_ID) {
+                        item { SmallTitle(stringResource(R.string.debug)) }
+                        item {
+                            Card(
+                                modifier = Modifier
+                                    .padding(horizontal = 12.dp)
+                                    .padding(bottom = 12.dp)
+                            ) {
+                                MiuixSwitchWidget(
+                                    title = stringResource(R.string.save_logs),
+                                    description = stringResource(R.string.save_logs_desc),
+                                    checked = uiState.enableFileLogging,
+                                    onCheckedChange = { viewModel.dispatch(AboutAction.SetEnableFileLogging(it)) }
+                                )
+                                AnimatedVisibility(
+                                    visible = uiState.enableFileLogging,
+                                    enter = fadeIn() + expandVertically(),
+                                    exit = fadeOut() + shrinkVertically()
+                                ) {
+                                    BasicComponent(
+                                        title = stringResource(R.string.export_logs),
+                                        summary = stringResource(R.string.export_logs_desc),
+                                        onClick = { viewModel.dispatch(AboutAction.ShareLog) }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    item { Spacer(Modifier.navigationBarsPadding()) }
                 }
             }
-            item { Spacer(Modifier.navigationBarsPadding()) }
         }
     }
 

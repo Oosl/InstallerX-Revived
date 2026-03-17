@@ -4,7 +4,7 @@ import android.content.Context
 import android.os.IBinder
 import com.rosan.app_process.AppProcess
 import com.rosan.installer.IPrivilegedService
-import com.rosan.installer.data.privileged.model.entity.DefaultPrivilegedService
+import com.rosan.installer.data.privileged.model.DefaultPrivilegedService
 import com.rosan.installer.data.privileged.repository.recyclable.Recyclable
 import com.rosan.installer.data.privileged.repository.recyclable.Recycler
 import com.rosan.installer.data.privileged.repository.recyclable.UserService

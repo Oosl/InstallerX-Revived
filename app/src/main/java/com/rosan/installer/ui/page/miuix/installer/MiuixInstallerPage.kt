@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2025-2026 InstallerX Revived contributors
 package com.rosan.installer.ui.page.miuix.installer
 
 import android.annotation.SuppressLint
@@ -188,7 +190,7 @@ fun MiuixInstallerPage(installer: InstallerSessionRepository) {
             compatStatusBarColor = false
         ) {
             WindowBottomSheet(
-                show = showBottomSheet, // Always true as long as this page is composed.
+                show = showBottomSheet.value, // Always true as long as this page is composed.
                 backgroundColor = if (isDynamicColor) MiuixTheme.colorScheme.surfaceContainerHigh else if (isDark)
                     miuixSheetColorDark else miuixSheetColorLight,
                 startAction = {
@@ -614,7 +616,7 @@ private fun RebootListPopup(
     }
 
     WindowListPopup(
-        show = showTopPopup,
+        show = showTopPopup.value,
         popupPositionProvider = ListPopupDefaults.ContextMenuPositionProvider,
         alignment = alignment,
         onDismissRequest = { showTopPopup.value = false }

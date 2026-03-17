@@ -5,6 +5,7 @@ package com.rosan.installer.ui.page.main.settings.preferred.subpage.about
 import com.rosan.installer.domain.settings.model.Authorizer
 
 data class AboutState(
+    val isLoading: Boolean = true,
     val useBlur: Boolean = true,
     val authorizer: Authorizer = Authorizer.None,
     val hasUpdate: Boolean = false,

@@ -47,6 +47,7 @@ class AboutViewModel(
         updateInfoFlow
     ) { prefs, updateInfo ->
         AboutState(
+            isLoading = false,
             useBlur = prefs.useBlur,
             authorizer = prefs.authorizer,
             hasUpdate = updateInfo?.hasUpdate ?: false,
@@ -55,8 +56,8 @@ class AboutViewModel(
         )
     }.stateIn(
         scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = AboutState()
+        started = SharingStarted.Eagerly,
+        initialValue = AboutState(isLoading = true)
     )
 
     init {

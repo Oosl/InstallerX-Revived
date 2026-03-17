@@ -1,15 +1,16 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2023-2026 InstallerX Revived contributors
 package com.rosan.installer.ui.page.miuix.settings.config.apply
 
 import android.graphics.drawable.Drawable
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.VisibilityThreshold
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -23,9 +24,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -37,14 +38,19 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import com.rosan.installer.R
@@ -57,11 +63,16 @@ import com.rosan.installer.ui.page.main.settings.config.apply.ApplyViewModel
 import com.rosan.installer.ui.page.main.settings.config.apply.ApplyViewState
 import com.rosan.installer.ui.page.miuix.widgets.MiuixBackButton
 import com.rosan.installer.ui.page.miuix.widgets.MiuixDropdown
+import com.rosan.installer.ui.theme.getMiuixAppBarColor
+import com.rosan.installer.ui.theme.installerHazeEffect
+import com.rosan.installer.ui.theme.rememberMiuixHazeStyle
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
-import top.yukonga.miuix.kmp.basic.Card
+import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.DropdownImpl
 import top.yukonga.miuix.kmp.basic.FloatingActionButton
 import top.yukonga.miuix.kmp.basic.Icon
@@ -77,7 +88,7 @@ import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.Switch
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TopAppBar
-import top.yukonga.miuix.kmp.extra.SuperListPopup
+import top.yukonga.miuix.kmp.extra.WindowListPopup
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Close
 import top.yukonga.miuix.kmp.icon.extended.More
@@ -93,18 +104,29 @@ fun MiuixApplyPage(
         parametersOf(id)
     }
 ) {
+    val uiState by viewModel.state.collectAsStateWithLifecycle()
     val coroutineScope = rememberCoroutineScope()
     val lazyListState = rememberLazyListState()
     val scrollBehavior = MiuixScrollBehavior()
+
+    val hazeState = if (uiState.useBlur) remember { HazeState() } else null
+    val hazeStyle = rememberMiuixHazeStyle()
+
     val showFloating by remember {
         derivedStateOf {
             lazyListState.firstVisibleItemIndex > 0 || lazyListState.firstVisibleItemScrollOffset > 0
         }
     }
+
     Scaffold(
         topBar = {
-            Column {
+            Column(
+                modifier = Modifier
+                    .installerHazeEffect(hazeState, hazeStyle)
+                    .background(hazeState.getMiuixAppBarColor())
+            ) {
                 TopAppBar(
+                    color = Color.Transparent,
                     scrollBehavior = scrollBehavior,
                     title = stringResource(R.string.config_scope),
                     navigationIcon = {
@@ -113,20 +135,49 @@ fun MiuixApplyPage(
                             icon = MiuixIcons.Regular.Close,
                             onClick = { navController.navigateUp() })
                     },
-                    actions = { TopAppBarActions(viewModel = viewModel) }
+                    actions = { TopAppBarActions(viewModel = viewModel, uiState = uiState) }
                 )
                 Spacer(modifier = Modifier.size(6.dp))
                 InputField(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    query = viewModel.state.search,
+                        .padding(horizontal = 16.dp)
+                        .padding(bottom = 8.dp),
+                    query = uiState.search,
                     onQueryChange = { viewModel.dispatch(ApplyViewAction.Search(it)) },
                     label = stringResource(R.string.search),
                     expanded = false,
                     onExpandedChange = {},
                     onSearch = {}
                 )
+
+                data class OrderData(val labelResId: Int, val type: ApplyViewState.OrderType)
+
+                val orderOptions = remember {
+                    listOf(
+                        OrderData(R.string.sort_by_label, ApplyViewState.OrderType.Label),
+                        OrderData(R.string.sort_by_package_name, ApplyViewState.OrderType.PackageName),
+                        OrderData(R.string.sort_by_install_time, ApplyViewState.OrderType.FirstInstallTime)
+                    )
+                }
+
+                val dropdownItems = orderOptions.map { stringResource(it.labelResId) }
+                val selectedIndex = orderOptions.indexOfFirst { it.type == uiState.orderType }.coerceAtLeast(0)
+
+                Box(
+                    modifier = Modifier
+                        .padding(horizontal = 6.dp)
+                        .padding(bottom = 6.dp)
+                ) {
+                    MiuixDropdown(
+                        items = dropdownItems,
+                        selectedIndex = selectedIndex,
+                        onSelectedIndexChange = { newIndex ->
+                            val newOrderType = orderOptions[newIndex].type
+                            viewModel.dispatch(ApplyViewAction.Order(newOrderType))
+                        }
+                    )
+                }
             }
         },
         floatingActionButton = {
@@ -151,12 +202,15 @@ fun MiuixApplyPage(
                     )
                 }
             }
-        }) {
-        Box(modifier = Modifier.padding(it)) {
+        }
+    ) { paddingValues ->
+        Box(modifier = Modifier.fillMaxSize()) {
             when {
-                viewModel.state.apps.progress is ViewContent.Progress.Loading && viewModel.state.apps.data.isEmpty() -> {
+                uiState.apps.progress is ViewContent.Progress.Loading && uiState.apps.data.isEmpty() -> {
                     Box(
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(paddingValues),
                         contentAlignment = Alignment.Center
                     ) {
                         Column(
@@ -173,12 +227,20 @@ fun MiuixApplyPage(
                 }
 
                 else -> {
-                    val refreshing = viewModel.state.apps.progress is ViewContent.Progress.Loading
+                    val refreshing = uiState.apps.progress is ViewContent.Progress.Loading
+
+                    val appliedPackageSet by remember(uiState.appEntities.data) {
+                        derivedStateOf {
+                            uiState.appEntities.data.map { it.packageName }.toHashSet()
+                        }
+                    }
+
                     PullToRefresh(
                         isRefreshing = refreshing,
                         onRefresh = { viewModel.dispatch(ApplyViewAction.LoadApps) },
                         modifier = Modifier.fillMaxSize(),
                         topAppBarScrollBehavior = scrollBehavior,
+                        contentPadding = paddingValues,
                         refreshTexts = listOf(
                             stringResource(R.string.pull_to_refresh_hint1),
                             stringResource(R.string.pull_to_refresh_hint2),
@@ -186,41 +248,72 @@ fun MiuixApplyPage(
                             stringResource(R.string.pull_to_refresh_hint4)
                         ),
                     ) {
-                        data class OrderData(val labelResId: Int, val type: ApplyViewState.OrderType)
-
-                        val orderOptions = remember {
-                            listOf(
-                                OrderData(R.string.sort_by_label, ApplyViewState.OrderType.Label),
-                                OrderData(R.string.sort_by_package_name, ApplyViewState.OrderType.PackageName),
-                                OrderData(R.string.sort_by_install_time, ApplyViewState.OrderType.FirstInstallTime)
-                            )
-                        }
-
-                        // Prepare the list of strings and the current selection index for the dropdown.
-                        val dropdownItems = orderOptions.map { stringResource(it.labelResId) }
-                        val selectedIndex = orderOptions.indexOfFirst { it.type == viewModel.state.orderType }.coerceAtLeast(0)
-
-                        // Use the StandaloneDropdown instead of SmallTitle.
-                        MiuixDropdown(
-                            items = dropdownItems,
-                            selectedIndex = selectedIndex,
-                            onSelectedIndexChange = { newIndex ->
-                                // Dispatch the action when a new item is selected.
-                                val newOrderType = orderOptions[newIndex].type
-                                viewModel.dispatch(ApplyViewAction.Order(newOrderType))
-                            }
-                        )
-                        Spacer(modifier = Modifier.size(6.dp))
-                        Card(
+                        LazyColumn(
                             modifier = Modifier
-                                .padding(horizontal = 12.dp)
+                                .fillMaxSize()
+                                .then(hazeState?.let { Modifier.hazeSource(it) } ?: Modifier)
+                                .scrollEndHaptic()
                                 .overScrollVertical()
+                                .nestedScroll(scrollBehavior.nestedScrollConnection),
+                            state = lazyListState,
+                            contentPadding = PaddingValues(
+                                top = paddingValues.calculateTopPadding() + 8.dp,
+                                bottom = paddingValues.calculateBottomPadding() + 16.dp
+                            ),
+                            overscrollEffect = null
                         ) {
-                            MiuixItemsWidget(
-                                modifier = Modifier.fillMaxSize(),
-                                viewModel = viewModel,
-                                lazyListState = lazyListState
-                            )
+                            val apps = uiState.checkedApps
+                            itemsIndexed(
+                                items = apps,
+                                key = { _, app -> app.packageName },
+                                contentType = { _, _ -> "app_item" }
+                            ) { index, app ->
+                                val cardRadius = CardDefaults.CornerRadius
+                                val shape = when {
+                                    apps.size == 1 -> RoundedCornerShape(cardRadius)
+                                    index == 0 -> RoundedCornerShape(
+                                        topStart = cardRadius,
+                                        topEnd = cardRadius,
+                                        bottomStart = 0.dp,
+                                        bottomEnd = 0.dp
+                                    )
+
+                                    index == apps.lastIndex -> RoundedCornerShape(
+                                        topStart = 0.dp,
+                                        topEnd = 0.dp,
+                                        bottomStart = cardRadius,
+                                        bottomEnd = cardRadius
+                                    )
+
+                                    else -> RoundedCornerShape(0.dp)
+                                }
+
+                                val isApplied = appliedPackageSet.contains(app.packageName)
+
+                                MiuixItemWidget(
+                                    modifier = Modifier
+                                        .padding(horizontal = 12.dp)
+                                        .zIndex(-index.toFloat())
+                                        .animateItem(
+                                            fadeInSpec = null,
+                                            fadeOutSpec = null,
+                                            placementSpec = spring(
+                                                stiffness = Spring.StiffnessMediumLow,
+                                                visibilityThreshold = IntOffset.VisibilityThreshold
+                                            )
+                                        ),
+                                    app = app,
+                                    isApplied = isApplied,
+                                    shape = shape,
+                                    onToggle = { isChecked ->
+                                        viewModel.dispatch(ApplyViewAction.ApplyPackageName(app.packageName, isChecked))
+                                    },
+                                    onClick = {
+                                        viewModel.dispatch(ApplyViewAction.ApplyPackageName(app.packageName, !isApplied))
+                                    },
+                                    showPackageName = uiState.showPackageName
+                                )
+                            }
                         }
                     }
                 }
@@ -230,84 +323,20 @@ fun MiuixApplyPage(
 }
 
 @Composable
-private fun MiuixItemsWidget(
-    modifier: Modifier,
-    viewModel: ApplyViewModel,
-    lazyListState: LazyListState,
-) {
-    // Optimize lookup performance by converting the list to a Set.
-    val appliedPackageSet by remember(viewModel.state.appEntities.data) {
-        derivedStateOf {
-            viewModel.state.appEntities.data.map { it.packageName }.toHashSet()
-        }
-    }
-
-    LazyColumn(
-        modifier = modifier.scrollEndHaptic(),
-        state = lazyListState,
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        contentPadding = PaddingValues(vertical = 8.dp),
-        overscrollEffect = null
-    ) {
-        items(
-            items = viewModel.state.checkedApps,
-            key = { it.packageName },
-            contentType = { "app_item" }
-        ) { app ->
-            val isApplied = appliedPackageSet.contains(app.packageName)
-
-            MiuixItemWidget(
-                modifier = Modifier.animateItem(
-                    // Keep the spring animation for reordering
-                    placementSpec = spring(
-                        stiffness = Spring.StiffnessMediumLow,
-                        visibilityThreshold = IntOffset.VisibilityThreshold
-                    )
-                ),
-                app = app,
-                isApplied = isApplied,
-                onToggle = { isChecked ->
-                    viewModel.dispatch(ApplyViewAction.ApplyPackageName(app.packageName, isChecked))
-                },
-                onClick = {
-                    viewModel.dispatch(ApplyViewAction.ApplyPackageName(app.packageName, !isApplied))
-                },
-                // Pass showPackageName as a parameter if needed, or derived from state
-                showPackageName = viewModel.state.showPackageName
-            )
-        }
-    }
-}
-
-@Composable
 private fun MiuixItemWidget(
     modifier: Modifier = Modifier,
     app: ApplyViewApp,
     isApplied: Boolean,
+    shape: Shape,
     onToggle: (Boolean) -> Unit,
     onClick: () -> Unit,
     showPackageName: Boolean
 ) {
-    // Manually control the entry animation state.
-    val animationState = remember { Animatable(0f) }
-
-    // Trigger the animation once when the item enters the composition.
-    LaunchedEffect(Unit) {
-        animationState.animateTo(
-            targetValue = 1f,
-            animationSpec = tween(durationMillis = 300)
-        )
-    }
-
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .graphicsLayer {
-                // Apply transformations in the draw phase to avoid relayout.
-                val progress = animationState.value
-                this.alpha = progress
-                this.translationY = 50f * (1f - progress)
-            }
+            .clip(shape)
+            .background(CardDefaults.defaultColors().color)
     ) {
         Row(
             modifier = Modifier
@@ -317,7 +346,7 @@ private fun MiuixItemWidget(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = ripple(color = MiuixTheme.colorScheme.primary)
                 )
-                .padding(horizontal = 16.dp, vertical = 8.dp),
+                .padding(horizontal = 16.dp, vertical = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             val context = LocalContext.current
@@ -326,7 +355,6 @@ private fun MiuixItemWidget(
 
             var icon by remember(app.packageName) { mutableStateOf<Drawable?>(null) }
 
-            // Load icon asynchronously using the AppIconCache
             LaunchedEffect(app.packageName) {
                 launch(Dispatchers.IO) {
                     val pm = context.packageManager
@@ -352,7 +380,6 @@ private fun MiuixItemWidget(
                     contentDescription = null
                 )
             } else {
-                // Placeholder to prevent layout shifts
                 Box(
                     modifier = Modifier
                         .size(40.dp)
@@ -387,56 +414,46 @@ private fun MiuixItemWidget(
 }
 
 @Composable
-private fun TopAppBarActions(viewModel: ApplyViewModel) {
+private fun TopAppBarActions(viewModel: ApplyViewModel, uiState: ApplyViewState) {
     val showMenu = remember { mutableStateOf(false) }
     val hapticFeedback = LocalHapticFeedback.current
 
-    // Define the options based on the state from the ViewModel.
-    // This list will be used to build the menu items.
     val menuOptions = remember(
-        viewModel.state.orderInReverse,
-        viewModel.state.selectedFirst,
-        viewModel.state.showSystemApp,
-        viewModel.state.showPackageName
+        uiState.orderInReverse,
+        uiState.selectedFirst,
+        uiState.showSystemApp,
+        uiState.showPackageName
     ) {
         listOf(
-            // Pair of (Label String Resource ID, Is Selected Boolean)
-            R.string.sort_by_reverse_order to viewModel.state.orderInReverse,
-            R.string.sort_by_selected_first to viewModel.state.selectedFirst,
-            R.string.sort_by_show_system_app to viewModel.state.showSystemApp,
-            R.string.sort_by_show_package_name to viewModel.state.showPackageName
+            R.string.sort_by_reverse_order to uiState.orderInReverse,
+            R.string.sort_by_selected_first to uiState.selectedFirst,
+            R.string.sort_by_show_system_app to uiState.showSystemApp,
+            R.string.sort_by_show_package_name to uiState.showPackageName
         )
     }
 
-    // Popup menu that appears when the button is clicked.
-    SuperListPopup(
-        show = showMenu,
+    WindowListPopup(
+        show = showMenu.value,
         popupPositionProvider = ListPopupDefaults.ContextMenuPositionProvider,
         alignment = PopupPositionProvider.Align.TopEnd,
         onDismissRequest = {
             showMenu.value = false
-        },
-        enableWindowDim = false
+        }
     ) {
         ListPopupColumn {
             menuOptions.forEachIndexed { index, (labelResId, isSelected) ->
-                // Reuse DropdownImpl for each menu item.
-                // 'isSelected' controls whether the checkmark is shown.
                 DropdownImpl(
                     text = stringResource(labelResId),
                     optionSize = menuOptions.size,
                     isSelected = isSelected,
                     onSelectedIndexChange = { selectedIndex ->
-                        // When an item is clicked, dispatch the corresponding action to toggle the state.
                         when (selectedIndex) {
-                            0 -> viewModel.dispatch(ApplyViewAction.OrderInReverse(!viewModel.state.orderInReverse))
-                            1 -> viewModel.dispatch(ApplyViewAction.SelectedFirst(!viewModel.state.selectedFirst))
-                            2 -> viewModel.dispatch(ApplyViewAction.ShowSystemApp(!viewModel.state.showSystemApp))
-                            3 -> viewModel.dispatch(ApplyViewAction.ShowPackageName(!viewModel.state.showPackageName))
+                            0 -> viewModel.dispatch(ApplyViewAction.OrderInReverse(!uiState.orderInReverse))
+                            1 -> viewModel.dispatch(ApplyViewAction.SelectedFirst(!uiState.selectedFirst))
+                            2 -> viewModel.dispatch(ApplyViewAction.ShowSystemApp(!uiState.showSystemApp))
+                            3 -> viewModel.dispatch(ApplyViewAction.ShowPackageName(!uiState.showPackageName))
                         }
                         hapticFeedback.performHapticFeedback(HapticFeedbackType.Confirm)
-                        // Unlike single-choice menus, we don't close the menu here,
-                        // allowing the user to toggle multiple options at once.
                     },
                     index = index
                 )
@@ -444,7 +461,6 @@ private fun TopAppBarActions(viewModel: ApplyViewModel) {
         }
     }
 
-    // The "More" button that triggers the popup menu.
     IconButton(
         modifier = Modifier.padding(end = 12.dp),
         onClick = {

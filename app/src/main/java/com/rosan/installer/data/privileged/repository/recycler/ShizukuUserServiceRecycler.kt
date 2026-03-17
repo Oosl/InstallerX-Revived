@@ -10,7 +10,7 @@ import androidx.annotation.Keep
 import com.rosan.installer.IPrivilegedService
 import com.rosan.installer.IShizukuUserService
 import com.rosan.installer.core.env.AppConfig
-import com.rosan.installer.data.privileged.model.entity.DefaultPrivilegedService
+import com.rosan.installer.data.privileged.model.DefaultPrivilegedService
 import com.rosan.installer.data.privileged.repository.recyclable.Recycler
 import com.rosan.installer.data.privileged.repository.recyclable.UserService
 import com.rosan.installer.data.privileged.util.requireShizukuPermissionGranted

@@ -17,7 +17,7 @@ import com.rosan.installer.BuildConfig
 import com.rosan.installer.core.reflection.ReflectionProvider
 import com.rosan.installer.core.reflection.getStaticValue
 import com.rosan.installer.core.reflection.getValue
-import com.rosan.installer.data.privileged.model.exception.ShizukuNotWorkException
+import com.rosan.installer.data.privileged.exception.ShizukuNotWorkException
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.catch

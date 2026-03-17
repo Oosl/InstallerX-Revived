@@ -12,8 +12,8 @@ import com.rosan.dhizuku.api.Dhizuku
 import com.rosan.dhizuku.api.DhizukuUserServiceArgs
 import com.rosan.installer.IDhizukuUserService
 import com.rosan.installer.IPrivilegedService
-import com.rosan.installer.data.privileged.model.entity.DhizukuPrivilegedService
-import com.rosan.installer.data.privileged.model.exception.DhizukuDeadServiceException
+import com.rosan.installer.data.privileged.model.DhizukuPrivilegedService
+import com.rosan.installer.data.privileged.exception.DhizukuDeadServiceException
 import com.rosan.installer.data.privileged.repository.recyclable.Recycler
 import com.rosan.installer.data.privileged.repository.recyclable.UserService
 import com.rosan.installer.data.privileged.util.requireDhizukuPermissionGranted

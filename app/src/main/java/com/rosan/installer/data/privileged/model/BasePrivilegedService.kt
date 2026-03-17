@@ -1,4 +1,4 @@
-package com.rosan.installer.data.privileged.model.entity
+package com.rosan.installer.data.privileged.model
 
 import android.content.Context
 import com.rosan.installer.IPrivilegedService

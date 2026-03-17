@@ -1,8 +1,8 @@
 package com.rosan.installer.data.privileged.util
 
 import com.rosan.installer.IPrivilegedService
-import com.rosan.installer.data.privileged.model.entity.DefaultPrivilegedService
-import com.rosan.installer.data.privileged.model.exception.ShizukuNotWorkException
+import com.rosan.installer.data.privileged.model.DefaultPrivilegedService
+import com.rosan.installer.data.privileged.exception.ShizukuNotWorkException
 import com.rosan.installer.data.privileged.repository.recyclable.Recyclable
 import com.rosan.installer.data.privileged.repository.recyclable.UserService
 import com.rosan.installer.data.privileged.repository.recycler.DhizukuUserServiceRecycler

@@ -6,6 +6,7 @@ import com.rosan.installer.domain.settings.model.AppModel
 import com.rosan.installer.ui.common.ViewContent
 
 data class ApplyViewState(
+    // App data state
     val apps: ViewContent<List<ApplyViewApp>> = ViewContent(
         data = emptyList(), progress = ViewContent.Progress.Loading
     ),
@@ -17,7 +18,10 @@ data class ApplyViewState(
     val selectedFirst: Boolean = true,
     val showSystemApp: Boolean = false,
     val showPackageName: Boolean = true,
-    val search: String = ""
+    val search: String = "",
+
+    // UI State
+    val useBlur: Boolean = true,
 ) {
     enum class OrderType {
         Label, PackageName, FirstInstallTime

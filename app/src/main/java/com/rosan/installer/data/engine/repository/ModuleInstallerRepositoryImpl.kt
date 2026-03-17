@@ -4,7 +4,7 @@ package com.rosan.installer.data.engine.repository
 
 import com.rosan.installer.data.engine.executor.moduleInstaller.LocalModuleInstallerRepositoryImpl
 import com.rosan.installer.data.engine.executor.moduleInstaller.ShizukuModuleInstallerRepositoryImpl
-import com.rosan.installer.data.privileged.model.exception.ShizukuNotWorkException
+import com.rosan.installer.data.privileged.exception.ShizukuNotWorkException
 import com.rosan.installer.domain.device.provider.DeviceCapabilityProvider
 import com.rosan.installer.domain.engine.exception.ModuleInstallFailedIncompatibleAuthorizerException
 import com.rosan.installer.domain.engine.model.AppEntity
