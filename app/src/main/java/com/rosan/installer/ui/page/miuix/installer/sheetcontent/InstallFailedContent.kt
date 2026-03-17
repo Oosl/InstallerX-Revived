@@ -26,22 +26,23 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.rosan.installer.R
-import com.rosan.installer.build.RsConfig
-import com.rosan.installer.build.model.entity.Manufacturer
-import com.rosan.installer.data.app.model.enums.InstallErrorType
-import com.rosan.installer.data.app.util.InstallOption
-import com.rosan.installer.data.installer.repo.InstallerRepo
-import com.rosan.installer.data.settings.model.room.entity.ConfigEntity
+import com.rosan.installer.core.env.DeviceConfig
+import com.rosan.installer.domain.device.model.Manufacturer
+import com.rosan.installer.domain.engine.model.InstallErrorType
+import com.rosan.installer.domain.engine.model.InstallOption
+import com.rosan.installer.domain.session.repository.InstallerSessionRepository
+import com.rosan.installer.domain.settings.model.Authorizer
 import com.rosan.installer.ui.common.LocalMiPackageInstallerPresent
 import com.rosan.installer.ui.page.main.installer.InstallerViewAction
 import com.rosan.installer.ui.page.main.installer.InstallerViewModel
 import com.rosan.installer.ui.page.miuix.widgets.MiuixErrorTextBlock
 import com.rosan.installer.ui.page.miuix.widgets.MiuixNavigationItemWidget
 import com.rosan.installer.ui.page.miuix.widgets.MiuixUninstallConfirmationDialog
-import com.rosan.installer.ui.theme.LocalIsDark
+import com.rosan.installer.ui.theme.InstallerTheme
 import com.rosan.installer.ui.theme.miuixSheetCardColorDark
 import com.rosan.installer.ui.util.isGestureNavigation
 import com.rosan.installer.util.hasErrorType
+import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CardColors
 import top.yukonga.miuix.kmp.basic.SmallTitle
@@ -52,11 +53,11 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme.isDynamicColor
 @Composable
 fun InstallFailedContent(
     appInfo: AppInfoState,
-    installer: InstallerRepo,
+    installer: InstallerSessionRepository,
     viewModel: InstallerViewModel,
     onClose: () -> Unit
 ) {
-    val isDarkMode = LocalIsDark.current
+    val isDarkMode = InstallerTheme.isDark
 
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -87,6 +88,10 @@ fun InstallFailedContent(
             TextButton(
                 onClick = onClose,
                 text = stringResource(R.string.close),
+                colors = ButtonDefaults.textButtonColors(
+                    color = if (isDynamicColor) MiuixTheme.colorScheme.secondaryContainer else MiuixTheme.colorScheme.secondaryVariant,
+                    textColor = if (isDynamicColor) MiuixTheme.colorScheme.onSecondaryContainer else MiuixTheme.colorScheme.onSecondaryVariant
+                ),
                 modifier = Modifier.fillMaxWidth(),
             )
         }
@@ -98,7 +103,7 @@ private fun MiuixErrorSuggestions(
     isDarkMode: Boolean,
     error: Throwable,
     viewModel: InstallerViewModel,
-    installer: InstallerRepo
+    installer: InstallerSessionRepository
 ) {
     val context = LocalContext.current
 
@@ -129,9 +134,9 @@ private fun MiuixErrorSuggestions(
                 )
             )
 
-            if (installer.config.authorizer != ConfigEntity.Authorizer.None ||
-                (installer.config.authorizer == ConfigEntity.Authorizer.None &&
-                        !(RsConfig.currentManufacturer == Manufacturer.XIAOMI && hasMiPackageInstaller))
+            if (installer.config.authorizer != Authorizer.None ||
+                (installer.config.authorizer == Authorizer.None &&
+                        !(DeviceConfig.currentManufacturer == Manufacturer.XIAOMI && hasMiPackageInstaller))
             ) {
                 add(
                     SuggestionItem(
@@ -184,8 +189,8 @@ private fun MiuixErrorSuggestions(
                 Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA &&
                 Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
                 !(Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM &&
-                        (RsConfig.currentManufacturer == Manufacturer.SAMSUNG || RsConfig.currentManufacturer == Manufacturer.REALME)) &&
-                (installer.config.authorizer == ConfigEntity.Authorizer.Root || installer.config.authorizer == ConfigEntity.Authorizer.Shizuku)
+                        (DeviceConfig.currentManufacturer == Manufacturer.SAMSUNG || DeviceConfig.currentManufacturer == Manufacturer.REALME)) &&
+                (installer.config.authorizer == Authorizer.Root || installer.config.authorizer == Authorizer.Shizuku)
             ) {
                 add(
                     SuggestionItem(
@@ -201,7 +206,7 @@ private fun MiuixErrorSuggestions(
             }
 
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
-                (installer.config.authorizer == ConfigEntity.Authorizer.Root || installer.config.authorizer == ConfigEntity.Authorizer.Shizuku)
+                (installer.config.authorizer == Authorizer.Root || installer.config.authorizer == Authorizer.Shizuku)
             ) {
                 add(
                     SuggestionItem(
@@ -216,13 +221,13 @@ private fun MiuixErrorSuggestions(
                 )
             }
 
-            if (installer.config.authorizer != ConfigEntity.Authorizer.Dhizuku) {
+            if (installer.config.authorizer != Authorizer.Dhizuku) {
                 add(
                     SuggestionItem(
                         isMatch = { it.hasErrorType(InstallErrorType.HYPEROS_ISOLATION_VIOLATION) },
                         onClick = {
                             // Set available installer
-                            installer.config.installer = "com.android.shell"
+                            installer.config = installer.config.copy(installer = "com.android.shell")
                             // Wipe originatingUid
                             installer.config.callingFromUid = null
                             viewModel.dispatch(InstallerViewAction.Install(false))
@@ -236,8 +241,8 @@ private fun MiuixErrorSuggestions(
                     SuggestionItem(
                         isMatch = { it.hasErrorType(InstallErrorType.HYPEROS_ISOLATION_VIOLATION) },
                         onClick = {
-                            installer.config.installer = "com.android.shell"
-                            installer.config.authorizer = ConfigEntity.Authorizer.Shizuku
+                            installer.config = installer.config.copy(installer = "com.android.shell")
+                            installer.config = installer.config.copy(authorizer = Authorizer.Shizuku)
                             viewModel.dispatch(InstallerViewAction.Install(false))
                         },
                         labelRes = R.string.suggestion_shizuku_isolation,

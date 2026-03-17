@@ -35,14 +35,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import com.rosan.installer.R
-import com.rosan.installer.build.RsConfig
-import com.rosan.installer.build.model.entity.Manufacturer
-import com.rosan.installer.data.app.model.entity.AppEntity
-import com.rosan.installer.data.app.model.entity.InstalledAppInfo
-import com.rosan.installer.data.app.model.enums.DataType
-import com.rosan.installer.data.app.util.sortedBest
-import com.rosan.installer.data.installer.repo.InstallerRepo
-import com.rosan.installer.data.settings.model.room.entity.ConfigEntity
+import com.rosan.installer.core.env.DeviceConfig
+import com.rosan.installer.domain.device.model.Manufacturer
+import com.rosan.installer.domain.engine.model.AppEntity
+import com.rosan.installer.domain.engine.model.DataType
+import com.rosan.installer.domain.engine.model.InstalledAppInfo
+import com.rosan.installer.domain.engine.model.sortedBest
+import com.rosan.installer.domain.session.repository.InstallerSessionRepository
+import com.rosan.installer.domain.settings.model.Authorizer
 import com.rosan.installer.ui.icons.AppIcons
 import com.rosan.installer.ui.page.main.installer.InstallerViewAction
 import com.rosan.installer.ui.page.main.installer.InstallerViewModel
@@ -50,7 +50,7 @@ import com.rosan.installer.ui.page.main.installer.dialog.inner.InstallWarningRes
 import com.rosan.installer.ui.page.miuix.widgets.MiuixInstallerTipCard
 import com.rosan.installer.ui.page.miuix.widgets.MiuixNavigationItemWidget
 import com.rosan.installer.ui.page.miuix.widgets.MiuixWarningChipGroup
-import com.rosan.installer.ui.theme.LocalIsDark
+import com.rosan.installer.ui.theme.InstallerTheme
 import com.rosan.installer.ui.theme.miuixSheetCardColorDark
 import com.rosan.installer.ui.util.InstallLogicUtils
 import com.rosan.installer.ui.util.formatSize
@@ -67,13 +67,13 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme.isDynamicColor
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun InstallPrepareContent(
-    installer: InstallerRepo,
+    installer: InstallerSessionRepository,
     viewModel: InstallerViewModel,
     appInfo: AppInfoState,
     onCancel: () -> Unit,
     onInstall: () -> Unit
 ) {
-    val isDarkMode = LocalIsDark.current
+    val isDarkMode = InstallerTheme.isDark
     val currentPackageName by viewModel.currentPackageName.collectAsState()
     val currentPackage = installer.analysisResults.find { it.packageName == currentPackageName }
     val settings = viewModel.viewSettings
@@ -170,7 +170,7 @@ fun InstallPrepareContent(
             primaryEntity = primaryEntity,
             isSplitUpdateMode = isSplitUpdateMode,
             containerType = containerType,
-            systemArch = RsConfig.currentArchitecture,
+            systemArch = DeviceConfig.currentArchitecture,
             systemSdkInt = Build.VERSION.SDK_INT,
             resources = installResources
         )
@@ -236,7 +236,7 @@ fun InstallPrepareContent(
                                 )
                             }
 
-                            if (RsConfig.currentManufacturer == Manufacturer.OPPO || RsConfig.currentManufacturer == Manufacturer.ONEPLUS) {
+                            if (DeviceConfig.currentManufacturer == Manufacturer.OPPO || DeviceConfig.currentManufacturer == Manufacturer.ONEPLUS) {
                                 AnimatedVisibility(visible = settings.showOPPOSpecial && primaryEntity.sourceType == DataType.APK) {
                                     primaryEntity.minOsdkVersion?.let {
                                         AdaptiveInfoRow(
@@ -335,8 +335,8 @@ fun InstallPrepareContent(
                         )
 
                     // Install Options
-                    if (installer.config.authorizer != ConfigEntity.Authorizer.Dhizuku &&
-                        installer.config.authorizer != ConfigEntity.Authorizer.None
+                    if (installer.config.authorizer != Authorizer.Dhizuku &&
+                        installer.config.authorizer != Authorizer.None
                     )
                         MiuixNavigationItemWidget(
                             title = stringResource(R.string.config_label_install_options),
@@ -431,13 +431,21 @@ fun InstallPrepareContent(
                 if (showExpandButton)
                     TextButton(
                         onClick = { isExpanded = !isExpanded },
+                        text = if (isExpanded) stringResource(R.string.collapse) else stringResource(R.string.expand),
+                        colors = ButtonDefaults.textButtonColors(
+                            color = if (isDynamicColor) MiuixTheme.colorScheme.secondaryContainer else MiuixTheme.colorScheme.secondaryVariant,
+                            textColor = if (isDynamicColor) MiuixTheme.colorScheme.onSecondaryContainer else MiuixTheme.colorScheme.onSecondaryVariant
+                        ),
                         modifier = Modifier.weight(1f),
-                        text = if (isExpanded) stringResource(R.string.collapse) else stringResource(R.string.expand)
                     )
                 else
                     TextButton(
                         onClick = onCancel,
                         text = stringResource(R.string.cancel),
+                        colors = ButtonDefaults.textButtonColors(
+                            color = if (isDynamicColor) MiuixTheme.colorScheme.secondaryContainer else MiuixTheme.colorScheme.secondaryVariant,
+                            textColor = if (isDynamicColor) MiuixTheme.colorScheme.onSecondaryContainer else MiuixTheme.colorScheme.onSecondaryVariant
+                        ),
                         modifier = Modifier.weight(1f),
                     )
                 TextButton(
@@ -624,7 +632,7 @@ private fun AdaptiveInfoRow(
 private fun SDKComparison(
     entityToInstall: AppEntity,
     preInstallAppInfo: InstalledAppInfo?,
-    installer: InstallerRepo
+    installer: InstallerSessionRepository
 ) {
     AnimatedVisibility(visible = installer.config.displaySdk) {
         Column(

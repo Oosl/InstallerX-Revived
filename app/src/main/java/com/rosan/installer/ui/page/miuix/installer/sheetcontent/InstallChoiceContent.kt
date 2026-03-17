@@ -28,14 +28,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.rosan.installer.R
-import com.rosan.installer.data.app.model.entity.AppEntity
-import com.rosan.installer.data.app.model.entity.PackageAnalysisResult
-import com.rosan.installer.data.app.model.enums.DataType
-import com.rosan.installer.data.app.model.enums.MmzSelectionMode
-import com.rosan.installer.data.app.model.enums.SessionMode
-import com.rosan.installer.data.app.util.getDisplayName
-import com.rosan.installer.data.app.util.getSplitDisplayName
-import com.rosan.installer.data.installer.repo.InstallerRepo
+import com.rosan.installer.data.engine.parser.getDisplayName
+import com.rosan.installer.data.engine.parser.getSplitDisplayName
+import com.rosan.installer.domain.engine.model.AppEntity
+import com.rosan.installer.domain.engine.model.DataType
+import com.rosan.installer.domain.engine.model.MmzSelectionMode
+import com.rosan.installer.domain.engine.model.PackageAnalysisResult
+import com.rosan.installer.domain.engine.model.SessionMode
+import com.rosan.installer.domain.session.repository.InstallerSessionRepository
 import com.rosan.installer.ui.page.main.installer.InstallerViewAction
 import com.rosan.installer.ui.page.main.installer.InstallerViewModel
 import com.rosan.installer.ui.page.miuix.widgets.MiuixCheckboxWidget
@@ -43,7 +43,7 @@ import com.rosan.installer.ui.page.miuix.widgets.MiuixInstallerTipCard
 import com.rosan.installer.ui.page.miuix.widgets.MiuixMultiApkCheckboxWidget
 import com.rosan.installer.ui.page.miuix.widgets.MiuixNavigationItemWidget
 import com.rosan.installer.ui.page.miuix.widgets.WarningCard
-import com.rosan.installer.ui.theme.LocalIsDark
+import com.rosan.installer.ui.theme.InstallerTheme
 import com.rosan.installer.ui.theme.miuixSheetCardColorDark
 import com.rosan.installer.ui.util.getSupportSubtitle
 import com.rosan.installer.ui.util.isGestureNavigation
@@ -62,11 +62,11 @@ import top.yukonga.miuix.kmp.utils.scrollEndHaptic
 
 @Composable
 fun InstallChoiceContent(
-    installer: InstallerRepo,
+    installer: InstallerSessionRepository,
     viewModel: InstallerViewModel,
     onCancel: () -> Unit
 ) {
-    val isDarkMode = LocalIsDark.current
+    val isDarkMode = InstallerTheme.isDark
     val analysisResults = installer.analysisResults
     val sourceType = analysisResults.firstOrNull()?.appEntities?.firstOrNull()?.app?.sourceType ?: DataType.NONE
     val currentSessionMode = analysisResults.firstOrNull()?.sessionMode ?: SessionMode.Single
@@ -188,6 +188,10 @@ fun InstallChoiceContent(
                         }
                     },
                     text = stringResource(if (isBack) R.string.back else R.string.cancel),
+                    colors = ButtonDefaults.textButtonColors(
+                        color = if (isDynamicColor) MiuixTheme.colorScheme.secondaryContainer else MiuixTheme.colorScheme.secondaryVariant,
+                        textColor = if (isDynamicColor) MiuixTheme.colorScheme.onSecondaryContainer else MiuixTheme.colorScheme.onSecondaryVariant
+                    ),
                     modifier = Modifier.weight(1f),
                 )
             }
@@ -558,6 +562,18 @@ private fun MixedModuleZip_InitialChoice(
                         title = stringResource(R.string.installer_choice_install_as_module),
                         description = stringResource(R.string.installer_module_id, moduleEntityInfo.id),
                         onClick = {
+                            analysisResults.flatMap { it.appEntities }
+                                .filter { it.app !is AppEntity.ModuleEntity && it.selected }
+                                .forEach { entity ->
+                                    viewModel.dispatch(
+                                        InstallerViewAction.ToggleSelection(
+                                            packageName = entity.app.packageName,
+                                            entity = entity,
+                                            isMultiSelect = true
+                                        )
+                                    )
+                                }
+
                             viewModel.dispatch(
                                 InstallerViewAction.ToggleSelection(
                                     packageName = moduleSelectableEntity.app.packageName,
@@ -577,7 +593,8 @@ private fun MixedModuleZip_InitialChoice(
                         onClick = {
                             if (apkChooseAll) {
                                 analysisResults.flatMap { it.appEntities }
-                                    .filter { it.app !is AppEntity.ModuleEntity }
+                                    // Only toggle those that are NOT already selected
+                                    .filter { it.app !is AppEntity.ModuleEntity && !it.selected }
                                     .forEach { entity ->
                                         viewModel.dispatch(
                                             InstallerViewAction.ToggleSelection(

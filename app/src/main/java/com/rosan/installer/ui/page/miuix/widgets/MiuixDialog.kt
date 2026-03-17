@@ -28,9 +28,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import com.rosan.installer.R
-import com.rosan.installer.build.RsConfig
-import com.rosan.installer.build.model.entity.Manufacturer
-import com.rosan.installer.data.app.model.enums.RootImplementation
+import com.rosan.installer.core.env.DeviceConfig
+import com.rosan.installer.domain.device.model.Manufacturer
+import com.rosan.installer.domain.settings.model.RootImplementation
 import top.yukonga.miuix.kmp.basic.BasicComponent
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.Card
@@ -71,7 +71,7 @@ fun MiuixUnsavedChangesDialog(
     }
 
     WindowDialog(
-        show = showState,
+        show = showState.value,
         onDismissRequest = onDismiss,
         title = dialogTitle,
         content = {
@@ -125,7 +125,7 @@ fun MiuixHideLauncherIconWarningDialog(
     onConfirm: () -> Unit,
 ) {
     WindowDialog(
-        show = showState,
+        show = showState.value,
         onDismissRequest = onDismiss,
         title = stringResource(R.string.warning),
         content = {
@@ -133,7 +133,7 @@ fun MiuixHideLauncherIconWarningDialog(
             Column {
                 // Warning message
                 Text(stringResource(R.string.theme_settings_hide_launcher_icon_warning))
-                if (RsConfig.currentManufacturer == Manufacturer.XIAOMI)
+                if (DeviceConfig.currentManufacturer == Manufacturer.XIAOMI)
                     Text(stringResource(R.string.theme_settings_hide_launcher_icon_warning_xiaomi))
                 Spacer(modifier = Modifier.height(24.dp)) // Spacing before buttons
 
@@ -172,7 +172,7 @@ fun MiuixUpdateDialog(
     val uriHandler = LocalUriHandler.current
 
     WindowDialog(
-        show = showState,
+        show = showState.value,
         onDismissRequest = onDismiss,
         title = stringResource(R.string.get_update),
         content = {
@@ -237,7 +237,7 @@ fun MiuixUninstallConfirmationDialog(
     keepData: Boolean
 ) {
     WindowDialog(
-        show = showState,
+        show = showState.value,
         onDismissRequest = onDismiss,
         title = stringResource(R.string.suggestion_uninstall_alert_dialog_confirm_action),
         content = {
@@ -299,7 +299,7 @@ fun ErrorDisplaySheet(
     title: String
 ) {
     SuperBottomSheet(
-        show = showState,
+        show = showState.value,
         onDismissRequest = onDismissRequest,
         title = title,
         startAction = {
@@ -382,7 +382,7 @@ fun MiuixRootImplementationDialog(
     var selectedImpl by remember { mutableStateOf(rootImplementations.first()) }
 
     WindowDialog(
-        show = showState,
+        show = showState.value,
         onDismissRequest = onDismiss,
         title = stringResource(R.string.lab_module_select_root_impl),
         insideMargin = DpSize(0.dp, 24.dp),
@@ -471,7 +471,7 @@ fun MiuixUninstallPackageDialog(
     val isConfirmEnabled = packageName.isNotBlank()
 
     WindowDialog(
-        show = showState,
+        show = showState.value,
         onDismissRequest = onDismiss,
         title = stringResource(R.string.uninstall_enter_package_name),
         content = {
@@ -521,7 +521,7 @@ fun MiuixBlurWarningDialog(
     onConfirm: () -> Unit,
 ) {
     WindowDialog(
-        show = showState,
+        show = showState.value,
         onDismissRequest = onDismiss,
         title = stringResource(R.string.warning),
         content = {

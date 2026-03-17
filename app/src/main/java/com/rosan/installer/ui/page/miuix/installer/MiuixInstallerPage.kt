@@ -30,11 +30,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import com.rosan.installer.R
-import com.rosan.installer.data.app.model.enums.DataType
-import com.rosan.installer.data.app.model.exception.ModuleInstallCmdInitException
-import com.rosan.installer.data.app.model.exception.ModuleInstallException
-import com.rosan.installer.data.app.model.exception.ModuleInstallFailedIncompatibleAuthorizerException
-import com.rosan.installer.data.installer.repo.InstallerRepo
+import com.rosan.installer.domain.engine.exception.ModuleInstallCmdInitException
+import com.rosan.installer.domain.engine.exception.ModuleInstallException
+import com.rosan.installer.domain.engine.exception.ModuleInstallFailedIncompatibleAuthorizerException
+import com.rosan.installer.domain.engine.model.DataType
+import com.rosan.installer.domain.session.repository.InstallerSessionRepository
 import com.rosan.installer.ui.common.LocalMiPackageInstallerPresent
 import com.rosan.installer.ui.icons.AppMiuixIcons
 import com.rosan.installer.ui.page.main.installer.InstallerViewAction
@@ -64,8 +64,6 @@ import com.rosan.installer.ui.page.miuix.widgets.MiuixBackButton
 import com.rosan.installer.ui.theme.InstallerMiuixTheme
 import com.rosan.installer.ui.theme.InstallerTheme
 import com.rosan.installer.ui.theme.LocalInstallerColorScheme
-import com.rosan.installer.ui.theme.LocalPaletteStyle
-import com.rosan.installer.ui.theme.LocalThemeColorSpec
 import com.rosan.installer.ui.theme.material.dynamicColorScheme
 import com.rosan.installer.ui.theme.miuixSheetColorDark
 import com.rosan.installer.ui.theme.miuixSheetColorLight
@@ -89,7 +87,7 @@ private const val SHEET_ANIMATION_DURATION = 450L
 
 @SuppressLint("UnusedContentLambdaTargetStateParameter")
 @Composable
-fun MiuixInstallerPage(installer: InstallerRepo) {
+fun MiuixInstallerPage(installer: InstallerSessionRepository) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val showBottomSheet = remember { mutableStateOf(true) }
@@ -106,9 +104,9 @@ fun MiuixInstallerPage(installer: InstallerRepo) {
     val useMiuixMonet = InstallerTheme.useMiuixMonet
     val useDynamicColor = InstallerTheme.useDynamicColor
     val isDark = InstallerTheme.isDark
-    val paletteStyle = LocalPaletteStyle.current
-    val colorSpec = LocalThemeColorSpec.current
-    val globalColorScheme = LocalInstallerColorScheme.current
+    val paletteStyle = InstallerTheme.paletteStyle
+    val colorSpec = InstallerTheme.colorSpec
+    val globalColorScheme = InstallerTheme.colorScheme
 
     val activeSeedColor = temporarySeedColor ?: globalSeedColor
     val activeMd3ColorScheme = remember(activeSeedColor, globalColorScheme, isDark, paletteStyle) {
@@ -181,6 +179,7 @@ fun MiuixInstallerPage(installer: InstallerRepo) {
     ) {
         InstallerMiuixTheme(
             seedColor = activeSeedColor,
+            paletteStyle = paletteStyle,
             colorSpec = colorSpec,
             darkTheme = isDark,
             themeMode = themeMode,

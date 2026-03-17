@@ -22,10 +22,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.rosan.installer.R
-import com.rosan.installer.data.app.model.entity.AppEntity
-import com.rosan.installer.data.installer.model.entity.InstallResult
+import com.rosan.installer.domain.engine.model.AppEntity
+import com.rosan.installer.domain.session.model.InstallResult
 import com.rosan.installer.ui.icons.AppMiuixIcons
-import com.rosan.installer.ui.theme.LocalIsDark
+import com.rosan.installer.ui.theme.InstallerTheme
 import com.rosan.installer.ui.theme.miuixSheetCardColorDark
 import com.rosan.installer.ui.util.isGestureNavigation
 import com.rosan.installer.util.help
@@ -46,7 +46,7 @@ fun InstallCompletedContent(
     results: List<InstallResult>,
     onClose: () -> Unit
 ) {
-    val isDarkMode = LocalIsDark.current
+    val isDarkMode = InstallerTheme.isDark
     val filteredResults = remember(results) {
         results
             // 1. Group by packageName

@@ -4,12 +4,13 @@ package com.rosan.installer.util
 
 import android.content.Context
 import android.content.pm.PackageManager
+import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.rosan.installer.R
-import com.rosan.installer.data.app.model.enums.InstallErrorType
-import com.rosan.installer.data.app.model.exception.InstallException
-import com.rosan.installer.data.app.model.exception.InstallerException
+import com.rosan.installer.domain.engine.exception.InstallException
+import com.rosan.installer.domain.engine.exception.InstallerException
+import com.rosan.installer.domain.engine.model.InstallErrorType
 import java.util.zip.ZipException
 
 /**
@@ -19,9 +20,9 @@ import java.util.zip.ZipException
  * responsible for mapping a {@link Throwable} to its corresponding
  * string resource ID.
  *
- * @author iamr0s wxxsfxyzm
  * @return The string resource ID defined in `R.string`.
  */
+@StringRes
 private fun Throwable.getStringRes() =
     when (this) {
         is InstallerException -> this.getStringResId()
@@ -62,6 +63,9 @@ fun Throwable.getErrorMessage(context: Context) = context.getString(this.getStri
 /**
  * Returns a [Boolean] indicating whether this [Throwable]
  * has a specific [InstallErrorType].
+ *
+ * @param types The [InstallErrorType] to check for.
+ * @return `true` if the [InstallErrorType] is found, `false` otherwise.
  */
 fun Throwable.hasErrorType(vararg types: InstallErrorType): Boolean =
     this is InstallException && this.errorType in types

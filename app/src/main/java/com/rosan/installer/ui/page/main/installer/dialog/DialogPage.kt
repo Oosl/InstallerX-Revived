@@ -11,7 +11,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import com.rosan.installer.data.installer.repo.InstallerRepo
+import com.rosan.installer.domain.session.repository.InstallerSessionRepository
 import com.rosan.installer.ui.page.main.installer.InstallerViewAction
 import com.rosan.installer.ui.page.main.installer.InstallerViewModel
 import com.rosan.installer.ui.page.main.installer.InstallerViewState
@@ -20,8 +20,6 @@ import com.rosan.installer.ui.page.main.widget.dialog.PositionDialog
 import com.rosan.installer.ui.theme.InstallerMaterialExpressiveTheme
 import com.rosan.installer.ui.theme.InstallerTheme
 import com.rosan.installer.ui.theme.LocalInstallerColorScheme
-import com.rosan.installer.ui.theme.LocalIsDark
-import com.rosan.installer.ui.theme.LocalPaletteStyle
 import com.rosan.installer.ui.theme.material.dynamicColorScheme
 import com.rosan.installer.ui.util.WindowBlurEffect
 import org.koin.compose.viewmodel.koinViewModel
@@ -30,19 +28,25 @@ import org.koin.core.parameter.parametersOf
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DialogPage(
-    installer: InstallerRepo,
+    installer: InstallerSessionRepository,
     viewModel: InstallerViewModel = koinViewModel {
         parametersOf(installer)
     }
 ) {
     val temporarySeedColor by viewModel.seedColor.collectAsState()
-    val globalColorScheme = LocalInstallerColorScheme.current
-    val isDark = LocalIsDark.current
-    val paletteStyle = LocalPaletteStyle.current
+    val globalColorScheme = InstallerTheme.colorScheme
+    val isDark = InstallerTheme.isDark
+    val paletteStyle = InstallerTheme.paletteStyle
+    val colorSpec = InstallerTheme.colorSpec
 
     val activeColorScheme = remember(temporarySeedColor, globalColorScheme, isDark, paletteStyle) {
         temporarySeedColor?.let {
-            dynamicColorScheme(keyColor = it, isDark = isDark, style = paletteStyle)
+            dynamicColorScheme(
+                keyColor = it,
+                isDark = isDark,
+                style = paletteStyle,
+                colorSpec = colorSpec
+            )
         } ?: globalColorScheme
     }
 
