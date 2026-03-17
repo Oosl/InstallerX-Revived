@@ -1,5 +1,0 @@
-- chore(ci): enhance auto-preview release workflow with update.json generation (oosl)
-- i18n: Translations update from Hosted Weblate (#536) (Weblate (bot))
-- refactor: refactor ViewModel state management and UI performance across settings pages (wxxsfxyzm)
-- refactor(ci): change versionName format (#540) (wxxsfxyzm)
-- chore(deps): update kotlin to v2.3.20 (#537) (renovate[bot])

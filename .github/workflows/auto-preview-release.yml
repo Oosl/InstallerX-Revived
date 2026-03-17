@@ -120,7 +120,7 @@ jobs:
 
           NEW_VERSION="${{ steps.rename_apks.outputs.version_tag }}"
           VERSION_CODE=$(date +%s)
-          UPDATE_JSON_URL="https://raw.githubusercontent.com/${{ github.repository }}/main/module/update.json"
+          UPDATE_JSON_URL="https://raw.githubusercontent.com/${{ github.repository }}/main/update.json"
 
           sed -i "s/^version=.*/version=${NEW_VERSION}/" module/module.prop
           sed -i "s/^versionCode=.*/versionCode=${VERSION_CODE}/" module/module.prop
@@ -234,9 +234,9 @@ jobs:
           TAG="${{ steps.rename_apks.outputs.version_tag }}"
 
           ZIP_URL="https://github.com/${REPO}/releases/download/${TAG}/${ZIP_NAME}"
-          CHANGELOG_URL="https://raw.githubusercontent.com/${REPO}/main/module/changelog.md"
+          CHANGELOG_URL="https://raw.githubusercontent.com/${REPO}/main/changelog.md"
 
-          cat > module/update.json <<EOF
+          cat > update.json <<EOF
           {
             "version": "${VERSION}",
             "versionCode": ${VERSION_CODE},
@@ -245,13 +245,13 @@ jobs:
           }
           EOF
 
-          cat > module/changelog.md <<'CLEOF'
+          cat > changelog.md <<'CLEOF'
           ${{ steps.changelog.outputs.changelog_body }}
           CLEOF
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add module/update.json module/changelog.md
+          git add update.json changelog.md
           git diff --staged --quiet && echo "No changes to commit" && exit 0
           git commit -m "chore(release): update module update.json for ${VERSION} [skip ci]"
           git push origin HEAD:main
