@@ -1,5 +1,5 @@
+- feat(ci): enhance workflows with upstream sync and commit checks (oosl)
+- chore(release): update module update.json for 26.03.7f7eae42 [skip ci] (github-actions[bot])
 - refactor(ci): update auto-preview release workflow to remove module directory references for update.json and changelog.md (oosl)
 - chore(release): update module update.json for 26.03.3c9c668b [skip ci] (github-actions[bot])
 - chore(ci): enhance auto-preview release workflow with update.json generation (oosl)
-- i18n: Translations update from Hosted Weblate (#536) (Weblate (bot))
-- refactor: refactor ViewModel state management and UI performance across settings pages (wxxsfxyzm)
