@@ -3,7 +3,6 @@ name: Automatic Alpha Pre-Release (Latest Only)
 on:
   push:
     branches: [ "main" ]
-    # Only trigger on specific path changes
     paths:
       - 'app/**'
       - 'build.gradle.kts'
@@ -11,11 +10,45 @@ on:
       - 'gradle.properties'
       - 'gradle/**'
       - '.github/workflows/auto-preview-release.yml'
+  schedule:
+    - cron: '0 5 * * *'
+  workflow_dispatch:
 
 jobs:
+  check_new_commits:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    outputs:
+      should_build: ${{ steps.check.outputs.should_build }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Check for new commits since last release
+        id: check
+        run: |
+          LATEST_TAG=$(git tag --list --sort=-creatordate | grep -E '^[0-9]+\.[0-9]+\.[a-f0-9]{7,}$' | head -n 1)
+          if [ -z "$LATEST_TAG" ]; then
+            echo "No previous preview tag found, will build."
+            echo "should_build=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          NEW_COMMITS=$(git rev-list --count "${LATEST_TAG}..HEAD")
+          echo "Commits since ${LATEST_TAG}: ${NEW_COMMITS}"
+          if [ "$NEW_COMMITS" -gt 0 ]; then
+            echo "should_build=true" >> $GITHUB_OUTPUT
+          else
+            echo "should_build=false" >> $GITHUB_OUTPUT
+            echo "No new commits, skipping build."
+          fi
+
   build_and_prerelease:
-    # Skip preview release for version bumps or explicitly skipped commits
+    needs: [ check_new_commits ]
     if: |
+      always() &&
+      (needs.check_new_commits.result == 'skipped' || needs.check_new_commits.outputs.should_build == 'true') &&
       !contains(github.event.head_commit.message, 'chore: bump version') &&
       !contains(github.event.head_commit.message, 'chore(release)') &&
       !contains(github.event.head_commit.message, '[skip preview]')

@@ -1,0 +1,91 @@
+name: Sync Upstream
+
+on:
+  schedule:
+    - cron: '0 4 * * *'
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout fork
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Add upstream remote and fetch
+        run: |
+          git remote add upstream https://github.com/wxxsfxyzm/InstallerX-Revived.git
+          git fetch upstream main
+
+      - name: Check for upstream changes
+        id: check
+        run: |
+          DIFF_COUNT=$(git rev-list --count HEAD..upstream/main)
+          echo "diff_count=${DIFF_COUNT}" >> $GITHUB_OUTPUT
+          if [ "$DIFF_COUNT" -eq 0 ]; then
+            echo "Already up to date with upstream."
+          else
+            echo "Upstream has ${DIFF_COUNT} new commit(s)."
+          fi
+
+      - name: Try merge upstream
+        if: steps.check.outputs.diff_count != '0'
+        id: merge
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          if git merge upstream/main --no-edit -m "chore(release): sync upstream [skip preview]"; then
+            echo "merge_ok=true" >> $GITHUB_OUTPUT
+          else
+            echo "merge_ok=false" >> $GITHUB_OUTPUT
+            git merge --abort
+          fi
+
+      - name: Push merged changes
+        if: steps.check.outputs.diff_count != '0' && steps.merge.outputs.merge_ok == 'true'
+        run: git push origin main
+
+      - name: Create PR on conflict
+        if: steps.check.outputs.diff_count != '0' && steps.merge.outputs.merge_ok == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          EXISTING_PR=$(gh pr list --label "upstream-sync" --state open --json number --jq '.[0].number')
+          if [ -n "$EXISTING_PR" ]; then
+            echo "Open upstream-sync PR #${EXISTING_PR} already exists, skipping."
+            exit 0
+          fi
+
+          BRANCH_NAME="upstream-sync/$(date +%Y%m%d)"
+          git checkout -b "$BRANCH_NAME" upstream/main
+          git push origin "$BRANCH_NAME"
+
+          gh label create "upstream-sync" --description "Automated upstream sync" --color "1d76db" 2>/dev/null || true
+
+          gh pr create \
+            --base main \
+            --head "$BRANCH_NAME" \
+            --title "Upstream Sync - 需手动解决冲突" \
+            --label "upstream-sync" \
+            --body "$(cat <<'EOF'
+          ## 上游同步
+
+          自动合并上游 `wxxsfxyzm/InstallerX-Revived` 的 main 分支时发现冲突，需要手动解决。
+
+          **操作方式：**
+          1. 在本地 checkout 此分支
+          2. 解决冲突后 push
+          3. 合并此 PR
+
+          或直接在 GitHub 上解决冲突后合并。
+          EOF
+          )"
