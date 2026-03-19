@@ -2,7 +2,7 @@ name: Sync Upstream
 
 on:
   schedule:
-    - cron: '0 4 * * *'
+    - cron: '18 * * * *'
   workflow_dispatch:
 
 jobs:
@@ -43,7 +43,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          if git merge upstream/main --no-edit -m "chore(release): sync upstream [skip preview]"; then
+          UPSTREAM_SHA=$(git rev-parse --short upstream/main)
+          if git merge upstream/main --no-edit -m "chore: sync upstream (${UPSTREAM_SHA})"; then
             echo "merge_ok=true" >> $GITHUB_OUTPUT
           else
             echo "merge_ok=false" >> $GITHUB_OUTPUT
