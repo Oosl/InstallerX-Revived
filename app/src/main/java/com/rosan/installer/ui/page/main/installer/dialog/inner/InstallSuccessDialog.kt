@@ -6,12 +6,12 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rosan.installer.R
 import com.rosan.installer.domain.device.provider.DeviceCapabilityProvider
 import com.rosan.installer.domain.engine.model.AppEntity
@@ -33,20 +33,21 @@ import org.koin.compose.koinInject
 
 @Composable
 fun installSuccessDialog(
-    installer: InstallerSessionRepository,
+    session: InstallerSessionRepository,
     viewModel: InstallerViewModel
 ): DialogParams {
     val context = LocalContext.current
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val deviceCapabilityProvider: DeviceCapabilityProvider = koinInject()
-    val currentPackageName by viewModel.currentPackageName.collectAsState()
+    val currentPackageName = uiState.currentPackageName
     val coroutineScope = rememberCoroutineScope()
-    val settings = viewModel.viewSettings
+    val settings = uiState.viewSettings
 
     val openAppUseCase: OpenAppUseCase = koinInject()
     val openLSPosedUseCase: OpenLSPosedUseCase = koinInject()
 
-    val packageName = currentPackageName ?: installer.analysisResults.firstOrNull()?.packageName ?: ""
-    val currentPackage = installer.analysisResults.find { it.packageName == packageName }
+    val packageName = currentPackageName ?: session.analysisResults.firstOrNull()?.packageName ?: ""
+    val currentPackage = session.analysisResults.find { it.packageName == packageName }
 
     val selectedEntities = currentPackage?.appEntities
         ?.filter { it.selected }
@@ -57,7 +58,7 @@ fun installSuccessDialog(
     val isXposedModule = if (effectivePrimaryEntity is AppEntity.BaseEntity) effectivePrimaryEntity.isXposedModule else false
 
     val baseParams = installInfoDialog(
-        installer = installer,
+        session = session,
         viewModel = viewModel,
         onTitleExtraClick = {
             if (packageName.isNotEmpty()) {
@@ -82,10 +83,10 @@ fun installSuccessDialog(
             }
 
             buildList {
-                if (isXposedModule && installer.config.isPrivileged(deviceCapabilityProvider)) {
+                if (isXposedModule && session.config.isPrivileged(deviceCapabilityProvider)) {
                     add(DialogButton(stringResource(R.string.open_lsposed)) {
                         coroutineScope.launch(Dispatchers.IO) {
-                            val success = openLSPosedUseCase(installer.config)
+                            val success = openLSPosedUseCase(session.config)
                             if (success) {
                                 withContext(Dispatchers.Main) {
                                     viewModel.dispatch(InstallerViewAction.Close)
@@ -99,7 +100,7 @@ fun installSuccessDialog(
                     add(DialogButton(stringResource(R.string.open)) {
                         coroutineScope.launch(Dispatchers.IO) {
                             val result = openAppUseCase(
-                                config = installer.config,
+                                config = session.config,
                                 launchIntent = launchIntent
                             )
 
@@ -114,7 +115,7 @@ fun installSuccessDialog(
                                     withContext(Dispatchers.Main) {
                                         context.startActivity(launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
 
-                                        if (installer.config.authorizer == Authorizer.Dhizuku) {
+                                        if (session.config.authorizer == Authorizer.Dhizuku) {
                                             delay(settings.autoCloseCountDown * 1000L)
                                         } else {
                                             delay(PRIVILEGED_START_TIMEOUT_MS)

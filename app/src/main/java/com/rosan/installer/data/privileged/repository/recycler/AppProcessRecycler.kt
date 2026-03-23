@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2023-2026 iamr0s, InstallerX Revived contributors
 package com.rosan.installer.data.privileged.repository.recycler
 
 import com.rosan.app_process.AppProcess
@@ -12,6 +14,7 @@ class AppProcessRecycler(private val shell: String) : Recycler<AppProcess>() {
 
     private class CustomizeAppProcess(private val shell: String) : AppProcess.Terminal() {
         override fun newTerminal(): MutableList<String> {
+            // Split the shell command and its arguments properly to build the command list
             return shell.trim().split("\\s+".toRegex()).toMutableList()
         }
     }
@@ -19,9 +22,18 @@ class AppProcessRecycler(private val shell: String) : Recycler<AppProcess>() {
     override fun onMake(): AppProcess {
         return CustomizeAppProcess(shell).apply {
             if (init()) return@apply
+
             val command = shell.trim().split("\\s+".toRegex()).firstOrNull()
-            if (command == SHELL_ROOT) throw RootNotWorkException("Cannot access su command")
-            else throw AppProcessNotWorkException("Cannot access command $command")
+            val fullCommand = shell.trim()
+
+            // Strictly check if the user intended to use standard root.
+            // Avoid throwing RootNotWorkException if arguments like "su 2000" were passed.
+            if (command == SHELL_ROOT && fullCommand == SHELL_ROOT) {
+                throw RootNotWorkException("Cannot access su command")
+            } else {
+                // Throw the exact full command that failed initialization for accurate debugging
+                throw AppProcessNotWorkException("AppProcess init failed for shell: $fullCommand")
+            }
         }
     }
 }

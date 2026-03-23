@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2025-2026 InstallerX Revived contributors
 package com.rosan.installer.ui.page.main.installer
 
 data class InstallerViewSettings(
@@ -13,5 +15,7 @@ data class InstallerViewSettings(
     val showOPPOSpecial: Boolean = false,
     val autoSilentInstall: Boolean = false,
     val enableModuleInstall: Boolean = false,
-    val useDynColorFollowPkgIcon: Boolean = false
+    val useDynColorFollowPkgIcon: Boolean = false,
+    // Lab
+    val labTapIconToShare: Boolean = false
 )

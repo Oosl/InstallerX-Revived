@@ -1,8 +1,7 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2023-2026 iamr0s, InstallerX Revived contributors
 package com.rosan.installer.ui.page.main.settings.config.all
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
@@ -16,8 +15,12 @@ import com.rosan.installer.ui.page.miuix.settings.MiuixSettingsScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 
@@ -26,14 +29,22 @@ class AllViewModel(
     private val repo: ConfigRepo,
     private val appSettingsRepo: AppSettingsRepo
 ) : ViewModel(), KoinComponent {
-    var state by mutableStateOf(AllViewState())
-        private set
+
+    private val _uiState = MutableStateFlow(AllViewState())
+    val uiState: StateFlow<AllViewState> = _uiState.asStateFlow()
 
     private val _eventFlow = MutableSharedFlow<AllViewEvent>()
     val eventFlow = _eventFlow.asSharedFlow()
 
+    private var loadDataJob: Job? = null
+
     init {
-        loadData()
+        // Fetch the initial "user read tips" state before starting the continuous data flow
+        viewModelScope.launch {
+            val userReadScopeTips = appSettingsRepo.getBoolean(BooleanSetting.UserReadScopeTips, default = false).first()
+            _uiState.update { it.copy(userReadScopeTips = userReadScopeTips) }
+            loadData()
+        }
     }
 
     fun dispatch(action: AllViewAction) {
@@ -49,36 +60,47 @@ class AllViewModel(
         }
     }
 
-    private var loadDataJob: Job? = null
-
     private fun loadData() {
         loadDataJob?.cancel()
-        state = state.copy(
-            data = state.data.copy(
-                progress = AllViewState.Data.Progress.Loading
-            )
-        )
-        loadDataJob = viewModelScope.launch(Dispatchers.IO) {
-            val initialState = AllViewState(
-                userReadScopeTips = appSettingsRepo.getBoolean(BooleanSetting.UserReadScopeTips, default = false).first(),
-            )
-            repo.flowAll(state.data.configOrder).collect {
-                state = state.copy(
-                    userReadScopeTips = initialState.userReadScopeTips,
-                    data = state.data.copy(
-                        configs = it,
-                        progress = AllViewState.Data.Progress.Loaded
-                    )
+        // Set loading state
+        _uiState.update { currentState ->
+            currentState.copy(
+                data = currentState.data.copy(
+                    progress = AllViewState.Data.Progress.Loading
                 )
+            )
+        }
+
+        // Start listening to the config DB
+        loadDataJob = viewModelScope.launch(Dispatchers.IO) {
+            // Collect the flow from DB based on the current order
+            repo.flowAll(_uiState.value.data.configOrder).collect { newConfigs ->
+                _uiState.update { currentState ->
+                    currentState.copy(
+                        data = currentState.data.copy(
+                            configs = newConfigs,
+                            progress = AllViewState.Data.Progress.Loaded
+                        )
+                    )
+                }
             }
         }
     }
 
     private fun userReadTips() {
-        state = state.copy(userReadScopeTips = true)
+        _uiState.update { it.copy(userReadScopeTips = true) }
         viewModelScope.launch {
             appSettingsRepo.putBoolean(BooleanSetting.UserReadScopeTips, true)
         }
+    }
+
+    private fun changeDataConfigOrder(configOrder: ConfigOrder) {
+        // Update the order state
+        _uiState.update { currentState ->
+            currentState.copy(data = currentState.data.copy(configOrder = configOrder))
+        }
+        // Restart the data collection with the new order
+        loadData()
     }
 
     private fun editDataConfig(configModel: ConfigModel) {
@@ -99,10 +121,6 @@ class AllViewModel(
                 ).route
             )
         }
-    }
-
-    private fun changeDataConfigOrder(configOrder: ConfigOrder) {
-        state = state.copy(data = state.data.copy(configOrder = configOrder))
     }
 
     private fun deleteDataConfig(configModel: ConfigModel) {

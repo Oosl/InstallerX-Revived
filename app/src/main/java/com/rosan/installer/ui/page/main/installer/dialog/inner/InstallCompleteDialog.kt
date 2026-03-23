@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2025-2026 InstallerX Revived contributors
 package com.rosan.installer.ui.page.main.installer.dialog.inner
 
 import androidx.compose.foundation.layout.Arrangement
@@ -28,7 +30,6 @@ import androidx.compose.ui.unit.dp
 import com.rosan.installer.R
 import com.rosan.installer.domain.engine.model.AppEntity
 import com.rosan.installer.domain.session.model.InstallResult
-import com.rosan.installer.domain.session.repository.InstallerSessionRepository
 import com.rosan.installer.ui.page.main.installer.InstallerViewAction
 import com.rosan.installer.ui.page.main.installer.InstallerViewModel
 import com.rosan.installer.ui.page.main.installer.dialog.DialogInnerParams
@@ -37,7 +38,6 @@ import com.rosan.installer.ui.page.main.installer.dialog.DialogParamsType
 
 @Composable
 fun installCompletedDialog(
-    installer: InstallerSessionRepository,
     viewModel: InstallerViewModel,
     results: List<InstallResult>
 ): DialogParams {
@@ -111,7 +111,7 @@ private fun ResultItemCard(
             if (result.success) {
                 SuccessCard()
             } else if (result.error != null) {
-                // 为了复用 errorTextBlock，我们需要在安装失败时将错误信息临时存到 repo 中
+                // 为了复用 errorTextBlock，我们需要在安装失败时将错误信息临时存到 session 中
                 // ViewModel 的 handleMultiInstallProgress 已经这样做了
                 FailureCard(result.error)
             }

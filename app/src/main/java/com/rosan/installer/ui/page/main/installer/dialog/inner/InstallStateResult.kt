@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2025-2026 InstallerX Revived contributors
-
 package com.rosan.installer.ui.page.main.installer.dialog.inner
 
 import androidx.compose.ui.graphics.Color
-import com.rosan.installer.ui.page.main.widget.chip.WarningModel
+import com.rosan.installer.ui.page.main.widget.chip.NoticeModel
 
 // Encapsulate UI resources to keep the function signature clean
-data class InstallWarningResources(
+data class InstallNoticeResources(
     // String
     val tagDowngrade: String,
     val textDowngrade: String,
@@ -22,6 +21,10 @@ data class InstallWarningResources(
     val textArchMismatchFormat: String, // Expecting a string with 2 placeholders
     val tagIdentical: String,
     val textIdentical: String,
+    // Xposed specific strings
+    val tagXposed: String,
+    val labelXposedMinApi: String,
+    val labelXposedTargetApi: String,
 
     // Color
     val errorColor: Color,
@@ -31,6 +34,6 @@ data class InstallWarningResources(
 
 // Return type containing the list and the button ID
 data class InstallStateResult(
-    val warnings: List<WarningModel>,
+    val notices: List<NoticeModel>,
     val buttonTextId: Int
 )

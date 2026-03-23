@@ -31,15 +31,15 @@ class InstallerSessionManager(
     fun getOrCreate(id: String?): InstallerSessionRepository {
         id?.let { existingId ->
             sessions[existingId]?.let {
-                Timber.Forest.d("InstallerSessionManager: Returning existing session for id: $existingId")
+                Timber.d("InstallerSessionManager: Returning existing session for id: $existingId")
                 return it
             }
         }
 
         val newId = id ?: UUID.randomUUID().toString()
-        Timber.Forest.d("InstallerSessionManager: Creating new session with id: $newId")
+        Timber.d("InstallerSessionManager: Creating new session with id: $newId")
 
-        // Define cleanup action: remove from map when repo closes
+        // Define cleanup action: remove from map when session closes
         val onCloseAction: () -> Unit = {
             remove(newId)
         }
@@ -62,11 +62,11 @@ class InstallerSessionManager(
 
     /**
      * Removes a session from the manager.
-     * This should usually be called by the repo's onClose callback.
+     * This should usually be called by the session's onClose callback.
      */
     private fun remove(id: String) {
         if (sessions.remove(id) != null) {
-            Timber.Forest.d("InstallerSessionManager: Session $id removed from memory.")
+            Timber.d("InstallerSessionManager: Session $id removed from memory.")
         }
     }
 
@@ -76,7 +76,7 @@ class InstallerSessionManager(
     private fun startService(id: String) {
         val intent = Intent(context, InstallerService::class.java).apply {
             action = InstallerService.Action.Ready.value
-            putExtra(InstallerService.Companion.EXTRA_ID, id)
+            putExtra(InstallerService.EXTRA_ID, id)
         }
         // Using startForegroundService ensures the service promotes itself quickly
         ContextCompat.startForegroundService(context, intent)

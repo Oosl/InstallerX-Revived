@@ -355,6 +355,9 @@
     <string name="installer_prepare_type_unknown_confirm">Are you sure you want to install?</string>
     <string name="installer_prepare_signature_mismatch">Signature mismatch! Continuing installation may cause data loss or security risks.</string>
     <string name="installer_prepare_signature_unknown">Unable to verify app signature, please proceed with caution.</string>
+    <string name="tag_xposed" translatable="false">Xposed</string>
+    <string name="installer_xposed_min_api">Min API: </string>
+    <string name="installer_xposed_target_api">Target API: </string>
     <string name="installer_splits_invalid_tip">Cannot add the selected split package to an uninstalled app</string>
     <string name="installer_splits_only_tip">Only split APKs are selected. They will be added to the existing application</string>
     <string name="installer_install_app">Install App</string>
@@ -542,6 +545,8 @@
     <string name="exception_http_not_allowed">Cleartext HTTP not allowed</string>
     <string name="exception_http_restricted_for_localhost">Cleartext HTTP restricted to localhost</string>
     <string name="exception_zip_exception">Failed to open zip as file</string>
+    <string name="error_dialog_install_menu_not_available">Extended menu is not available</string>
+    <string name="error_no_package_to_uninstall">No package available to uninstall</string>
     <string name="old_version_prefix">Current</string>
     <string name="old_version_archived">Archived</string>
     <string name="old_version_uninstalled">Uninstalled</string>
@@ -725,4 +730,6 @@
     <string name="lab_set_install_requester_desc">Fill OriginatingUid field with caller package to match system behavior</string>
     <string name="lab_mi_island">Mi Super Island</string>
     <string name="lab_mi_island_desc">Global notification style. System signature verification can only be bypassed when the custom app-authenticator is set to Shizuku. Root users can enable this directly after manually disabling signature restrictions</string>
+    <string name="lab_tap_icon_to_share">Tap icon to share apk</string>
+    <string name="lab_tap_icon_to_share_desc">Tap icon on the prepare page to share apk</string>
 </resources>

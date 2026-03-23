@@ -13,20 +13,21 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
-import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
-import androidx.compose.foundation.lazy.staggeredgrid.items
-import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.rosan.installer.R
 import com.rosan.installer.domain.settings.model.ConfigModel
@@ -73,23 +74,25 @@ fun MiuixAllPage(
     outerPadding: PaddingValues,
     snackbarHostState: SnackbarHostState
 ) {
-    val context = LocalContext.current
     LaunchedEffect(Unit) {
         viewModel.navController = navController
     }
 
-    val listState = rememberLazyStaggeredGridState()
-
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val listState = rememberLazyGridState()
     val scrollBehavior = MiuixScrollBehavior()
     val hazeStyle = rememberMiuixHazeStyle()
+
+    val deleteSuccessString = stringResource(id = R.string.delete_success)
+    val restoreString = stringResource(id = R.string.restore)
 
     LaunchedEffect(Unit) {
         viewModel.eventFlow.collectLatest { event ->
             when (event) {
                 is AllViewEvent.DeletedConfig -> {
                     val result = snackbarHostState.showSnackbar(
-                        message = context.getString(R.string.delete_success),
-                        actionLabel = context.getString(R.string.restore),
+                        message = deleteSuccessString,
+                        actionLabel = restoreString,
                         withDismissAction = true
                     )
                     if (result == SnackbarResult.ActionPerformed) {
@@ -113,8 +116,8 @@ fun MiuixAllPage(
             )
         }
     ) { innerPadding ->
-        when (viewModel.state.data.progress) {
-            is AllViewState.Data.Progress.Loading if viewModel.state.data.configs.isEmpty() -> {
+        when (uiState.data.progress) {
+            is AllViewState.Data.Progress.Loading if uiState.data.configs.isEmpty() -> {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -134,40 +137,40 @@ fun MiuixAllPage(
                 }
             }
 
-            is AllViewState.Data.Progress.Loaded if viewModel.state.data.configs.isEmpty() -> {
+            is AllViewState.Data.Progress.Loaded if uiState.data.configs.isEmpty() -> {
                 // TODO Add error handling
                 // Since we don't allow removing default profile,
                 // There is no need to handle an empty state.
             }
 
             else -> {
-                val configs = viewModel.state.data.configs
+                val configs = uiState.data.configs
                 val minId = configs.minByOrNull { it.id }?.id
 
-                LazyVerticalStaggeredGrid(
+                LazyVerticalGrid(
                     modifier = Modifier
                         .fillMaxSize()
                         .then(hazeState?.let { Modifier.hazeSource(it) } ?: Modifier)
                         .overScrollVertical()
                         .nestedScroll(scrollBehavior.nestedScrollConnection),
-                    columns = StaggeredGridCells.Adaptive(350.dp),
+                    columns = GridCells.Adaptive(350.dp),
                     contentPadding = PaddingValues(
                         start = 16.dp,
                         end = 16.dp,
                         top = innerPadding.calculateTopPadding() + 16.dp,
                         bottom = outerPadding.calculateBottomPadding() + 16.dp
                     ),
-                    verticalItemSpacing = 16.dp,
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     overscrollEffect = null,
                     state = listState,
                 ) {
 
-                    if (!viewModel.state.userReadScopeTips)
+                    if (!uiState.userReadScopeTips)
                         item {
                             MiuixScopeTipCard(viewModel = viewModel)
                         }
-                    else item { Spacer(modifier = Modifier.size(6.dp)) }
+                    /*else item { Spacer(modifier = Modifier.size(6.dp)) }*/
 
                     items(configs) {
                         DataItemWidget(viewModel, it, it.id == minId)

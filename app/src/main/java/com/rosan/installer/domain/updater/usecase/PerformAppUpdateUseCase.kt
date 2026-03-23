@@ -6,6 +6,8 @@ import com.rosan.installer.domain.settings.model.ConfigModel
 import com.rosan.installer.domain.updater.model.UpdateInfo
 import com.rosan.installer.domain.updater.provider.InAppInstallProvider
 import com.rosan.installer.domain.updater.repository.UpdateRepository
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.IOException
 
 class PerformAppUpdateUseCase(
@@ -17,7 +19,7 @@ class PerformAppUpdateUseCase(
      * @throws IllegalStateException if the update info is invalid.
      * @throws IOException if the download stream fails to open.
      */
-    suspend operator fun invoke(updateInfo: UpdateInfo?, config: ConfigModel) {
+    suspend operator fun invoke(updateInfo: UpdateInfo?, config: ConfigModel) = withContext(Dispatchers.IO) {
         if (updateInfo == null || !updateInfo.hasUpdate || updateInfo.downloadUrl.isEmpty()) {
             throw IllegalStateException("No valid update info found.")
         }

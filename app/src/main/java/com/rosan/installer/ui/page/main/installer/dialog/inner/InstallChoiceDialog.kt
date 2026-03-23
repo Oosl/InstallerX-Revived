@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2023-2026 iamr0s, InstallerX Revived contributors
 package com.rosan.installer.ui.page.main.installer.dialog.inner
 
 import androidx.compose.animation.AnimatedVisibility
@@ -68,16 +70,16 @@ import com.rosan.installer.ui.util.getSupportTitle
 
 @Composable
 fun installChoiceDialog(
-    installer: InstallerSessionRepository, viewModel: InstallerViewModel
+    session: InstallerSessionRepository, viewModel: InstallerViewModel
 ): DialogParams {
-    val analysisResults = installer.analysisResults
+    val analysisResults = session.analysisResults
     val sourceType = analysisResults.firstOrNull()?.appEntities?.firstOrNull()?.app?.sourceType ?: DataType.NONE
     val currentSessionMode = analysisResults.firstOrNull()?.sessionMode ?: SessionMode.Single
     val isMultiApk = currentSessionMode == SessionMode.Batch
     val isModuleApk = sourceType == DataType.MIXED_MODULE_APK
     val isMixedModuleZip = sourceType == DataType.MIXED_MODULE_ZIP
     var selectionMode by remember(sourceType) { mutableStateOf(MmzSelectionMode.INITIAL_CHOICE) }
-    val apkChooseAll = installer.config.apkChooseAll
+    val apkChooseAll = session.config.apkChooseAll
 
     val primaryButtonText = if (isMultiApk) R.string.install else R.string.next
     val primaryButtonAction = if (isMultiApk) {

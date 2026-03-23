@@ -28,20 +28,36 @@ val viewModelModule = module {
     viewModelOf(::LabSettingsViewModel)
     viewModelOf(::AboutViewModel)
 
-    viewModel { (installer: InstallerSessionRepository) ->
+    viewModel { (session: InstallerSessionRepository) ->
         InstallerViewModel(
-            repo = installer,
-            appSettingsRepo = get(),
-            appIconRepo = get(),
-            systemInfoProvider = get()
+            session = session,
+            get(),
+            get(),
+            get(),
+            get()
         )
     }
 
     viewModel { (id: Long) ->
-        ApplyViewModel(get(), get(), get(), get(), get(), id)
+        ApplyViewModel(
+            id = id,
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get()
+        )
     }
 
     viewModel { (id: Long?) ->
-        EditViewModel(get(), get(), get(), get(), id)
+        EditViewModel(
+            id = id,
+            get(),
+            get(),
+            get(),
+            get()
+        )
     }
 }

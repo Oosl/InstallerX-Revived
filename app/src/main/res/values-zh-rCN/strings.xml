@@ -345,6 +345,8 @@
     <string name="installer_prepare_type_unknown_confirm">你确定要安装吗？</string>
     <string name="installer_prepare_signature_mismatch">签名不一致！继续安装可能导致数据丢失或带来安全风险。</string>
     <string name="installer_prepare_signature_unknown">无法验证应用签名，请谨慎操作。</string>
+    <string name="installer_xposed_min_api">最低 API：</string>
+    <string name="installer_xposed_target_api">目标 API：</string>
     <string name="installer_splits_invalid_tip">无法将所选分包添加至未安装应用</string>
     <string name="installer_splits_only_tip">仅选择了分包，将把这些分包添加到现有应用中</string>
     <string name="installer_install_app">安装应用</string>
@@ -523,6 +525,8 @@
     <string name="exception_http_not_allowed">当前配置不允许明文 HTTP</string>
     <string name="exception_http_restricted_for_localhost">仅允许在本地网络使用明文 HTTP</string>
     <string name="exception_zip_exception">无法打开 zip 文件</string>
+    <string name="error_dialog_install_menu_not_available">当前无法打开扩展菜单</string>
+    <string name="error_no_package_to_uninstall">没有可卸载的应用</string>
     <string name="old_version_prefix">当前</string>
     <string name="old_version_archived">已归档</string>
     <string name="old_version_uninstalled">已卸载</string>
@@ -709,4 +713,6 @@
     <string name="lab_set_install_requester_desc">向安装会话填写 OriginatingUid 字段来记录发起安装的应用，匹配系统包管理器行为</string>
     <string name="lab_mi_island">小米超级岛</string>
     <string name="lab_mi_island_desc">覆盖全局通知样式。仅当应用授权器设置为 Shizuku 时可绕过系统签名限制；Root 用户在手动关闭系统签名验证后可直接开启</string>
+    <string name="lab_tap_icon_to_share">点击图标分享安装包</string>
+    <string name="lab_tap_icon_to_share_desc">在安装准备界面点击应用图标即可分享安装包</string>
 </resources>

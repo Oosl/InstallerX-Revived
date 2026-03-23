@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2025-2026 InstallerX Revived contributors
 package com.rosan.installer.ui.page.miuix.installer.sheetcontent
 
 import android.os.Build
@@ -20,7 +22,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -34,6 +35,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rosan.installer.R
 import com.rosan.installer.core.env.DeviceConfig
 import com.rosan.installer.domain.device.model.Manufacturer
@@ -41,20 +43,22 @@ import com.rosan.installer.domain.engine.model.AppEntity
 import com.rosan.installer.domain.engine.model.DataType
 import com.rosan.installer.domain.engine.model.InstalledAppInfo
 import com.rosan.installer.domain.engine.model.sortedBest
+import com.rosan.installer.domain.engine.usecase.AnalyzeInstallStateUseCase
 import com.rosan.installer.domain.session.repository.InstallerSessionRepository
 import com.rosan.installer.domain.settings.model.Authorizer
 import com.rosan.installer.ui.icons.AppIcons
 import com.rosan.installer.ui.page.main.installer.InstallerViewAction
 import com.rosan.installer.ui.page.main.installer.InstallerViewModel
-import com.rosan.installer.ui.page.main.installer.dialog.inner.InstallWarningResources
+import com.rosan.installer.ui.page.main.installer.dialog.inner.InstallNoticeResources
+import com.rosan.installer.ui.page.main.installer.mapper.InstallStateUiMapper
+import com.rosan.installer.ui.page.miuix.widgets.MiuixInfoChipGroup
 import com.rosan.installer.ui.page.miuix.widgets.MiuixInstallerTipCard
 import com.rosan.installer.ui.page.miuix.widgets.MiuixNavigationItemWidget
-import com.rosan.installer.ui.page.miuix.widgets.MiuixWarningChipGroup
 import com.rosan.installer.ui.theme.InstallerTheme
 import com.rosan.installer.ui.theme.miuixSheetCardColorDark
-import com.rosan.installer.ui.util.InstallLogicUtils
 import com.rosan.installer.ui.util.formatSize
 import com.rosan.installer.ui.util.isGestureNavigation
+import org.koin.compose.koinInject
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CardColors
@@ -67,16 +71,17 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme.isDynamicColor
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun InstallPrepareContent(
-    installer: InstallerSessionRepository,
+    session: InstallerSessionRepository,
     viewModel: InstallerViewModel,
     appInfo: AppInfoState,
     onCancel: () -> Unit,
     onInstall: () -> Unit
 ) {
     val isDarkMode = InstallerTheme.isDark
-    val currentPackageName by viewModel.currentPackageName.collectAsState()
-    val currentPackage = installer.analysisResults.find { it.packageName == currentPackageName }
-    val settings = viewModel.viewSettings
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val currentPackageName = uiState.currentPackageName
+    val currentPackage = session.analysisResults.find { it.packageName == currentPackageName }
+    val settings = uiState.viewSettings
 
     var isExpanded by remember { mutableStateOf(false) }
 
@@ -135,9 +140,12 @@ fun InstallPrepareContent(
     val textArchMismatch = stringResource(R.string.installer_prepare_arch_mismatch_notice)
     val tagIdentical = stringResource(R.string.tag_identical)
     val textIdentical = stringResource(R.string.installer_prepare_identical_notice)
+    val tagXposed = stringResource(R.string.tag_xposed)
+    val labelXposedMinApi = stringResource(R.string.installer_xposed_min_api)
+    val labelXposedTargetApi = stringResource(R.string.installer_xposed_target_api)
 
     val installResources = remember(errorColor, primaryColor) {
-        InstallWarningResources(
+        InstallNoticeResources(
             tagDowngrade = tagDowngrade,
             textDowngrade = downgradeWarning,
             tagSignature = tagSignature,
@@ -151,40 +159,67 @@ fun InstallPrepareContent(
             textArchMismatchFormat = textArchMismatch,
             tagIdentical = tagIdentical,
             textIdentical = textIdentical,
+            tagXposed = tagXposed,
+            labelXposedMinApi = labelXposedMinApi,
+            labelXposedTargetApi = labelXposedTargetApi,
             errorColor = errorColor,
             tertiaryColor = primaryColor,
             primaryColor = primaryColor
         )
     }
 
-    val (warningModels, buttonTextId) = remember(
+    // Inject the pure domain use case
+    val analyzeInstallStateUseCase = koinInject<AnalyzeInstallStateUseCase>()
+
+    // Instantiate the UI mapper with the required Compose resources
+    val installStateUiMapper = remember(installResources) {
+        InstallStateUiMapper(installResources)
+    }
+
+    // Execute domain logic and map to UI state within the remember block
+    val (notices, buttonTextId) = remember(
         currentPackage,
         entityToInstall,
         isSplitUpdateMode,
         containerType,
-        installResources
+        installStateUiMapper
     ) {
-        InstallLogicUtils.analyzeInstallState(
+        // 1. Get pure domain state
+        val domainState = analyzeInstallStateUseCase(
             currentPackage = currentPackage,
             entityToInstall = entityToInstall,
             primaryEntity = primaryEntity,
             isSplitUpdateMode = isSplitUpdateMode,
             containerType = containerType,
             systemArch = DeviceConfig.currentArchitecture,
-            systemSdkInt = Build.VERSION.SDK_INT,
-            resources = installResources
+            systemSdkInt = Build.VERSION.SDK_INT
         )
+
+        // 2. Map to UI state
+        val uiState = installStateUiMapper.mapToUiState(domainState)
+
+        // 3. Destructure the data class components
+        Pair(uiState.notices, uiState.buttonTextId)
     }
 
     LazyColumn(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        item { AppInfoSlot(appInfo = appInfo) }
+        item {
+            AppInfoSlot(
+                appInfo = appInfo,
+                onIconClick = {
+                    // Trigger the share action using the already resolved primaryEntity
+                    if (settings.labTapIconToShare)
+                        viewModel.dispatch(InstallerViewAction.ShareApp(primaryEntity))
+                }
+            )
+        }
         item { Spacer(modifier = Modifier.height(4.dp)) }
         item {
-            MiuixWarningChipGroup(
+            MiuixInfoChipGroup(
                 modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp),
-                warnings = warningModels
+                notices = notices
             )
         }
         item {
@@ -221,10 +256,10 @@ fun InstallPrepareContent(
                             SDKComparison(
                                 entityToInstall = primaryEntity,
                                 preInstallAppInfo = currentPackage.installedAppInfo,
-                                installer = installer
+                                installer = session
                             )
 
-                            AnimatedVisibility(visible = installer.config.displaySize && primaryEntity.size > 0) {
+                            AnimatedVisibility(visible = session.config.displaySize && primaryEntity.size > 0) {
                                 val oldSize = currentPackage.installedAppInfo?.packageSize ?: 0L
                                 val oldSizeStr = if (oldSize > 0 && !isSplitUpdateMode) oldSize.formatSize() else null
                                 val newSizeStr = totalSelectedSize.formatSize()
@@ -260,14 +295,14 @@ fun InstallPrepareContent(
                                 newValue = primaryEntity.versionCode.toString(),
                                 oldValue = null
                             )
-                            AnimatedVisibility(visible = installer.config.displaySdk) {
+                            AnimatedVisibility(visible = session.config.displaySdk) {
                                 AdaptiveInfoRow(
                                     labelResId = R.string.installer_module_author_label,
                                     newValue = primaryEntity.author,
                                     oldValue = null
                                 )
                             }
-                            AnimatedVisibility(visible = installer.config.displaySize) {
+                            AnimatedVisibility(visible = session.config.displaySize) {
                                 val newSizeStr = totalSelectedSize.formatSize()
                                 AdaptiveInfoRow(
                                     labelResId = R.string.installer_package_size_label,
@@ -289,11 +324,11 @@ fun InstallPrepareContent(
                             SDKComparison(
                                 entityToInstall = primaryEntity,
                                 preInstallAppInfo = currentPackage.installedAppInfo,
-                                installer = installer
+                                installer = session
                             )
 
                             // Size
-                            AnimatedVisibility(visible = installer.config.displaySize) {
+                            AnimatedVisibility(visible = session.config.displaySize) {
                                 val newSizeStr = totalSelectedSize.formatSize()
                                 AdaptiveInfoRow(
                                     labelResId = R.string.installer_package_size_label,
@@ -335,8 +370,8 @@ fun InstallPrepareContent(
                         )
 
                     // Install Options
-                    if (installer.config.authorizer != Authorizer.Dhizuku &&
-                        installer.config.authorizer != Authorizer.None
+                    if (session.config.authorizer != Authorizer.Dhizuku &&
+                        session.config.authorizer != Authorizer.None
                     )
                         MiuixNavigationItemWidget(
                             title = stringResource(R.string.config_label_install_options),
@@ -387,7 +422,7 @@ fun InstallPrepareContent(
             AnimatedVisibility(
                 visible = (primaryEntity is AppEntity.ModuleEntity) &&
                         primaryEntity.description.isNotBlank() &&
-                        installer.config.displaySdk,
+                        session.config.displaySdk,
                 enter = fadeIn() + expandVertically(),
                 exit = fadeOut() + shrinkVertically()
             ) {

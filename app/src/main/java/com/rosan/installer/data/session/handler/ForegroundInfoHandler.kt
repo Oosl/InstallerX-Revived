@@ -17,7 +17,7 @@ import com.rosan.installer.data.session.notification.LegacyNotificationBuilder
 import com.rosan.installer.data.session.notification.MiIslandNotificationBuilder
 import com.rosan.installer.data.session.notification.ModernNotificationBuilder
 import com.rosan.installer.data.session.notification.NotificationHelper
-import com.rosan.installer.domain.engine.repository.AppIconRepository
+import com.rosan.installer.domain.engine.usecase.GetAppIconUseCase
 import com.rosan.installer.domain.privileged.provider.AppOpsProvider
 import com.rosan.installer.domain.session.model.ProgressEntity
 import com.rosan.installer.domain.session.repository.InstallerSessionRepository
@@ -45,8 +45,8 @@ import org.koin.core.component.inject
 import timber.log.Timber
 import kotlin.reflect.KClass
 
-class ForegroundInfoHandler(scope: CoroutineScope, installer: InstallerSessionRepository) :
-    Handler(scope, installer), KoinComponent {
+class ForegroundInfoHandler(scope: CoroutineScope, session: InstallerSessionRepository) :
+    Handler(scope, session), KoinComponent {
 
     companion object {
         private const val MINIMUM_VISIBILITY_DURATION_MS = 400L
@@ -73,12 +73,12 @@ class ForegroundInfoHandler(scope: CoroutineScope, installer: InstallerSessionRe
     private var sessionStartTime: Long = 0L
     private val context by inject<Context>()
     private val appSettingsRepo by inject<AppSettingsRepo>()
-    private val appIconRepo by inject<AppIconRepository>()
     private val appOpsProvider by inject<AppOpsProvider>()
-    private val configUseCase by inject<GetResolvedConfigUseCase>()
+    private val getResolvedConfig by inject<GetResolvedConfigUseCase>()
+    private val getAppIcon by inject<GetAppIconUseCase>()
 
     private val notificationManager = NotificationManagerCompat.from(context)
-    private val notificationId = installer.id.hashCode() and Int.MAX_VALUE
+    private val notificationId = session.id.hashCode() and Int.MAX_VALUE
 
     // Throttling state
     private var lastNotificationUpdateTime = 0L
@@ -103,22 +103,22 @@ class ForegroundInfoHandler(scope: CoroutineScope, installer: InstallerSessionRe
     }
 
     // Initialize Delegated Builders
-    private val helper by lazy { NotificationHelper(context, installer, appIconRepo) }
-    private val miIslandBuilder by lazy { MiIslandNotificationBuilder(context, installer, helper) }
-    private val legacyBuilder by lazy { LegacyNotificationBuilder(context, installer, helper) }
+    private val helper by lazy { NotificationHelper(context, session, getAppIcon) }
+    private val miIslandBuilder by lazy { MiIslandNotificationBuilder(context, session, helper) }
+    private val legacyBuilder by lazy { LegacyNotificationBuilder(context, session, helper) }
     private val modernBuilder by lazy {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) ModernNotificationBuilder(context, installer, helper) else null
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) ModernNotificationBuilder(context, session, helper) else null
     }
 
     @SuppressLint("MissingPermission")
     override suspend fun onStart() {
-        Timber.d("[id=${installer.id}] onStart: Starting to combine and collect flows.")
+        Timber.d("[id=${session.id}] onStart: Starting to combine and collect flows.")
         createNotificationChannels()
         sessionStartTime = System.currentTimeMillis()
         isXiaomiNetworkBlocked = false
 
         // Initialize synchronously in the suspend function to avoid race conditions with onFinish
-        globalAuthorizer = configUseCase(null).authorizer
+        globalAuthorizer = getResolvedConfig(null).authorizer
 
         val settings = NotificationSettings(
             showDialog = appSettingsRepo.getBoolean(BooleanSetting.ShowDialogWhenPressingNotification, true).first(),
@@ -141,7 +141,7 @@ class ForegroundInfoHandler(scope: CoroutineScope, installer: InstallerSessionRe
         val requiresAnimation = isModernEligible && settings.showLiveActivity
 
         job = scope.launch {
-            combine(installer.progress, installer.background, ticker) { progress, background, tick ->
+            combine(session.progress, session.background, ticker) { progress, background, tick ->
                 NotificationState(progress, background, tick)
             }.distinctUntilChanged { old, new ->
                 if (old.progress != new.progress || old.background != new.background) return@distinctUntilChanged false
@@ -169,11 +169,11 @@ class ForegroundInfoHandler(scope: CoroutineScope, installer: InstallerSessionRe
 
                 if (progress is ProgressEntity.InstallAnalysedUnsupported) {
                     scope.launch(Dispatchers.Main) { Toast.makeText(context, progress.reason, Toast.LENGTH_LONG).show() }
-                    installer.close()
+                    session.close()
                     return@collect
                 }
 
-                if (progress is ProgressEntity.InstallAnalysedSuccess && installer.config.installMode == InstallMode.AutoNotification) return@collect
+                if (progress is ProgressEntity.InstallAnalysedSuccess && session.config.installMode == InstallMode.AutoNotification) return@collect
 
                 if (background) {
                     val isModernEligible = Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA
@@ -212,7 +212,7 @@ class ForegroundInfoHandler(scope: CoroutineScope, installer: InstallerSessionRe
                             if (settings.autoCloseNotification > 0) {
                                 delay(settings.autoCloseNotification * 1000L)
                                 notificationManager.cancel(notificationId)
-                                installer.close()
+                                session.close()
                             }
                         }
                     }
@@ -371,9 +371,6 @@ class ForegroundInfoHandler(scope: CoroutineScope, installer: InstallerSessionRe
 
     @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
     override suspend fun onFinish() {
-        installer.analysisResults.flatMap { it.appEntities }.filter { it.selected }.map { it.app.packageName }.distinct()
-            .forEach { appIconRepo.clearCacheForPackage(it) }
-
         setNotificationImmediate(null)
         job?.cancel()
 

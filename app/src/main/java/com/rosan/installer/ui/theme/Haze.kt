@@ -35,22 +35,24 @@ fun HazeState?.getMiuixAppBarColor() = this?.let { Color.Transparent } ?: MiuixT
 
 /**
  * Apply a standard glassmorphism blur effect using Haze.
- * @param state The HazeState to coordinate with the source.
- * @param style The custom HazeStyle.
+ * @param hazeState The HazeState to coordinate with the source.
+ * @param hazeStyle The custom HazeStyle.
  * @param enabled Whether the effect is enabled.
  */
 @OptIn(ExperimentalHazeApi::class)
 fun Modifier.installerHazeEffect(
-    state: HazeState?,
-    style: HazeStyle,
+    hazeState: HazeState?,
+    hazeStyle: HazeStyle,
     enabled: Boolean = true
-): Modifier = state?.let {
-    this.hazeEffect(it) {
-        this.style = style
-        this.blurEnabled = enabled
-        this.blurRadius = 20.dp
-        this.inputScale = HazeInputScale.Fixed(0.25f)
-        this.noiseFactor = 0f
-        this.forceInvalidateOnPreDraw = false
+): Modifier = hazeState?.let {
+    this.hazeEffect(
+        state = it,
+        style = hazeStyle
+    ) {
+        blurEnabled = enabled
+        blurRadius = 20.dp
+        inputScale = HazeInputScale.Fixed(0.33f)
+        noiseFactor = 0f
+        forceInvalidateOnPreDraw = false
     }
 } ?: this

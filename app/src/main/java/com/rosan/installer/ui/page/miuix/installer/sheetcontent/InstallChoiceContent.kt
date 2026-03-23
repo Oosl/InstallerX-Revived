@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2025-2026 InstallerX Revived contributors
 package com.rosan.installer.ui.page.miuix.installer.sheetcontent
 
 import androidx.compose.animation.AnimatedVisibility
@@ -62,12 +64,12 @@ import top.yukonga.miuix.kmp.utils.scrollEndHaptic
 
 @Composable
 fun InstallChoiceContent(
-    installer: InstallerSessionRepository,
+    session: InstallerSessionRepository,
     viewModel: InstallerViewModel,
     onCancel: () -> Unit
 ) {
     val isDarkMode = InstallerTheme.isDark
-    val analysisResults = installer.analysisResults
+    val analysisResults = session.analysisResults
     val sourceType = analysisResults.firstOrNull()?.appEntities?.firstOrNull()?.app?.sourceType ?: DataType.NONE
     val currentSessionMode = analysisResults.firstOrNull()?.sessionMode ?: SessionMode.Single
     val isMultiApk = currentSessionMode == SessionMode.Batch
@@ -128,7 +130,7 @@ fun InstallChoiceContent(
                     analysisResults = analysisResults,
                     viewModel = viewModel,
                     isDarkMode = isDarkMode,
-                    apkChooseAll = installer.config.apkChooseAll,
+                    apkChooseAll = session.config.apkChooseAll,
                     onSelectModule = { viewModel.dispatch(InstallerViewAction.InstallPrepare) }
                 ) { selectionMode = MmzSelectionMode.APK_CHOICE }
             }

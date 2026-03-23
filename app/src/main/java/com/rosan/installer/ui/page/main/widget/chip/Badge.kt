@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2025-2026 InstallerX Revived contributors
-
 package com.rosan.installer.ui.page.main.widget.chip
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
@@ -27,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import com.rosan.installer.R
@@ -42,74 +42,78 @@ fun CapsuleTag(
 ) {
     Box(
         modifier = modifier
+            .defaultMinSize(minHeight = 24.dp)
             .clip(CircleShape)
             .background(backgroundColor)
-            .padding(horizontal = 6.dp, vertical = 2.dp),
+            .padding(horizontal = 8.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = text,
             color = textColor,
-            style = style
+            style = style.copy(
+                platformStyle = PlatformTextStyle(
+                    includeFontPadding = false
+                )
+            )
         )
     }
 }
 
 // Data model to hold both short tag and full description
-data class WarningModel(
-    val shortLabel: String,   // Displayed on the chip
+data class NoticeModel(
+    val shortLabel: String,      // Displayed on the chip
     val fullDescription: String, // Displayed in the dialog
-    val color: Color
+    val color: Color             // Color of the chip
 )
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun WarningChipGroup(
+fun InstallInfoChipGroup(
     modifier: Modifier = Modifier,
-    warnings: List<WarningModel>
+    notices: List<NoticeModel>
 ) {
-    // State to track which warning is currently being viewed
-    var selectedWarning by remember { mutableStateOf<WarningModel?>(null) }
+    // State to track which notice is currently being viewed
+    var selectedNotice by remember { mutableStateOf<NoticeModel?>(null) }
 
-    if (warnings.isEmpty()) return
+    if (notices.isEmpty()) return
 
     FlowRow(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
         verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically)
     ) {
-        warnings.forEach { item ->
+        notices.forEach { item ->
             CapsuleTag(
                 text = item.shortLabel,
                 textColor = item.color,
                 // Make background lighter for better contrast
-                backgroundColor = item.color.copy(alpha = 0.12f),
+                backgroundColor = item.color.copy(alpha = 0.2f),
                 modifier = Modifier
                     .clip(CircleShape) // Ensure ripple is circular
-                    .clickable { selectedWarning = item }
+                    .clickable { selectedNotice = item }
             )
         }
     }
 
     // Dialog handling
-    selectedWarning?.let { warning ->
+    selectedNotice?.let { notice ->
         AlertDialog(
-            onDismissRequest = { selectedWarning = null },
+            onDismissRequest = { selectedNotice = null },
             confirmButton = {
-                TextButton(onClick = { selectedWarning = null }) {
+                TextButton(onClick = { selectedNotice = null }) {
                     Text(stringResource(R.string.confirm)) // Or use a common "OK" string
                 }
             },
             title = {
                 Text(
-                    text = warning.shortLabel,
-                    color = warning.color,
+                    text = notice.shortLabel,
+                    color = notice.color,
                     style = MaterialTheme.typography.titleMedium
                 )
             },
             text = {
                 Text(
-                    text = warning.fullDescription,
+                    text = notice.fullDescription,
                     style = MaterialTheme.typography.bodyMedium
                 )
             },

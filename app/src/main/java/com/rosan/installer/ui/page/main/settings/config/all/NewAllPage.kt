@@ -11,7 +11,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.add
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -36,12 +36,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.rosan.installer.R
 import com.rosan.installer.ui.icons.AppIcons
 import com.rosan.installer.ui.page.main.settings.SettingsScreen
 import com.rosan.installer.ui.page.main.widget.card.ShowDataWidget
-import com.rosan.installer.ui.page.main.widget.setting.DeleteEventCollector
+import com.rosan.installer.ui.page.main.widget.util.DeleteEventCollector
 import com.rosan.installer.ui.theme.getM3TopBarColor
 import com.rosan.installer.ui.theme.installerHazeEffect
 import com.rosan.installer.ui.theme.none
@@ -63,7 +64,8 @@ fun NewAllPage(
         viewModel.navController = navController
     }
 
-    val listState = rememberLazyStaggeredGridState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val listState = rememberLazyGridState()
     val hazeStyle = rememberMaterial3HazeStyle()
     val snackBarHostState = remember { SnackbarHostState() }
     val topAppBarState = rememberTopAppBarState()
@@ -140,8 +142,8 @@ fun NewAllPage(
         snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
     ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize()) {
-            when (viewModel.state.data.progress) {
-                is AllViewState.Data.Progress.Loading if viewModel.state.data.configs.isEmpty() -> {
+            when (uiState.data.progress) {
+                is AllViewState.Data.Progress.Loading if uiState.data.configs.isEmpty() -> {
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
@@ -162,7 +164,7 @@ fun NewAllPage(
                     }
                 }
 
-                is AllViewState.Data.Progress.Loaded if viewModel.state.data.configs.isEmpty() -> {
+                is AllViewState.Data.Progress.Loaded if uiState.data.configs.isEmpty() -> {
                     // Since we don't allow removing default profile,
                     // There is no need to handle an empty state.
                 }

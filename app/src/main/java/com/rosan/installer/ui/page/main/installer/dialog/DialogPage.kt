@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2023-2026 iamr0s, InstallerX Revived contributors
 package com.rosan.installer.ui.page.main.installer.dialog
 
 import androidx.compose.animation.AnimatedContent
@@ -8,15 +10,16 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rosan.installer.domain.session.repository.InstallerSessionRepository
+import com.rosan.installer.ui.page.main.installer.InstallerStage
 import com.rosan.installer.ui.page.main.installer.InstallerViewAction
 import com.rosan.installer.ui.page.main.installer.InstallerViewModel
-import com.rosan.installer.ui.page.main.installer.InstallerViewState
 import com.rosan.installer.ui.page.main.installer.dialog.inner.ModuleInstallSheetContent
 import com.rosan.installer.ui.page.main.widget.dialog.PositionDialog
+import com.rosan.installer.ui.page.main.widget.util.ToastEventCollector
 import com.rosan.installer.ui.theme.InstallerMaterialExpressiveTheme
 import com.rosan.installer.ui.theme.InstallerTheme
 import com.rosan.installer.ui.theme.LocalInstallerColorScheme
@@ -28,12 +31,15 @@ import org.koin.core.parameter.parametersOf
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DialogPage(
-    installer: InstallerSessionRepository,
-    viewModel: InstallerViewModel = koinViewModel {
-        parametersOf(installer)
-    }
+    session: InstallerSessionRepository,
+    viewModel: InstallerViewModel = koinViewModel { parametersOf(session) }
 ) {
-    val temporarySeedColor by viewModel.seedColor.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val stage = uiState.stage
+    val viewSettings = uiState.viewSettings
+    val temporarySeedColor = uiState.seedColor
+    val useBlur = viewSettings.useBlur && viewSettings.uiExpressive
+
     val globalColorScheme = InstallerTheme.colorScheme
     val isDark = InstallerTheme.isDark
     val paletteStyle = InstallerTheme.paletteStyle
@@ -50,12 +56,11 @@ fun DialogPage(
         } ?: globalColorScheme
     }
 
-    LaunchedEffect(installer.id) {
-        viewModel.dispatch(InstallerViewAction.CollectRepo(installer))
+    LaunchedEffect(session.id) {
+        viewModel.dispatch(InstallerViewAction.CollectSession(session))
     }
 
-    val state = viewModel.state
-    val useBlur = viewModel.viewSettings.useBlur && viewModel.viewSettings.uiExpressive
+    ToastEventCollector(viewModel)
 
     CompositionLocalProvider(
         LocalInstallerColorScheme provides activeColorScheme
@@ -67,7 +72,7 @@ fun DialogPage(
         ) {
             val colorScheme = InstallerTheme.colorScheme
             // Handle InstallingModule state: Show ModalBottomSheet
-            if (state is InstallerViewState.InstallingModule) {
+            if (stage is InstallerStage.InstallingModule) {
                 // Do NOT create a local variable for isDismissible here.
                 // Capturing a changing local variable causes the lambda below to change,
                 // which forces rememberModalBottomSheetState to recreate the state, resetting the sheet.
@@ -78,7 +83,7 @@ fun DialogPage(
                         if (sheetValue == SheetValue.Hidden) {
                             // Access the property directly from the stable viewModel.
                             // This ensures the lambda instance remains stable across state changes.
-                            viewModel.isDismissible
+                            viewModel.uiState.value.isDismissible
                         } else {
                             true
                         }
@@ -87,7 +92,7 @@ fun DialogPage(
 
                 ModalBottomSheet(
                     onDismissRequest = {
-                        if (viewModel.isDismissible) {
+                        if (uiState.isDismissible) {
                             viewModel.dispatch(InstallerViewAction.Close)
                         }
                     },
@@ -101,8 +106,8 @@ fun DialogPage(
                     }
 
                     ModuleInstallSheetContent(
-                        outputLines = state.output,
-                        isFinished = state.isFinished,
+                        outputLines = stage.output,
+                        isFinished = stage.isFinished,
                         onReboot = { viewModel.dispatch(InstallerViewAction.Reboot("")) },
                         onClose = { viewModel.dispatch(InstallerViewAction.Close) },
                         colorScheme = colorScheme
@@ -110,26 +115,26 @@ fun DialogPage(
                 }
             }
             // Handle other non-Ready states: Show standard PositionDialog
-            else if (state !is InstallerViewState.Ready) {
-                val params = dialogGenerateParams(installer, viewModel)
+            else if (stage !is InstallerStage.Ready) {
+                val params = dialogGenerateParams(session, viewModel)
 
                 PositionDialog(
                     useBlur = useBlur,
                     onDismissRequest = {
-                        if (viewModel.isDismissible) {
-                            if (viewModel.viewSettings.disableNotificationOnDismiss) {
+                        if (uiState.isDismissible) {
+                            if (viewSettings.disableNotificationOnDismiss) {
                                 viewModel.dispatch(InstallerViewAction.Close)
                             } else {
                                 viewModel.dispatch(InstallerViewAction.Background)
                             }
                         }
                     },
-                    centerIcon = dialogInnerWidget(installer, params.icon),
-                    centerTitle = dialogInnerWidget(installer, params.title),
-                    centerSubtitle = dialogInnerWidget(installer, params.subtitle),
-                    centerText = dialogInnerWidget(installer, params.text),
-                    centerContent = dialogInnerWidget(installer, params.content),
-                    centerButton = dialogInnerWidget(installer, params.buttons)
+                    centerIcon = dialogInnerWidget(params.icon),
+                    centerTitle = dialogInnerWidget(params.title),
+                    centerSubtitle = dialogInnerWidget(params.subtitle),
+                    centerText = dialogInnerWidget(params.text),
+                    centerContent = dialogInnerWidget(params.content),
+                    centerButton = dialogInnerWidget(params.buttons)
                 )
             }
         }

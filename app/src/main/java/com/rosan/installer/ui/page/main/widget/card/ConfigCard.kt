@@ -1,6 +1,5 @@
 package com.rosan.installer.ui.page.main.widget.card
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -10,11 +9,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridState
-import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
-import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
-import androidx.compose.foundation.lazy.staggeredgrid.items
-import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyGridState
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -24,11 +23,13 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rosan.installer.R
 import com.rosan.installer.domain.settings.model.ConfigModel
 import com.rosan.installer.ui.icons.AppIcons
@@ -38,37 +39,33 @@ import com.rosan.installer.ui.page.main.widget.chip.CapsuleTag
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ShowDataWidget(
     viewModel: AllViewModel,
-    listState: LazyStaggeredGridState = rememberLazyStaggeredGridState(),
+    listState: LazyGridState = rememberLazyGridState(),
     contentPadding: PaddingValues = PaddingValues(16.dp),
     hazeState: HazeState? = null,
     adaptiveMinSize: Dp = 320.dp
 ) {
-    val configs = viewModel.state.data.configs
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val configs = uiState.data.configs
     val minId = configs.minByOrNull { it.id }?.id
 
-    LazyVerticalStaggeredGrid(
+    LazyVerticalGrid(
         modifier = Modifier
             .fillMaxSize()
             .then(hazeState?.let { Modifier.hazeSource(it) } ?: Modifier),
-        columns = StaggeredGridCells.Adaptive(adaptiveMinSize),
+        columns = GridCells.Adaptive(adaptiveMinSize),
         contentPadding = contentPadding,
-        verticalItemSpacing = 16.dp,
+        verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         state = listState,
     ) {
         // Insert the tip card as a list item to match MIUIX behavior
-        if (!viewModel.state.userReadScopeTips) {
+        if (!uiState.userReadScopeTips)
             item {
                 ScopeTipCard(viewModel = viewModel)
             }
-        } else {
-            // Keep the spacing consistent with MIUIX implementation
-            item { Spacer(modifier = Modifier.size(6.dp)) }
-        }
 
         items(configs) { entity ->
             DataItemWidget(

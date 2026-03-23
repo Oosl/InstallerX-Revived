@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2023-2026 iamr0s, InstallerX Revived contributors
 package com.rosan.installer.ui.page.main.settings.config.all
 
 import com.rosan.installer.domain.settings.model.ConfigModel
@@ -14,8 +16,8 @@ data class AllViewState(
         val progress: Progress = Progress.Loading
     ) {
         sealed class Progress {
-            object Loading : Progress()
-            object Loaded : Progress()
+            data object Loading : Progress()
+            data object Loaded : Progress()
         }
     }
 }

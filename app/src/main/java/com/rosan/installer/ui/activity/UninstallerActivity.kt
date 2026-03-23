@@ -17,15 +17,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import com.rosan.installer.R
 import com.rosan.installer.data.session.manager.InstallerSessionManager
+import com.rosan.installer.domain.device.model.PermissionType
+import com.rosan.installer.domain.device.provider.PermissionChecker
 import com.rosan.installer.domain.session.model.ProgressEntity
 import com.rosan.installer.domain.session.repository.InstallerSessionRepository
 import com.rosan.installer.domain.settings.model.ThemeState
 import com.rosan.installer.domain.settings.provider.ThemeStateProvider
+import com.rosan.installer.ui.common.auth.BiometricAuthBridge
+import com.rosan.installer.ui.common.permission.PermissionRequester
 import com.rosan.installer.ui.page.main.installer.InstallerPage
 import com.rosan.installer.ui.page.miuix.installer.MiuixInstallerPage
 import com.rosan.installer.ui.theme.InstallerTheme
-import com.rosan.installer.ui.util.PermissionDenialReason
-import com.rosan.installer.ui.util.PermissionManager
 import com.rosan.installer.util.toast
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -43,10 +45,11 @@ class UninstallerActivity : ComponentActivity(), KoinComponent {
 
     private val themeStateProvider by inject<ThemeStateProvider>()
     private val sessionManager by inject<InstallerSessionManager>()
-    private var installer: InstallerSessionRepository? = null
+    private var session: InstallerSessionRepository? = null
     private var job: Job? = null
 
-    private lateinit var permissionManager: PermissionManager
+    private val permissionChecker: PermissionChecker by inject()
+    private lateinit var permissionRequester: PermissionRequester
 
     // Flag to track if the activity is stopped due to a permission request
     private var isRequestingPermission = false
@@ -59,15 +62,15 @@ class UninstallerActivity : ComponentActivity(), KoinComponent {
         super.onCreate(savedInstanceState)
         Timber.d("UninstallerActivity onCreate.")
 
-        permissionManager = PermissionManager(this)
+        permissionRequester = PermissionRequester(this, permissionChecker)
         // Set up the callback to intercept the settings launch event
-        permissionManager.onBeforeLaunchSettings = {
-            Timber.d("Launching settings for permission, preventing repo closure in onStop.")
+        permissionRequester.onBeforeLaunchSettings = {
+            Timber.d("Launching settings for permission, preventing session closure in onStop.")
             isRequestingPermission = true
         }
 
-        val installerId = savedInstanceState?.getString(KEY_ID)
-        installer = sessionManager.getOrCreate(installerId)
+        val sessionId = savedInstanceState?.getString(KEY_ID)
+        session = sessionManager.getOrCreate(sessionId)
 
         // Start the process only if it's a fresh launch, not a configuration change
         if (savedInstanceState == null) {
@@ -87,7 +90,7 @@ class UninstallerActivity : ComponentActivity(), KoinComponent {
 
             if (packageName.isNullOrBlank()) {
                 Timber.e("UninstallerActivity started without a package name.")
-                installer?.close()
+                session?.close()
                 this.finish()
                 return
             }
@@ -102,7 +105,7 @@ class UninstallerActivity : ComponentActivity(), KoinComponent {
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
-        val currentId = installer?.id
+        val currentId = session?.id
         outState.putString(KEY_ID, currentId)
         Timber.d("UninstallerActivity onSaveInstanceState: Saving id: $currentId")
         super.onSaveInstanceState(outState)
@@ -110,6 +113,11 @@ class UninstallerActivity : ComponentActivity(), KoinComponent {
 
     override fun onStop() {
         super.onStop()
+
+        if (BiometricAuthBridge.isAuthenticating) {
+            Timber.d("onStop: Ignored session closure due to active biometric authentication.")
+            return
+        }
         // Check if the screen is currently on.
         // If the screen is off, onStop is triggered by locking the device.
         // We explicitly want to ignore this case.
@@ -123,12 +131,12 @@ class UninstallerActivity : ComponentActivity(), KoinComponent {
         }
         // Only strictly interpret as user leaving when not finishing and not changing configurations (e.g., rotation)
         if (!isFinishing && !isChangingConfigurations && !isRequestingPermission) {
-            installer?.let { repo ->
+            session?.let { session ->
                 Timber.d("onStop: User left UninstallerActivity. Closing repository.")
-                repo.close()
+                session.close()
             }
         } else if (isRequestingPermission) {
-            Timber.d("onStop: Ignored repo closure due to active permission request.")
+            Timber.d("onStop: Ignored session closure due to active permission request.")
             isRequestingPermission = false
         }
     }
@@ -142,19 +150,19 @@ class UninstallerActivity : ComponentActivity(), KoinComponent {
     }
 
     private fun requestPermissionsAndProceed(packageName: String) {
-        permissionManager.requestEssentialPermissions(
+        permissionRequester.requestEssentialPermissions(
             onGranted = {
                 Timber.d("Permissions granted. Proceeding with uninstall for $packageName")
-                installer?.resolveUninstall(this@UninstallerActivity, packageName)
+                session?.resolveUninstall(this@UninstallerActivity, packageName)
             },
             onDenied = { reason ->
                 when (reason) {
-                    PermissionDenialReason.NOTIFICATION -> {
+                    PermissionType.NOTIFICATION -> {
                         Timber.w("Notification permission was denied.")
                         this.toast(R.string.enable_notification_hint)
                     }
 
-                    PermissionDenialReason.STORAGE -> {
+                    PermissionType.STORAGE -> {
                         Timber.w("Storage permission was denied.")
                         this.toast(R.string.enable_storage_permission_hint)
                     }
@@ -168,8 +176,8 @@ class UninstallerActivity : ComponentActivity(), KoinComponent {
         job?.cancel()
         val scope = CoroutineScope(Dispatchers.Main.immediate)
         job = scope.launch {
-            installer?.progress?.collect { progress ->
-                Timber.d("[id=${installer?.id}] Activity collected progress: ${progress::class.simpleName}")
+            session?.progress?.collect { progress ->
+                Timber.d("[id=${session?.id}] Activity collected progress: ${progress::class.simpleName}")
                 // Finish the activity on final states
                 if (progress is ProgressEntity.Finish) {
                     if (!this@UninstallerActivity.isFinishing) this@UninstallerActivity.finish()
@@ -183,9 +191,9 @@ class UninstallerActivity : ComponentActivity(), KoinComponent {
             val uiState by themeStateProvider.themeStateFlow.collectAsState(initial = ThemeState())
             if (!uiState.isLoaded) return@setContent
 
-            val currentInstaller = installer
-            if (currentInstaller == null) {
-                // If repo is null, we can't proceed.
+            val currentSession = session
+            if (currentSession == null) {
+                // If session is null, we can't proceed.
                 LaunchedEffect(Unit) {
                     finish()
                 }
@@ -204,9 +212,9 @@ class UninstallerActivity : ComponentActivity(), KoinComponent {
             ) {
                 Box(modifier = Modifier.fillMaxSize()) {
                     if (uiState.useMiuix) {
-                        MiuixInstallerPage(installer = currentInstaller)
+                        MiuixInstallerPage(currentSession)
                     } else {
-                        InstallerPage(installer = currentInstaller)
+                        InstallerPage(currentSession)
                     }
                 }
             }
