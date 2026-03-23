@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2025-2026 InstallerX Revived contributors
 package com.rosan.installer.data.session.resolver
 
 import android.content.Context
@@ -63,7 +65,7 @@ class OkHttpNetworkResolver(
         cacheDirectory: String,
         progressFlow: MutableSharedFlow<ProgressEntity>
     ): List<DataEntity> = withContext(Dispatchers.IO) {
-        Timber.Forest.d("Starting smart download for URI: $uri")
+        Timber.d("Starting smart download for URI: $uri")
         progressFlow.emit(ProgressEntity.InstallPreparing(-1f))
 
         // 1. Security & Config Checks
@@ -94,10 +96,10 @@ class OkHttpNetworkResolver(
 
         try {
             if (threadCount > 1) {
-                Timber.Forest.i("Strategy: Multi-threaded ($threadCount threads). Size: $contentLength")
+                Timber.i("Strategy: Multi-threaded ($threadCount threads). Size: $contentLength")
                 downloadMultiThreaded(client, uri.toString(), tempFile, contentLength, threadCount, progressFlow)
             } else {
-                Timber.Forest.i("Strategy: Single-threaded. Range Support: $supportsRange, Size: $contentLength")
+                Timber.i("Strategy: Single-threaded. Range Support: $supportsRange, Size: $contentLength")
                 downloadSingleThreaded(client, uri.toString(), tempFile, progressFlow)
             }
 
@@ -291,7 +293,7 @@ class OkHttpNetworkResolver(
                 return Pair(length, supports)
             }
         } catch (e: Exception) {
-            Timber.Forest.w(e, "Pre-flight HEAD request failed. Assuming single thread.")
+            Timber.w(e, "Pre-flight HEAD request failed. Assuming single thread.")
             return Pair(-1L, false)
         }
     }
@@ -383,7 +385,7 @@ class OkHttpNetworkResolver(
                 }
             }
         } catch (e: Exception) {
-            Timber.Forest.w(e, "Failed to verify archive magic number.")
+            Timber.w(e, "Failed to verify archive magic number.")
             // Assume true on network failure to avoid blocking valid downloads
             // if the server simply mishandled the Range request.
             true

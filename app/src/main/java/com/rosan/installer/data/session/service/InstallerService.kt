@@ -61,7 +61,7 @@ class InstallerService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        Timber.Forest.d("InstallerService: onCreate. Creating Notification Channel.")
+        Timber.d("InstallerService: onCreate. Creating Notification Channel.")
         createNotificationChannel()
 
         // Restore state from Manager.
@@ -72,7 +72,7 @@ class InstallerService : Service() {
     private fun restoreSessions() {
         val activeSessions = sessionManager.getAllSessions()
         if (activeSessions.isNotEmpty()) {
-            Timber.Forest.i("InstallerService: Restoring ${activeSessions.size} active sessions from Manager.")
+            Timber.i("InstallerService: Restoring ${activeSessions.size} active sessions from Manager.")
             activeSessions.forEach { setupInstallerScope(it) }
         }
     }
@@ -81,7 +81,7 @@ class InstallerService : Service() {
         val actionString = intent?.action
         val id = intent?.getStringExtra(EXTRA_ID)
 
-        Timber.Forest.d("onStartCommand: Action=$actionString, ID=$id")
+        Timber.d("onStartCommand: Action=$actionString, ID=$id")
 
         // Unconditionally fulfill the Android foreground service contract.
         // Even if the intent is invalid or the session was canceled,
@@ -104,7 +104,7 @@ class InstallerService : Service() {
                     sessionManager.get(id)?.let { repo ->
                         setupInstallerScope(repo)
                     } ?: run {
-                        Timber.Forest.w("Received Ready action for ID $id but Repo not found in Manager.")
+                        Timber.w("Received Ready action for ID $id but Repo not found in Manager.")
                     }
                 }
             }
@@ -126,11 +126,11 @@ class InstallerService : Service() {
 
         synchronized(installerScopes) {
             if (installerScopes.containsKey(id)) {
-                Timber.Forest.d("[id=$id] Scope already exists. Skipping setup.")
+                Timber.d("[id=$id] Scope already exists. Skipping setup.")
                 return
             }
 
-            Timber.Forest.d("[id=$id] Creating new execution scope and handlers.")
+            Timber.d("[id=$id] Creating new execution scope and handlers.")
             idleTimeoutJob?.cancel()
 
             val scope = CoroutineScope(Dispatchers.IO + Job())
@@ -144,12 +144,12 @@ class InstallerService : Service() {
             )
 
             scope.launch {
-                Timber.Forest.d("[id=$id] Starting handlers.")
+                Timber.d("[id=$id] Starting handlers.")
                 handlers.forEach { it.onStart() }
 
                 installer.progress.collect { progress ->
                     if (progress is ProgressEntity.Finish) {
-                        Timber.Forest.d("[id=$id] Finished. Cleaning up handlers.")
+                        Timber.d("[id=$id] Finished. Cleaning up handlers.")
                         handlers.forEach { it.onFinish() }
                         detachInstaller(id)
                     }
@@ -164,11 +164,11 @@ class InstallerService : Service() {
             // We already promoted to foreground at the top of onStartCommand.
 
             if (installerScopes.isEmpty()) {
-                Timber.Forest.d("No active scopes. Scheduling shutdown in $IDLE_TIMEOUT_MS ms.")
+                Timber.d("No active scopes. Scheduling shutdown in $IDLE_TIMEOUT_MS ms.")
                 idleTimeoutJob?.cancel()
                 idleTimeoutJob = serviceScope.launch {
                     delay(IDLE_TIMEOUT_MS)
-                    Timber.Forest.i("Idle timeout reached. Stopping service.")
+                    Timber.i("Idle timeout reached. Stopping service.")
                     stopSelf()
                 }
             }
@@ -228,7 +228,7 @@ class InstallerService : Service() {
     private fun detachInstaller(id: String) {
         synchronized(installerScopes) {
             installerScopes.remove(id)?.cancel()
-            Timber.Forest.d("[id=$id] Scope removed and cancelled.")
+            Timber.d("[id=$id] Scope removed and cancelled.")
         }
 
         // We do NOT remove from SessionManager here.
@@ -250,7 +250,7 @@ class InstallerService : Service() {
     }
 
     private fun stopServiceForcefully() {
-        Timber.Forest.w("Force destroying service.")
+        Timber.w("Force destroying service.")
         // Clean up all scopes
         synchronized(installerScopes) {
             installerScopes.values.forEach { it.cancel() }
@@ -261,7 +261,7 @@ class InstallerService : Service() {
     }
 
     override fun onDestroy() {
-        Timber.Forest.d("InstallerService: onDestroy")
+        Timber.d("InstallerService: onDestroy")
         serviceScope.cancel()
         synchronized(installerScopes) {
             installerScopes.values.forEach { it.cancel() }
