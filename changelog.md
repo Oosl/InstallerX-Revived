@@ -1,5 +1,5 @@
+- chore: sync upstream (a4d75424) (github-actions[bot])
+- fix: implement offline network resolver and cleanup Timber logging (wxxsfxyzm)
+- chore(release): update module update.json for 26.03.ba12fb47 [skip ci] (github-actions[bot])
 - chore: sync upstream (4d723ab1) (github-actions[bot])
 - i18n: Translations update from Hosted Weblate (#544) (Weblate (bot))
-- refactor: Refactor app icon management and unify icon use cases across UI (#548) (wxxsfxyzm)
-- feat: support share apk, xposed detection (#541) (wxxsfxyzm)
-- style: adjust Haze blur input scale (wxxsfxyzm)
