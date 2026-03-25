@@ -11,6 +11,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      workflows: write
 
     steps:
       - name: Checkout fork
@@ -44,7 +45,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           UPSTREAM_SHA=$(git rev-parse --short upstream/main)
-          if git merge upstream/main --no-edit -m "chore: sync upstream (${UPSTREAM_SHA})"; then
+          if git merge upstream/main --no-edit -m "auto sync upstream (${UPSTREAM_SHA})"; then
             echo "merge_ok=true" >> $GITHUB_OUTPUT
           else
             echo "merge_ok=false" >> $GITHUB_OUTPUT
