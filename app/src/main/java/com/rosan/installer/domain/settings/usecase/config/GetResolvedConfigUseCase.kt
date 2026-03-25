@@ -3,9 +3,6 @@
 package com.rosan.installer.domain.settings.usecase.config
 
 import android.content.Context
-import com.rosan.installer.data.settings.local.room.entity.converter.AuthorizerConverter
-import com.rosan.installer.data.settings.local.room.entity.converter.InstallModeConverter
-import com.rosan.installer.domain.device.provider.DeviceCapabilityProvider
 import com.rosan.installer.domain.settings.model.AppModel
 import com.rosan.installer.domain.settings.model.Authorizer
 import com.rosan.installer.domain.settings.model.ConfigModel
@@ -24,21 +21,23 @@ class GetResolvedConfigUseCase(
     private val context: Context,
     private val appSettingsRepo: AppSettingsRepo,
     private val configRepo: ConfigRepo,
-    private val appRepository: AppRepository,
-    private val deviceCapabilityProvider: DeviceCapabilityProvider
+    private val appRepository: AppRepository
 ) {
     suspend operator fun invoke(packageName: String? = null): ConfigModel = withContext(Dispatchers.IO) {
         var model = getByPackageNameInner(packageName)
 
         // Handle Global overrides
         if (model.authorizer == Authorizer.Global) {
+            val globalAuthorizer = getGlobalAuthorizer()
             model = model.copy(
-                authorizer = getGlobalAuthorizer(),
+                authorizer = globalAuthorizer,
                 customizeAuthorizer = getGlobalCustomizeAuthorizer()
             )
         }
+
         if (model.installMode == InstallMode.Global) {
-            model = model.copy(installMode = getGlobalInstallMode())
+            val globalInstallMode = getGlobalInstallMode()
+            model = model.copy(installMode = globalInstallMode)
         }
 
         // Apply runtime properties
@@ -63,10 +62,14 @@ class GetResolvedConfigUseCase(
         val app = getAppByPackageName(packageName)
         var config: ConfigModel? = null
 
-        if (app != null) config = configRepo.find(app.configId)
-        if (config != null) return config
+        if (app != null) {
+            config = configRepo.find(app.configId)
+            if (config != null) return config
+        }
 
-        config = configRepo.all().firstOrNull()
+        // Fetch only the default configuration directly from the database
+        // Avoid using all().firstOrNull() to save memory and IO performance
+        config = configRepo.findDefault()
         if (config != null) return config
 
         return ConfigModel.generateOptimalDefault()
@@ -79,17 +82,9 @@ class GetResolvedConfigUseCase(
         return app
     }
 
-    private suspend fun getGlobalAuthorizer(): Authorizer {
-        val str = appSettingsRepo.getString(StringSetting.Authorizer, "").first()
-        return AuthorizerConverter.revert(str)
-    }
+    private suspend fun getGlobalAuthorizer() = appSettingsRepo.preferencesFlow.first().authorizer
 
-    private suspend fun getGlobalCustomizeAuthorizer(): String {
-        return appSettingsRepo.getString(StringSetting.CustomizeAuthorizer, "").first()
-    }
+    private suspend fun getGlobalCustomizeAuthorizer() = appSettingsRepo.getString(StringSetting.CustomizeAuthorizer, "").first()
 
-    private suspend fun getGlobalInstallMode(): InstallMode {
-        val str = appSettingsRepo.getString(StringSetting.InstallMode, "").first()
-        return InstallModeConverter.revert(str)
-    }
+    private suspend fun getGlobalInstallMode() = appSettingsRepo.preferencesFlow.first().installMode
 }

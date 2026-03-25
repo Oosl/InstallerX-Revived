@@ -240,11 +240,13 @@ dependencies {
     implementation(libs.miuix)
     implementation(libs.miuix.icons)
     implementation(libs.capsule)
+    implementation(libs.backdrop)
     // haze
     implementation(libs.haze)
     implementation(libs.haze.materials)
 
     // okhttp
+    implementation(platform(libs.okhttp.bom))
     implementation(libs.okhttp)
 
     // monetcompat

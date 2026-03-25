@@ -6,6 +6,10 @@
   "baseBranchPatterns": [
     "dev"
   ],
+  "ignoreDeps": [
+    "int:BUILD_LEVEL",
+    "boolean:INTERNET_ACCESS_ENABLED"
+  ],
   "packageRules": [
     {
       "matchUpdateTypes": [

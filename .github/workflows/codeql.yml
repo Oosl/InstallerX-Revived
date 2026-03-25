@@ -59,10 +59,14 @@ jobs:
         with:
           languages: ${{ matrix.language }}
 
-      # 新增：Gradle 设置与缓存管理
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v5
+        uses: gradle/actions/setup-gradle@v6
         with:
+          # Accept the terms of use to suppress the caching licensing warning
+          build-scan-terms-of-use-url: "https://gradle.com/help/legal-terms-of-use"
+          build-scan-terms-of-use-agree: "yes"
+          # Enable build scan publication
+          build-scan-publish: true
           # CodeQL 分析只读缓存
           cache-read-only: true
 
