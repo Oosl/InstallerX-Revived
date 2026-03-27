@@ -47,6 +47,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
       - name: Set up JDK 25
         uses: actions/setup-java@v5
@@ -65,8 +67,7 @@ jobs:
           # Accept the terms of use to suppress the caching licensing warning
           build-scan-terms-of-use-url: "https://gradle.com/help/legal-terms-of-use"
           build-scan-terms-of-use-agree: "yes"
-          # Enable build scan publication
-          build-scan-publish: true
+          build-scan-publish: false
           # CodeQL 分析只读缓存
           cache-read-only: true
 

@@ -338,6 +338,7 @@
     <string name="installer_prepare_install">Before you install</string>
     <string name="installer_prepare_install_empty">Please select at least one package</string>
     <string name="installer_prepare_install_too_many">Please select only one base.apk</string>
+    <string name="copied_format">Copied: %1$s</string>
     <string name="tag_downgrade">Downgrade</string>
     <string name="tag_signature">Signature</string>
     <string name="tag_sdk" translatable="false">SDK</string>
@@ -695,7 +696,7 @@
     <string name="suggestion_uninstall_alert_dialog_confirm_action">Confirm Action</string>
     <string name="suggestion_uninstall_alert_dialog_confirm_uninstall_keep_data_message">This will uninstall the current version of the app while keeping its data, then try to install the new one. DO NOT use on system app!</string>
     <string name="suggestion_uninstall_alert_dialog_confirm_uninstall_no_data_message">This will uninstall the current version of the app and try to install the new one. DO NOT use on system app!</string>
-    <string name="suggestion_allow_downgrade">Allow Downgrade</string>
+    <string name="suggestion_allow_downgrade">Allow downgrade once</string>
     <string name="suggestion_allow_downgrade_desc">Temporarily Allow Downgrade and retry</string>
     <string name="suggestion_allow_test_app">Allow Test</string>
     <string name="suggestion_allow_test_app_desc">Temporarily Allow Test and retry</string>

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2025-2026 InstallerX Revived contributors
 package com.rosan.installer.ui.page.miuix.settings.preferred.subpage.installer
 
 import android.os.Build
@@ -13,10 +15,17 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.MaterialTheme
@@ -26,6 +35,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -76,6 +86,9 @@ fun MiuixInstallerGlobalSettingsPage(
     val isNotificationMode = uiState.installMode == InstallMode.Notification ||
             uiState.installMode == InstallMode.AutoNotification
 
+    val layoutDirection = LocalLayoutDirection.current
+    val horizontalSafeInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal).asPaddingValues()
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -96,7 +109,11 @@ fun MiuixInstallerGlobalSettingsPage(
                 .scrollEndHaptic()
                 .overScrollVertical()
                 .nestedScroll(scrollBehavior.nestedScrollConnection),
-            contentPadding = PaddingValues(top = paddingValues.calculateTopPadding()),
+            contentPadding = PaddingValues(
+                start = horizontalSafeInsets.calculateStartPadding(layoutDirection),
+                top = paddingValues.calculateTopPadding(),
+                end = horizontalSafeInsets.calculateEndPadding(layoutDirection)
+            ),
             overscrollEffect = null
         ) {
             item { Spacer(modifier = Modifier.size(12.dp)) }

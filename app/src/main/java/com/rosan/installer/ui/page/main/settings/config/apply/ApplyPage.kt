@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2023-2026 iamr0s, InstallerX Revived contributors
 package com.rosan.installer.ui.page.main.settings.config.apply
 
 import androidx.compose.animation.AnimatedContent
@@ -16,10 +18,16 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
@@ -72,10 +80,12 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -111,6 +121,9 @@ fun ApplyPage(
             lazyListState.firstVisibleItemIndex > 0 || lazyListState.firstVisibleItemScrollOffset > 0
         }
     }
+
+    val layoutDirection = LocalLayoutDirection.current
+    val horizontalSafeInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal).asPaddingValues()
 
     Scaffold(
         modifier = Modifier
@@ -188,7 +201,10 @@ fun ApplyPage(
                 visible = showFloating,
                 enter = scaleIn(),
                 exit = scaleOut(),
-                modifier = Modifier.padding(bottom = 16.dp)
+                modifier = Modifier.padding(
+                    end = horizontalSafeInsets.calculateEndPadding(layoutDirection),
+                    bottom = 16.dp
+                )
             ) {
                 FloatingActionButton({
                     coroutineScope.launch {
@@ -198,12 +214,15 @@ fun ApplyPage(
                     Icon(imageVector = AppIcons.ArrowUp, contentDescription = null)
                 }
             }
-        }) {
-        Box(modifier = Modifier.padding(it)) {
+        }
+    ) { paddingValues ->
+        Box(modifier = Modifier.fillMaxSize()) {
             when {
                 uiState.apps.progress is ViewContent.Progress.Loading && uiState.apps.data.isEmpty() -> {
                     Box(
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(paddingValues),
                         contentAlignment = Alignment.Center
                     ) {
                         Column(
@@ -241,7 +260,11 @@ fun ApplyPage(
                             modifier = Modifier.fillMaxSize(),
                             uiState = uiState,
                             viewModel = viewModel,
-                            lazyListState = lazyListState
+                            lazyListState = lazyListState,
+                            topPadding = paddingValues.calculateTopPadding(),
+                            bottomPadding = paddingValues.calculateBottomPadding(),
+                            startPadding = horizontalSafeInsets.calculateStartPadding(layoutDirection),
+                            endPadding = horizontalSafeInsets.calculateEndPadding(layoutDirection)
                         )
                         Spacer(modifier = Modifier.navigationBarsPadding())
                     }
@@ -261,6 +284,10 @@ private fun ItemsWidget(
     uiState: ApplyViewState,
     viewModel: ApplyViewModel,
     lazyListState: LazyListState,
+    topPadding: Dp = 0.dp,
+    bottomPadding: Dp = 0.dp,
+    startPadding: Dp = 0.dp,
+    endPadding: Dp = 0.dp
 ) {
     // Optimize lookup performance by converting the list to a Set.
     // Use derivedStateOf to ensure it only recalculates when the data actually changes.
@@ -274,7 +301,12 @@ private fun ItemsWidget(
         modifier = modifier,
         state = lazyListState,
         verticalArrangement = Arrangement.spacedBy(8.dp),
-        contentPadding = PaddingValues(8.dp)
+        contentPadding = PaddingValues(
+            start = startPadding + 8.dp,
+            top = topPadding + 8.dp,
+            end = endPadding + 8.dp,
+            bottom = bottomPadding + 88.dp
+        )
     ) {
         items(
             items = uiState.checkedApps,

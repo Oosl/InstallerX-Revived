@@ -14,7 +14,6 @@ import com.rosan.installer.R
 import com.rosan.installer.data.engine.executor.PackageManagerUtil
 import com.rosan.installer.domain.engine.model.AppEntity
 import com.rosan.installer.domain.engine.model.DataType
-import com.rosan.installer.domain.engine.model.InstallOption
 import com.rosan.installer.domain.engine.model.PackageAnalysisResult
 import com.rosan.installer.domain.engine.model.sourcePath
 import com.rosan.installer.domain.engine.usecase.GetAppIconColorUseCase
@@ -69,6 +68,9 @@ class InstallerViewModel(
         onBufferOverflow = BufferOverflow.DROP_OLDEST
     )
     val uiEvents: SharedFlow<InstallerViewEvent> = _uiEvents.asSharedFlow()
+
+    // Cache default seed color to avoid heavy recalculation
+    private var defaultFallbackSeedColor: Int? = null
 
     // Internal mutable state for high-frequency UI changes and progress
     private val _localState = MutableStateFlow(
@@ -259,15 +261,7 @@ class InstallerViewModel(
         this.session = session
         if (session.config.enableCustomizeUser) loadAvailableUsers(session.config.authorizer)
 
-        val initialInstallFlags = listOfNotNull(
-            session.config.allowTestOnly.takeIf { it }?.let { InstallOption.AllowTest.value },
-            session.config.allowDowngrade.takeIf { it }?.let { InstallOption.AllowDowngrade.value },
-            session.config.forAllUser.takeIf { it }?.let { InstallOption.AllUsers.value },
-            session.config.bypassLowTargetSdk.takeIf { it }?.let { InstallOption.BypassLowTargetSdkBlock.value },
-            session.config.allowAllRequestedPermissions.takeIf { it }?.let { InstallOption.GrantAllRequestedPermissions.value }
-        ).fold(0) { acc, flag -> acc or flag }
-
-        session.config.installFlags = initialInstallFlags
+        val initialInstallFlags = session.config.installFlags
 
         _localState.update {
             it.copy(
@@ -344,15 +338,33 @@ class InstallerViewModel(
 
                     // Re-calculate seed color from the icon if dynamic color is enabled
                     if (updatedState.viewSettings.useDynColorFollowPkgIcon) {
-                        // For uninstallation, we can now use the session's central logic to get the color
-                        // from the already loaded/cached icon bitmap
-                        viewModelScope.launch {
-                            val colorInt = getAppIconColor(
-                                sessionId = session.id,
-                                packageName = newPackageName ?: "",
-                                preferSystemIcon = updatedState.viewSettings.preferSystemIconForUpdates
-                            )
-                            _localState.update { it.copy(seedColor = colorInt?.let { c -> Color(c) }) }
+                        val targetPackage = newPackageName
+
+                        if (targetPackage.isNullOrEmpty()) {
+                            // Empty package scenario: Use cache to avoid recalculating the default icon color
+                            if (defaultFallbackSeedColor != null) {
+                                _localState.update { it.copy(seedColor = Color(defaultFallbackSeedColor!!)) }
+                            } else {
+                                // Only calculate the color on the first encounter of an empty package name
+                                viewModelScope.launch {
+                                    defaultFallbackSeedColor = getAppIconColor(
+                                        sessionId = session.id,
+                                        packageName = "",
+                                        preferSystemIcon = updatedState.viewSettings.preferSystemIconForUpdates
+                                    )
+                                    _localState.update { it.copy(seedColor = defaultFallbackSeedColor?.let { c -> Color(c) }) }
+                                }
+                            }
+                        } else {
+                            // Specific package scenario: Extract the app's color normally
+                            viewModelScope.launch {
+                                val colorInt = getAppIconColor(
+                                    sessionId = session.id,
+                                    packageName = targetPackage,
+                                    preferSystemIcon = updatedState.viewSettings.preferSystemIconForUpdates
+                                )
+                                _localState.update { it.copy(seedColor = colorInt?.let { c -> Color(c) }) }
+                            }
                         }
                     }
 

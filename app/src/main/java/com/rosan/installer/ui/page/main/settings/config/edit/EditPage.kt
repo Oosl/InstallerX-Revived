@@ -1,25 +1,26 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2023-2026 iamr0s, InstallerX Revived contributors
 package com.rosan.installer.ui.page.main.settings.config.edit
 
 import android.os.Build
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.IconButtonShapes
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SmallExtendedFloatingActionButton
 import androidx.compose.material3.SnackbarHost
@@ -33,9 +34,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -72,18 +73,13 @@ import kotlinx.coroutines.flow.collectLatest
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
 
-@OptIn(
-    ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class,
-    ExperimentalMaterial3ExpressiveApi::class
-)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun EditPage(
     navController: NavController,
     id: Long? = null,
     viewModel: EditViewModel = koinViewModel { parametersOf(id) }
 ) {
-    val showFloatingState = remember { mutableStateOf(true) }
-    val showFloating by showFloatingState
     val listState = rememberLazyListState()
     val snackBarHostState = remember { SnackbarHostState() }
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
@@ -91,28 +87,6 @@ fun EditPage(
 
     val stateAuthorizer = viewModel.state.data.authorizer
     val globalAuthorizer = viewModel.globalAuthorizer
-
-    LaunchedEffect(listState) {
-        var previousIndex = listState.firstVisibleItemIndex
-        var previousOffset = listState.firstVisibleItemScrollOffset
-
-        snapshotFlow { listState.firstVisibleItemIndex to listState.firstVisibleItemScrollOffset }
-            .collectLatest { (index, offset) ->
-                val isScrollingDown = when {
-                    index > previousIndex -> true
-                    index < previousIndex -> false
-                    else -> offset > previousOffset
-                }
-
-                previousIndex = index
-                previousOffset = offset
-
-                val newShowFloating = !isScrollingDown
-                if (showFloatingState.value != newShowFloating) {
-                    showFloatingState.value = newShowFloating
-                }
-            }
-    }
 
     UnsavedChangesDialog(
         show = showUnsavedDialog,
@@ -135,7 +109,7 @@ fun EditPage(
         showUnsavedDialog = true
     }
 
-    LaunchedEffect(true) {
+    LaunchedEffect(Unit) {
         viewModel.eventFlow.collectLatest { event ->
             when (event) {
                 is EditViewEvent.SnackBar -> {
@@ -152,6 +126,9 @@ fun EditPage(
         }
     }
 
+    val layoutDirection = LocalLayoutDirection.current
+    val horizontalSafeInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal).asPaddingValues()
+
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
@@ -162,61 +139,35 @@ fun EditPage(
                 scrollBehavior = scrollBehavior,
                 title = { Text(text = stringResource(id = if (id == null) R.string.add else R.string.update)) },
                 navigationIcon = { AppBackButton(onClick = { navController.navigateUp() }) },
-                // 新增: 当滚动到底部时，在 actions 中显示 FAB
-                actions = {
-                    AnimatedVisibility(
-                        visible = !showFloating, // 只有在滚动到底部时可见
-                        enter = scaleIn(),
-                        exit = scaleOut()
-                    ) {
-                        IconButton(
-                            onClick = { viewModel.dispatch(EditViewAction.SaveData) },
-                            shapes = IconButtonShapes(
-                                shape = IconButtonDefaults.smallRoundShape,
-                                pressedShape = IconButtonDefaults.smallPressedShape
-                            ),
-                            colors = IconButtonDefaults.iconButtonColors(
-                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                                containerColor = MaterialTheme.colorScheme.surfaceContainer, // 标准 IconButton 背景是透明的
-                            )
-                        ) {
-                            Icon(
-                                imageVector = AppIcons.Save,
-                                contentDescription = stringResource(R.string.save)
-                            )
-                        }
-                    }
-                }
             )
         },
-        // 修改: 只有在未滚动到底部时，才在右下角显示 FAB
         floatingActionButton = {
-            AnimatedVisibility(
-                visible = showFloating, // 在未滚动到底部且 showFloating 为 true 时可见
-                enter = scaleIn(),
-                exit = scaleOut(),
-                modifier = Modifier.padding(bottom = 16.dp)
-            ) {
-                val text = stringResource(R.string.save)
-                SmallExtendedFloatingActionButton(
-                    icon = {
-                        Icon(
-                            imageVector = AppIcons.Save,
-                            contentDescription = text
-                        )
-                    },
-                    text = { Text(text) },
-                    onClick = { viewModel.dispatch(EditViewAction.SaveData) }
-                )
-            }
+            SmallExtendedFloatingActionButton(
+                modifier = Modifier.padding(
+                    end = horizontalSafeInsets.calculateEndPadding(layoutDirection),
+                    bottom = 16.dp
+                ),
+                icon = {
+                    Icon(
+                        imageVector = AppIcons.Save,
+                        contentDescription = stringResource(R.string.save)
+                    )
+                },
+                text = { Text(stringResource(R.string.save)) },
+                onClick = { viewModel.dispatch(EditViewAction.SaveData) }
+            )
         },
         snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
-    ) {
+    ) { paddingValues ->
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(it),
+            modifier = Modifier.fillMaxSize(),
             state = listState,
+            contentPadding = PaddingValues(
+                start = horizontalSafeInsets.calculateStartPadding(layoutDirection),
+                top = paddingValues.calculateTopPadding(),
+                end = horizontalSafeInsets.calculateEndPadding(layoutDirection),
+                bottom = paddingValues.calculateBottomPadding() + 80.dp
+            )
         ) {
             item { DataNameWidget(viewModel = viewModel) }
             item { DataDescriptionWidget(viewModel = viewModel) }

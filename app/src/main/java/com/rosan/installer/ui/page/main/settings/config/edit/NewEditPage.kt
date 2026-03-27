@@ -1,22 +1,27 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2025-2026 InstallerX Revived contributors
 package com.rosan.installer.ui.page.main.settings.config.edit
 
 import android.os.Build
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.add
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -25,9 +30,6 @@ import androidx.compose.material.icons.automirrored.twotone.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.IconButtonShapes
 import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -43,10 +45,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -99,8 +101,6 @@ fun NewEditPage(
     viewModel: EditViewModel = koinViewModel { parametersOf(id) },
     useBlur: Boolean
 ) {
-    val showFloatingState = remember { mutableStateOf(true) }
-    val showFloating by showFloatingState
     val listState = rememberLazyListState()
     val snackBarHostState = remember { SnackbarHostState() }
     val topAppBarState = rememberTopAppBarState()
@@ -115,28 +115,6 @@ fun NewEditPage(
 
     val stateAuthorizer = viewModel.state.data.authorizer
     val globalAuthorizer = viewModel.globalAuthorizer
-
-    LaunchedEffect(listState) {
-        var previousIndex = listState.firstVisibleItemIndex
-        var previousOffset = listState.firstVisibleItemScrollOffset
-
-        snapshotFlow { listState.firstVisibleItemIndex to listState.firstVisibleItemScrollOffset }
-            .collectLatest { (index, offset) ->
-                val isScrollingDown = when {
-                    index > previousIndex -> true
-                    index < previousIndex -> false
-                    else -> offset > previousOffset
-                }
-
-                previousIndex = index
-                previousOffset = offset
-
-                val newShowFloating = !isScrollingDown
-                if (showFloatingState.value != newShowFloating) {
-                    showFloatingState.value = newShowFloating
-                }
-            }
-    }
 
     UnsavedChangesDialog(
         show = showUnsavedDialog,
@@ -177,6 +155,8 @@ fun NewEditPage(
     }
 
     val focusManager = LocalFocusManager.current
+    val layoutDirection = LocalLayoutDirection.current
+    val horizontalSafeInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal).asPaddingValues()
 
     Scaffold(
         modifier = Modifier
@@ -212,53 +192,24 @@ fun NewEditPage(
                     containerColor = hazeState.getM3TopBarColor(),
                     titleContentColor = MaterialTheme.colorScheme.onBackground,
                     scrolledContainerColor = hazeState.getM3TopBarColor()
-                ),
-                actions = {
-                    AnimatedVisibility(
-                        visible = !showFloating, // 只有在滚动到底部时可见
-                        enter = scaleIn(),
-                        exit = scaleOut()
-                    ) {
-                        IconButton(
-                            onClick = { viewModel.dispatch(EditViewAction.SaveData) },
-                            shapes = IconButtonShapes(
-                                shape = IconButtonDefaults.smallRoundShape,
-                                pressedShape = IconButtonDefaults.smallPressedShape
-                            ),
-                            colors = IconButtonDefaults.iconButtonColors(
-                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            )
-                        ) {
-                            Icon(
-                                imageVector = AppIcons.Save,
-                                contentDescription = stringResource(R.string.save)
-                            )
-                        }
-                    }
-                }
+                )
             )
         },
-        // Only show FAB when not scrolling to the bottom
         floatingActionButton = {
-            AnimatedVisibility(
-                visible = showFloating, // Visible when not scrolling to the bottom
-                enter = scaleIn(),
-                exit = scaleOut(),
-                modifier = Modifier.padding(bottom = 16.dp)
-            ) {
-                val text = stringResource(R.string.save)
-                SmallExtendedFloatingActionButton(
-                    icon = {
-                        Icon(
-                            imageVector = AppIcons.Save,
-                            contentDescription = text
-                        )
-                    },
-                    text = { Text(text) },
-                    onClick = { viewModel.dispatch(EditViewAction.SaveData) }
-                )
-            }
+            SmallExtendedFloatingActionButton(
+                modifier = Modifier.padding(
+                    end = horizontalSafeInsets.calculateEndPadding(layoutDirection),
+                    bottom = 16.dp
+                ),
+                icon = {
+                    Icon(
+                        imageVector = AppIcons.Save,
+                        contentDescription = stringResource(R.string.save)
+                    )
+                },
+                text = { Text(stringResource(R.string.save)) },
+                onClick = { viewModel.dispatch(EditViewAction.SaveData) }
+            )
         },
         snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
     ) { paddingValues ->
@@ -267,7 +218,10 @@ fun NewEditPage(
                 .fillMaxSize()
                 .then(hazeState?.let { Modifier.hazeSource(it) } ?: Modifier),
             contentPadding = PaddingValues(
-                top = paddingValues.calculateTopPadding()
+                start = horizontalSafeInsets.calculateStartPadding(layoutDirection),
+                top = paddingValues.calculateTopPadding(),
+                end = horizontalSafeInsets.calculateEndPadding(layoutDirection),
+                bottom = paddingValues.calculateBottomPadding() + 80.dp
             ),
             state = listState,
         ) {

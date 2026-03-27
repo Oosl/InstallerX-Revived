@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2025-2026 InstallerX Revived contributors
 package com.rosan.installer.ui.page.miuix.settings.config.all
 
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -7,10 +9,17 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -23,6 +32,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -105,6 +115,9 @@ fun MiuixAllPage(
         }
     }
 
+    val layoutDirection = LocalLayoutDirection.current
+    val horizontalSafeInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal).asPaddingValues()
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
@@ -121,7 +134,10 @@ fun MiuixAllPage(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(innerPadding),
+                        .padding(
+                            top = innerPadding.calculateTopPadding(),
+                            bottom = outerPadding.calculateBottomPadding()
+                        ),
                     contentAlignment = Alignment.Center
                 ) {
                     Column(
@@ -138,7 +154,6 @@ fun MiuixAllPage(
             }
 
             is AllViewState.Data.Progress.Loaded if uiState.data.configs.isEmpty() -> {
-                // TODO Add error handling
                 // Since we don't allow removing default profile,
                 // There is no need to handle an empty state.
             }
@@ -155,8 +170,8 @@ fun MiuixAllPage(
                         .nestedScroll(scrollBehavior.nestedScrollConnection),
                     columns = GridCells.Adaptive(350.dp),
                     contentPadding = PaddingValues(
-                        start = 16.dp,
-                        end = 16.dp,
+                        start = horizontalSafeInsets.calculateStartPadding(layoutDirection) + 16.dp,
+                        end = horizontalSafeInsets.calculateEndPadding(layoutDirection) + 16.dp,
                         top = innerPadding.calculateTopPadding() + 16.dp,
                         bottom = outerPadding.calculateBottomPadding() + 16.dp
                     ),

@@ -22,9 +22,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.displayCutout
-import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -197,8 +197,11 @@ fun MiuixSettingsPage(
                         pagerState = pagerState,
                         navigationItems = navigationItems,
                         snackbarHostState = snackbarHostState,
+                        useFloatingBottomBar = useFloatingBottomBar,
+                        useFloatingBottomBarBlur = useFloatingBottomBarBlur,
                         hazeState = hazeState,
-                        hazeStyle = hazeStyle
+                        hazeStyle = hazeStyle,
+                        backdrop = backdrop
                     )
                 else
                     SettingsCompactLayout(
@@ -266,6 +269,68 @@ fun MiuixSettingsPage(
 }
 
 /**
+ * Reusable Floating Bottom Bar
+ */
+@Composable
+private fun SettingsFloatingBottomBar(
+    pagerState: PagerState,
+    navigationItems: List<NavigationItem>,
+    useFloatingBottomBarBlur: Boolean,
+    backdrop: LayerBackdrop
+) {
+    val coroutineScope = rememberCoroutineScope()
+    Box(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        FloatingBottomBar(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = {},
+                )
+                .padding(bottom = 12.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()),
+            selectedIndex = { pagerState.currentPage },
+            onSelected = { index ->
+                coroutineScope.launch {
+                    pagerState.animateScrollToPage(index)
+                }
+            },
+            backdrop = backdrop,
+            tabsCount = navigationItems.size,
+            isBlurEnabled = useFloatingBottomBarBlur
+        ) {
+            navigationItems.forEachIndexed { index, item ->
+                FloatingBottomBarItem(
+                    onClick = {
+                        coroutineScope.launch {
+                            pagerState.animateScrollToPage(index)
+                        }
+                    },
+                    modifier = Modifier.defaultMinSize(minWidth = 76.dp)
+                ) {
+                    Icon(
+                        imageVector = item.icon,
+                        contentDescription = item.label,
+                        tint = MiuixTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = item.label,
+                        fontSize = 11.sp,
+                        lineHeight = 14.sp,
+                        color = MiuixTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Visible
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
  * Compact Screen Layout (Portrait/Phone)
  */
 @Composable
@@ -282,62 +347,20 @@ private fun SettingsCompactLayout(
 ) {
     val coroutineScope = rememberCoroutineScope()
 
+    // Removed explicit contentWindowInsets override.
+    // Let the Scaffold pass default insets (which won't consume status bar cutouts),
+    // allowing inner pages to handle their own statusBarsPadding().
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
             if (useFloatingBottomBar) {
-                // Floating Bottom Bar Layout
-                Box(
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    FloatingBottomBar(
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
-                                onClick = {},
-                            )
-                            .padding(bottom = 12.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()),
-                        selectedIndex = { pagerState.currentPage },
-                        onSelected = { index ->
-                            coroutineScope.launch {
-                                pagerState.animateScrollToPage(index)
-                            }
-                        },
-                        backdrop = backdrop,
-                        tabsCount = navigationItems.size,
-                        isBlurEnabled = useFloatingBottomBarBlur
-                    ) {
-                        navigationItems.forEachIndexed { index, item ->
-                            FloatingBottomBarItem(
-                                onClick = {
-                                    coroutineScope.launch {
-                                        pagerState.animateScrollToPage(index)
-                                    }
-                                },
-                                modifier = Modifier.defaultMinSize(minWidth = 76.dp)
-                            ) {
-                                Icon(
-                                    imageVector = item.icon,
-                                    contentDescription = item.label,
-                                    tint = MiuixTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = item.label,
-                                    fontSize = 11.sp,
-                                    lineHeight = 14.sp,
-                                    color = MiuixTheme.colorScheme.onSurface,
-                                    maxLines = 1,
-                                    softWrap = false,
-                                    overflow = TextOverflow.Visible
-                                )
-                            }
-                        }
-                    }
-                }
+                SettingsFloatingBottomBar(
+                    pagerState = pagerState,
+                    navigationItems = navigationItems,
+                    useFloatingBottomBarBlur = useFloatingBottomBarBlur,
+                    backdrop = backdrop
+                )
             } else {
-                // Standard Miuix Navigation Bar Layout
                 NavigationBar(
                     modifier = Modifier.installerHazeEffect(hazeState, hazeStyle),
                     color = hazeState.getMiuixAppBarColor()
@@ -359,7 +382,6 @@ private fun SettingsCompactLayout(
         },
         snackbarHost = { SnackbarHost(state = snackbarHostState) },
         floatingActionButton = {
-            // FAB logic specifically tied to the first page (Config)
             AnimatedVisibility(
                 visible = pagerState.currentPage == 0,
                 enter = scaleIn(),
@@ -397,7 +419,6 @@ private fun SettingsCompactLayout(
 
 /**
  * Wide Screen Layout (Tablet/Landscape)
- * Uses a Row to split the View into a Side Panel and Main Content.
  */
 @Composable
 private fun SettingsWideScreenLayout(
@@ -405,46 +426,75 @@ private fun SettingsWideScreenLayout(
     pagerState: PagerState,
     navigationItems: List<NavigationItem>,
     snackbarHostState: SnackbarHostState,
+    useFloatingBottomBar: Boolean,
+    useFloatingBottomBarBlur: Boolean,
     hazeState: HazeState?,
-    hazeStyle: HazeStyle
+    hazeStyle: HazeStyle,
+    backdrop: LayerBackdrop
 ) {
     val coroutineScope = rememberCoroutineScope()
 
-    Row(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MiuixTheme.colorScheme.surface)
-    ) {
-        // Left Panel: Navigation Rail
-        NavigationRail(
+    if (useFloatingBottomBar) {
+        SettingsWideContent(
+            navController = navController,
+            pagerState = pagerState,
+            navigationItems = navigationItems,
+            snackbarHostState = snackbarHostState,
+            useFloatingBottomBar = true,
+            useFloatingBottomBarBlur = useFloatingBottomBarBlur,
+            backdrop = backdrop,
+            hazeState = hazeState
+        )
+    } else {
+        // Calculate the insets consumed by the NavigationRail on the start side
+        val startInsets = WindowInsets.systemBars.union(WindowInsets.displayCutout)
+            .only(WindowInsetsSides.Start)
+
+        Row(
             modifier = Modifier
-                .fillMaxHeight()
-                .installerHazeEffect(hazeState, hazeStyle),
-            color = hazeState.getMiuixAppBarColor()
+                .fillMaxSize()
+                .background(MiuixTheme.colorScheme.surface)
         ) {
-            navigationItems.forEachIndexed { index, item ->
-                NavigationRailItem(
-                    selected = pagerState.currentPage == index,
-                    onClick = {
-                        coroutineScope.launch {
-                            pagerState.animateScrollToPage(index)
-                        }
-                    },
-                    icon = item.icon,
-                    label = item.label
+            // Left Panel: Navigation Rail
+            NavigationRail(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .installerHazeEffect(hazeState, hazeStyle),
+                color = hazeState.getMiuixAppBarColor()
+            ) {
+                navigationItems.forEachIndexed { index, item ->
+                    NavigationRailItem(
+                        selected = pagerState.currentPage == index,
+                        onClick = {
+                            coroutineScope.launch {
+                                pagerState.animateScrollToPage(index)
+                            }
+                        },
+                        icon = item.icon,
+                        label = item.label
+                    )
+                }
+            }
+
+            // Right Panel: Content + FAB + Snackbar
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    // Only consume start insets so the side bar area isn't duplicated.
+                    // Top and bottom insets are left for the inner pages to handle.
+                    .consumeWindowInsets(startInsets)
+            ) {
+                SettingsWideContent(
+                    navController = navController,
+                    pagerState = pagerState,
+                    navigationItems = navigationItems,
+                    snackbarHostState = snackbarHostState,
+                    useFloatingBottomBar = false,
+                    useFloatingBottomBarBlur = false,
+                    backdrop = null,
+                    hazeState = hazeState
                 )
             }
-        }
-
-        // Right Panel: Content + FAB + Snackbar
-        Box(modifier = Modifier.weight(1f)) {
-            SettingsWideContent(
-                navController = navController,
-                pagerState = pagerState,
-                navigationItems = navigationItems,
-                snackbarHostState = snackbarHostState,
-                hazeState = hazeState
-            )
         }
     }
 }
@@ -455,15 +505,23 @@ private fun SettingsWideContent(
     pagerState: PagerState,
     navigationItems: List<NavigationItem>,
     snackbarHostState: SnackbarHostState,
+    useFloatingBottomBar: Boolean,
+    useFloatingBottomBarBlur: Boolean,
+    backdrop: LayerBackdrop?,
     hazeState: HazeState?
 ) {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-        contentWindowInsets = WindowInsets.systemBars.union(
-            WindowInsets.displayCutout.exclude(
-                WindowInsets.displayCutout.only(WindowInsetsSides.Start)
-            )
-        ),
+        bottomBar = {
+            if (useFloatingBottomBar && backdrop != null) {
+                SettingsFloatingBottomBar(
+                    pagerState = pagerState,
+                    navigationItems = navigationItems,
+                    useFloatingBottomBarBlur = useFloatingBottomBarBlur,
+                    backdrop = backdrop
+                )
+            }
+        },
         snackbarHost = { SnackbarHost(state = snackbarHostState) },
         floatingActionButton = {
             AnimatedVisibility(
@@ -495,8 +553,8 @@ private fun SettingsWideContent(
             snackbarHostState = snackbarHostState,
             modifier = Modifier.fillMaxSize(),
             outerPadding = paddingValues,
-            useFloatingBottomBar = false,
-            backdrop = null
+            useFloatingBottomBar = useFloatingBottomBar,
+            backdrop = backdrop
         )
     }
 }

@@ -16,6 +16,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Chip(
+    modifier: Modifier = Modifier,
     selected: Boolean,
     useHaptic: Boolean = true,
     onClick: () -> Unit,
@@ -24,27 +25,23 @@ fun Chip(
 ) {
     val haptic = LocalHapticFeedback.current
     FilterChip(
+        modifier = modifier,
         selected = selected,
         onClick = {
-            if (useHaptic)
-                haptic.performHapticFeedback(HapticFeedbackType.Confirm)
+            if (useHaptic) haptic.performHapticFeedback(HapticFeedbackType.Confirm)
             onClick()
         },
-        label = {
-            Text(label)
-        },
+        label = { Text(label) },
         leadingIcon = {
             Icon(
                 imageVector = icon,
-                contentDescription = null, // contentDescription 建议不为 null，而是提供有意义的描述
+                contentDescription = null,
                 modifier = Modifier.size(FilterChipDefaults.IconSize)
             )
         },
         colors = FilterChipDefaults.filterChipColors(
-            // 指定未选中状态下，前置图标的颜色。
-            // onSurfaceVariant 是主题中为次要图标和文本定义的标准颜色。
             iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            selectedLeadingIconColor = MaterialTheme.colorScheme.primary,
+            selectedLeadingIconColor = MaterialTheme.colorScheme.primary
         )
     )
 }

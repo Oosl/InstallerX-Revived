@@ -70,9 +70,9 @@ class OkHttpNetworkResolver(
 
         // 1. Security & Config Checks
         val httpProfileName = appSettingsRepo.getString(StringSetting.LabHttpProfile).first()
-        validateSecurity(uri, HttpProfile.Companion.fromString(httpProfileName))
+        validateSecurity(uri, HttpProfile.fromString(httpProfileName))
 
-        val client = buildClientForScheme(uri, HttpProfile.Companion.fromString(httpProfileName))
+        val client = buildClientForScheme(uri, HttpProfile.fromString(httpProfileName))
 
         // 2. Pre-flight Check (HEAD Request)
         val preFlight = performPreFlightCheck(client, uri.toString())
@@ -320,7 +320,7 @@ class OkHttpNetworkResolver(
         val scheme = uri.scheme?.lowercase()
         return if (scheme == "http" && profile != HttpProfile.ALLOW_SECURE) {
             okHttpClient.newBuilder()
-                .connectionSpecs(listOf(ConnectionSpec.Companion.MODERN_TLS, ConnectionSpec.Companion.CLEARTEXT))
+                .connectionSpecs(listOf(ConnectionSpec.MODERN_TLS, ConnectionSpec.CLEARTEXT))
                 .build()
         } else {
             okHttpClient

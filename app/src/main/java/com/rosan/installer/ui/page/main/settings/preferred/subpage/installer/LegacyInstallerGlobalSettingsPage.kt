@@ -15,11 +15,17 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
@@ -31,6 +37,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
@@ -62,6 +69,9 @@ fun LegacyInstallerGlobalSettingsPage(
     val uiState by viewModel.state.collectAsStateWithLifecycle()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
+    val layoutDirection = LocalLayoutDirection.current
+    val horizontalSafeInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal).asPaddingValues()
+
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         contentWindowInsets = WindowInsets.none,
@@ -77,8 +87,13 @@ fun LegacyInstallerGlobalSettingsPage(
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
+                .fillMaxSize(),
+            contentPadding = PaddingValues(
+                start = horizontalSafeInsets.calculateStartPadding(layoutDirection),
+                top = paddingValues.calculateTopPadding(),
+                end = horizontalSafeInsets.calculateEndPadding(layoutDirection),
+                bottom = paddingValues.calculateBottomPadding()
+            )
         ) {
             item { LabelWidget(stringResource(R.string.installer_settings_global_installer)) }
             item {

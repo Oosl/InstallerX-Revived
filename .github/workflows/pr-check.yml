@@ -6,6 +6,11 @@ on:
       - main
       - dev
 
+# Set the absolute minimum permissions for the GITHUB_TOKEN
+permissions:
+  contents: read # Required to checkout the code
+  packages: read # Required if you pull dependencies from GitHub Packages
+
 jobs:
   build_for_pr:
     runs-on: ubuntu-latest
@@ -13,6 +18,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
       - name: Set up JDK 25
         uses: actions/setup-java@v5
@@ -20,28 +27,25 @@ jobs:
           distribution: 'zulu'
           java-version: '25'
 
-      # 保持只读：PR 不需要产生新的构建缓存，复用 main/dev 的即可
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
         with:
-          # Accept the terms of use to suppress the caching licensing warning
           build-scan-terms-of-use-url: "https://gradle.com/help/legal-terms-of-use"
           build-scan-terms-of-use-agree: "yes"
-          # Enable build scan publication
-          build-scan-publish: true
+          build-scan-publish: false
+          # Keep read-only to prevent cache poisoning from PRs
           cache-read-only: true
 
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
 
-      # 构建 Online 和 Offline 两个版本的 Debug 包
       - name: Build Both Variant (onlinePreview/offlinePreview)
+        # Use GITHUB_TOKEN only if strictly necessary for fetching packages
         env:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: ./gradlew assembleOnlinePreviewDebug assembleOfflinePreviewDebug -PAPP_ID="com.rosan.installer.x.revived.test"
 
-      # Upload the online debug unzipped APK for manual testing
       - name: Upload Online Debug APK
         uses: actions/upload-artifact@v7
         with:
@@ -50,7 +54,6 @@ jobs:
           retention-days: 7
           archive: false
 
-      # Upload the offline debug unzipped APK for manual testing
       - name: Upload Offline Debug APK
         uses: actions/upload-artifact@v7
         with:

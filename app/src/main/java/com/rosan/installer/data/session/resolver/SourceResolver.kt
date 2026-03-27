@@ -36,8 +36,8 @@ import java.io.RandomAccessFile
 import java.util.UUID
 
 class SourceResolver(
-    private val context: Context,               // 2. 从构造函数传入 Context
-    private val networkResolver: NetworkResolver, // 3. 从构造函数传入 NetworkResolver
+    private val context: Context,
+    private val networkResolver: NetworkResolver,
     private val cacheDirectory: String,
     private val progressFlow: MutableSharedFlow<ProgressEntity>
 ) {

@@ -1,5 +1,6 @@
 package com.rosan.installer.ui.page.main.widget.setting
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -43,6 +44,11 @@ fun UpdateLoadingIndicator(
     viewModel: AboutViewModel
 ) {
     var showUpdateLoading by remember { mutableStateOf(false) }
+
+    BackHandler(enabled = showUpdateLoading) {
+        // 这里留空，代表拦截返回事件但不执行任何操作
+        // 如果想给用户提示，可以在这里 emit 一个 Toast 事件
+    }
 
     LaunchedEffect(Unit) {
         viewModel.uiEvents.collect { event ->
