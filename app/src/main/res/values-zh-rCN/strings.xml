@@ -193,6 +193,8 @@
     <string name="config_install_mode_notification">通知栏</string>
     <string name="config_install_mode_auto_notification">通知栏自动</string>
     <string name="config_install_mode_ignore">忽略</string>
+    <string name="config_install_show_toast">显示 Toast</string>
+    <string name="config_install_show_toast_desc">安装完成后显示 Toast</string>
     <string name="config_customize_install_reason">自定义安装原因</string>
     <string name="config_customize_install_reason_desc">指定安装原因。对于新安装的应用，选择“用户”原因通常会触发启动器自动创建桌面图标</string>
     <string name="config_install_reason">安装原因</string>
@@ -360,6 +362,7 @@
     <string name="installer_install_failed">安装失败</string>
     <string name="installer_install_success">安装成功</string>
     <string name="installer_install_complete">安装完成</string>
+    <string name="batch_install_result_message">批量安装：%1$d/%2$d 成功</string>
     <string name="installer_silent_install">静默安装</string>
     <string name="installer_unknown_error">未知错误</string>
     <string name="installer_channel_name">安装通知</string>
@@ -397,7 +400,7 @@
     <string name="uninstall_call_uninstaller">调用卸载器</string>
     <string name="uninstall_call_uninstaller_manually">手动调用卸载器</string>
     <string name="uninstall_call_uninstaller_manually_desc">通过指定的包名卸载应用</string>
-    <string name="uninstall_progress_text">正在卸载...</string>
+    <string name="uninstall_progress_text">正在卸载…</string>
     <string name="uninstall_enter_package_name">输入要卸载的应用包名</string>
     <string name="permission_read_external_storage">读取外部存储</string>
     <string name="permission_write_external_storage">写入外部存储</string>

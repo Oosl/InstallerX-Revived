@@ -1,5 +1,8 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2025-2026 InstallerX Revived contributors
 package com.rosan.installer.ui.page.main.widget.util
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
@@ -14,12 +17,15 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.navigation.NavController
 import com.rosan.installer.R
 import com.rosan.installer.ui.page.main.installer.InstallerViewEvent
 import com.rosan.installer.ui.page.main.installer.InstallerViewModel
 import com.rosan.installer.ui.page.main.settings.config.all.AllViewAction
 import com.rosan.installer.ui.page.main.settings.config.all.AllViewEvent
 import com.rosan.installer.ui.page.main.settings.config.all.AllViewModel
+import com.rosan.installer.ui.page.main.settings.config.edit.EditViewEvent
+import com.rosan.installer.ui.page.main.settings.config.edit.EditViewModel
 import com.rosan.installer.ui.page.main.settings.preferred.subpage.about.AboutEvent
 import com.rosan.installer.ui.page.main.settings.preferred.subpage.about.AboutViewModel
 import com.rosan.installer.util.toast
@@ -114,6 +120,40 @@ fun ToastEventCollector(viewModel: InstallerViewModel) {
             when (event) {
                 is InstallerViewEvent.ShowToast -> context.toast(event.message)
                 is InstallerViewEvent.ShowToastRes -> context.toast(event.messageResId)
+            }
+        }
+    }
+}
+
+@Composable
+fun EditEventCollector(
+    viewModel: EditViewModel,
+    navController: NavController,
+    snackBarHostState: SnackbarHostState
+) {
+    val context = LocalContext.current
+    val unknownErrorString = stringResource(R.string.installer_unknown_error)
+    LaunchedEffect(Unit) {
+        viewModel.eventFlow.collectLatest { event ->
+            when (event) {
+                is EditViewEvent.SnackBar -> {
+                    // Resolve priority:
+                    // 1. Specific Resource ID
+                    // 2. Explicit String message
+                    // 3. Localized generic fallback
+                    val snackBarText = event.messageResId?.let { @SuppressLint("LocalContextGetResourceValueCall") context.getString(it) }
+                        ?: event.message
+                        ?: unknownErrorString
+
+                    snackBarHostState.showSnackbar(
+                        message = snackBarText,
+                        withDismissAction = true,
+                    )
+                }
+
+                is EditViewEvent.Saved -> {
+                    navController.navigateUp()
+                }
             }
         }
     }

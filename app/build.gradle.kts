@@ -5,7 +5,7 @@ import java.util.Properties
 // Get git commit hash safely, compatible with configuration cache
 val gitHash: String = try {
     providers.exec {
-        commandLine("git", "rev-parse", "--short", "HEAD")
+        commandLine("git", "rev-parse", "--short=7", "HEAD")
     }.standardOutput.asText.get().trim()
 } catch (_: Exception) {
     "unknown"
@@ -25,7 +25,8 @@ plugins {
 }
 
 android {
-    compileSdk = 36
+    compileSdk = 37
+    compileSdkMinor = 0
 
     val properties = Properties()
     val keystorePropertiesFile = rootProject.file("keystore.properties")
@@ -53,7 +54,7 @@ android {
             ?: "com.rosan.installer.x.revived"
         namespace = "com.rosan.installer"
         minSdk = 26
-        targetSdk = 36
+        targetSdk = 37
         // Version control:
         // - versionName is auto-generated as "yy.MM" by default,
         //   or manually set via the VERSION_NAME Gradle property.
@@ -61,7 +62,7 @@ android {
         //   (e.g., "25.07.abc1234"), configured in productFlavors.
         // - Stable builds use the base versionName as-is (e.g., "25.07").
         // - versionCode must be incremented manually before each Stable release.
-        versionCode = 46
+        versionCode = 47
         versionName = baseVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

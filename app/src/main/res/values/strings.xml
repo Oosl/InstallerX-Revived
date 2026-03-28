@@ -197,6 +197,8 @@
     <string name="config_install_mode_notification">Notification</string>
     <string name="config_install_mode_auto_notification">Auto notification</string>
     <string name="config_install_mode_ignore">Ignore</string>
+    <string name="config_install_show_toast">Show Toast</string>
+    <string name="config_install_show_toast_desc">Show toast after install</string>
     <string name="config_customize_install_reason">Customize Install Reason</string>
     <string name="config_customize_install_reason_desc">Specify the install reason. For new installations, selecting "User" usually triggers the launcher to create a desktop icon</string>
     <string name="config_install_reason">Install Reason</string>
@@ -371,6 +373,7 @@
     <string name="installer_install_failed">Install failed</string>
     <string name="installer_install_success">Install success</string>
     <string name="installer_install_complete">Install complete</string>
+    <string name="batch_install_result_message">Batch installation: %1$d/%2$d successful</string>
     <string name="installer_silent_install">Silent Install</string>
     <string name="installer_error_reason">Error Reason</string>
     <string name="installer_unknown_error">Unknown Error</string>
@@ -672,13 +675,13 @@
     <string name="split_name_language">Language split: %1$s</string>
     <string name="split_name_architecture">Architecture split: %1$s</string>
     <string name="split_name_density">Screen density: %1$s</string>
-    <string name="split_dpi_ldpi">Low (~120dpi)</string>
-    <string name="split_dpi_mdpi">Medium (~160dpi)</string>
-    <string name="split_dpi_hdpi">High (~240dpi)</string>
-    <string name="split_dpi_xhdpi">Very High (~320dpi)</string>
-    <string name="split_dpi_xxhdpi">Extremely High (~480dpi)</string>
-    <string name="split_dpi_xxxhdpi">Maximum (~640dpi)</string>
-    <string name="split_dpi_tvdpi">TV (~213dpi)</string>
+    <string name="split_dpi_ldpi">Low (~120 DPI)</string>
+    <string name="split_dpi_mdpi">Medium (~160 DPI)</string>
+    <string name="split_dpi_hdpi">High (~240 DPI)</string>
+    <string name="split_dpi_xhdpi">Very High (~320 DPI)</string>
+    <string name="split_dpi_xxhdpi">Extremely High (~480 DPI)</string>
+    <string name="split_dpi_xxxhdpi">Maximum (~640 DPI)</string>
+    <string name="split_dpi_tvdpi">TV (~213 DPI)</string>
     <string name="split_dpi_nodpi">No scaling</string>
     <string name="split_dpi_anydpi">Any density</string>
     <string name="split_name_base_group_title">Base Application</string>

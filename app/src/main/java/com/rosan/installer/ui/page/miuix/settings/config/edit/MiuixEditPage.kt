@@ -2,6 +2,7 @@
 // Copyright (C) 2025-2026 InstallerX Revived contributors
 package com.rosan.installer.ui.page.miuix.settings.config.edit
 
+import android.annotation.SuppressLint
 import android.os.Build
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.PaddingValues
@@ -19,17 +20,18 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.rosan.installer.R
 import com.rosan.installer.ui.page.main.settings.config.edit.EditViewAction
@@ -57,7 +59,9 @@ import com.rosan.installer.ui.page.miuix.widgets.MiuixDataUserWidget
 import com.rosan.installer.ui.page.miuix.widgets.MiuixDisplaySdkWidget
 import com.rosan.installer.ui.page.miuix.widgets.MiuixDisplaySizeWidget
 import com.rosan.installer.ui.page.miuix.widgets.MiuixInstallReasonWidget
+import com.rosan.installer.ui.page.miuix.widgets.MiuixRequestUpdateOwnershipWidget
 import com.rosan.installer.ui.page.miuix.widgets.MiuixSettingsTipCard
+import com.rosan.installer.ui.page.miuix.widgets.MiuixShowToastWidget
 import com.rosan.installer.ui.page.miuix.widgets.MiuixUnsavedChangesDialog
 import com.rosan.installer.ui.theme.getMiuixAppBarColor
 import com.rosan.installer.ui.theme.installerHazeEffect
@@ -74,6 +78,8 @@ import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.SmallTitle
+import top.yukonga.miuix.kmp.basic.SnackbarHost
+import top.yukonga.miuix.kmp.basic.SnackbarHostState
 import top.yukonga.miuix.kmp.basic.TopAppBar
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Close
@@ -88,6 +94,10 @@ fun MiuixEditPage(
     viewModel: EditViewModel = koinViewModel { parametersOf(id) },
     useBlur: Boolean
 ) {
+    val context = LocalContext.current
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val dispatch = viewModel::dispatch
+
     val snackBarHostState = remember { SnackbarHostState() }
     val scrollBehavior = MiuixScrollBehavior()
     val hazeState = if (useBlur) remember { HazeState() } else null
@@ -103,25 +113,33 @@ fun MiuixEditPage(
             showUnsavedDialogState.value = false
             navController.navigateUp()
         },
-        errorMessages = viewModel.activeErrorMessages
+        errorMessages = state.activeErrorResIds.map { stringResource(it) }
     )
-    // The condition for interception is now expanded to include errors.
-    // If there are unsaved changes OR if there are validation errors, we should intercept.
-    val shouldInterceptBackPress = viewModel.hasUnsavedChanges || viewModel.hasErrors
+
+    val shouldInterceptBackPress = state.hasUnsavedChanges || state.hasErrors
 
     BackHandler(enabled = shouldInterceptBackPress) {
         showUnsavedDialogState.value = true
     }
 
-    val stateAuthorizer = viewModel.state.data.authorizer
-    val globalAuthorizer = viewModel.globalAuthorizer
+    val stateAuthorizer = state.data.authorizer
+    val globalAuthorizer = state.globalAuthorizer
 
+    val unknownErrorString = stringResource(R.string.installer_unknown_error)
     LaunchedEffect(Unit) {
         viewModel.eventFlow.collectLatest { event ->
             when (event) {
                 is EditViewEvent.SnackBar -> {
+                    // Resolve priority:
+                    // 1. Specific Resource ID
+                    // 2. Explicit String message
+                    // 3. Localized generic fallback
+                    val snackBarText = event.messageResId?.let { @SuppressLint("LocalContextGetResourceValueCall") context.getString(it) }
+                        ?: event.message
+                        ?: unknownErrorString
+
                     snackBarHostState.showSnackbar(
-                        message = event.message,
+                        message = snackBarText,
                         withDismissAction = true,
                     )
                 }
@@ -154,7 +172,7 @@ fun MiuixEditPage(
                 actions = {
                     IconButton(
                         modifier = Modifier.padding(end = 16.dp),
-                        onClick = { viewModel.dispatch(EditViewAction.SaveData) },
+                        onClick = { dispatch(EditViewAction.SaveData) },
                     ) {
                         Icon(
                             imageVector = MiuixIcons.Regular.Ok,
@@ -164,7 +182,7 @@ fun MiuixEditPage(
                 }
             )
         },
-        snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
+        snackbarHost = { SnackbarHost(state = snackBarHostState) },
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
@@ -181,8 +199,8 @@ fun MiuixEditPage(
             overscrollEffect = null,
         ) {
             item { Spacer(modifier = Modifier.size(12.dp)) }
-            item { MiuixDataNameWidget(viewModel = viewModel) }
-            item { MiuixDataDescriptionWidget(viewModel = viewModel) }
+            item { MiuixDataNameWidget(state = state, dispatch = dispatch) }
+            item { MiuixDataDescriptionWidget(state = state, dispatch = dispatch) }
             item { SmallTitle(stringResource(R.string.config)) }
             item {
                 Card(
@@ -190,9 +208,10 @@ fun MiuixEditPage(
                         .padding(horizontal = 12.dp)
                         .padding(bottom = 12.dp)
                 ) {
-                    MiuixDataAuthorizerWidget(viewModel = viewModel)
-                    MiuixDataCustomizeAuthorizerWidget(viewModel = viewModel)
-                    MiuixDataInstallModeWidget(viewModel = viewModel)
+                    MiuixDataAuthorizerWidget(state = state, dispatch = dispatch)
+                    MiuixDataCustomizeAuthorizerWidget(state = state, dispatch = dispatch)
+                    MiuixDataInstallModeWidget(state = state, dispatch = dispatch)
+                    MiuixShowToastWidget(state = state, dispatch = dispatch)
                 }
             }
             if (isNoneActive(stateAuthorizer, globalAuthorizer))
@@ -204,16 +223,17 @@ fun MiuixEditPage(
                         .padding(horizontal = 12.dp)
                         .padding(bottom = 12.dp)
                 ) {
-                    MiuixDataUserWidget(viewModel = viewModel)
-                    MiuixInstallReasonWidget(viewModel = viewModel)
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) MiuixDataPackageSourceWidget(viewModel = viewModel)
-                    if (viewModel.state.isCustomInstallRequesterEnabled)
-                        MiuixDataInstallRequesterWidget(viewModel = viewModel)
-                    MiuixDataDeclareInstallerWidget(viewModel = viewModel)
-                    MiuixDataManualDexoptWidget(viewModel)
-                    MiuixDataAutoDeleteWidget(viewModel = viewModel)
-                    MiuixDisplaySdkWidget(viewModel = viewModel)
-                    MiuixDisplaySizeWidget(viewModel = viewModel)
+                    MiuixDataUserWidget(state = state, dispatch = dispatch)
+                    MiuixInstallReasonWidget(state = state, dispatch = dispatch)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
+                        MiuixDataPackageSourceWidget(state = state, dispatch = dispatch)
+                    if (state.isCustomInstallRequesterEnabled)
+                        MiuixDataInstallRequesterWidget(state = state, dispatch = dispatch)
+                    MiuixDataDeclareInstallerWidget(state = state, dispatch = dispatch)
+                    MiuixDataManualDexoptWidget(state = state, dispatch = dispatch)
+                    MiuixDataAutoDeleteWidget(state = state, dispatch = dispatch)
+                    MiuixDisplaySdkWidget(state = state, dispatch = dispatch)
+                    MiuixDisplaySizeWidget(state = state, dispatch = dispatch)
                 }
             }
             item { SmallTitle(stringResource(R.string.config_label_install_options)) }
@@ -223,12 +243,14 @@ fun MiuixEditPage(
                         .padding(horizontal = 12.dp)
                         .padding(bottom = 16.dp)
                 ) {
-                    MiuixDataForAllUserWidget(viewModel = viewModel)
-                    MiuixDataAllowTestOnlyWidget(viewModel = viewModel)
-                    MiuixDataAllowDowngradeWidget(viewModel = viewModel)
+                    MiuixDataForAllUserWidget(state = state, dispatch = dispatch)
+                    MiuixDataAllowTestOnlyWidget(state = state, dispatch = dispatch)
+                    MiuixDataAllowDowngradeWidget(state = state, dispatch = dispatch)
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-                        MiuixDataBypassLowTargetSdkWidget(viewModel = viewModel)
-                    MiuixDataAllowAllRequestedPermissionsWidget(viewModel = viewModel)
+                        MiuixDataBypassLowTargetSdkWidget(state = state, dispatch = dispatch)
+                    MiuixDataAllowAllRequestedPermissionsWidget(state = state, dispatch = dispatch)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+                        MiuixRequestUpdateOwnershipWidget(state = state, dispatch = dispatch)
                 }
             }
             item { SmallTitle(stringResource(R.string.config_label_preferences)) }
@@ -238,8 +260,8 @@ fun MiuixEditPage(
                         .padding(horizontal = 12.dp)
                         .padding(bottom = 16.dp)
                 ) {
-                    MiuixDataSplitChooseAllWidget(viewModel = viewModel)
-                    MiuixDataApkChooseAllWidget(viewModel = viewModel)
+                    MiuixDataSplitChooseAllWidget(state = state, dispatch = dispatch)
+                    MiuixDataApkChooseAllWidget(state = state, dispatch = dispatch)
                 }
             }
             item { Spacer(Modifier.navigationBarsPadding()) }
