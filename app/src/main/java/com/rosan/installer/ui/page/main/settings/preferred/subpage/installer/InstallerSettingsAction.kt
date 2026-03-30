@@ -10,6 +10,7 @@ import com.rosan.installer.domain.settings.model.SharedUid
 sealed class InstallerSettingsAction {
     data class ChangeGlobalAuthorizer(val authorizer: Authorizer) : InstallerSettingsAction()
     data class ChangeDhizukuAutoCloseCountDown(val countDown: Int) : InstallerSettingsAction()
+    data class ChangeAlwaysUseRootInSystem(val alwaysUseRootInSystem: Boolean) : InstallerSettingsAction()
     data class ChangeGlobalInstallMode(val installMode: InstallMode) : InstallerSettingsAction()
     data class ChangeShowLiveActivity(val showLiveActivity: Boolean) : InstallerSettingsAction()
     data class ChangeBiometricAuth(val require: Boolean) : InstallerSettingsAction()

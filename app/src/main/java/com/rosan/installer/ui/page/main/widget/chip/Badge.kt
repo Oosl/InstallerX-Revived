@@ -36,21 +36,21 @@ import com.rosan.installer.R
 fun CapsuleTag(
     modifier: Modifier = Modifier,
     text: String,
-    backgroundColor: Color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-    textColor: Color = MaterialTheme.colorScheme.primary,
+    containerColor: Color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+    contentColor: Color = MaterialTheme.colorScheme.primary,
     style: TextStyle = MaterialTheme.typography.labelMediumEmphasized
 ) {
     Box(
         modifier = modifier
             .defaultMinSize(minHeight = 24.dp)
             .clip(CircleShape)
-            .background(backgroundColor)
+            .background(containerColor)
             .padding(horizontal = 8.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = text,
-            color = textColor,
+            color = contentColor,
             style = style.copy(
                 platformStyle = PlatformTextStyle(
                     includeFontPadding = false
@@ -85,9 +85,9 @@ fun InstallInfoChipGroup(
         notices.forEach { item ->
             CapsuleTag(
                 text = item.shortLabel,
-                textColor = item.color,
+                contentColor = item.color,
                 // Make background lighter for better contrast
-                backgroundColor = item.color.copy(alpha = 0.2f),
+                containerColor = item.color.copy(alpha = 0.2f),
                 modifier = Modifier
                     .clip(CircleShape) // Ensure ripple is circular
                     .clickable { selectedNotice = item }

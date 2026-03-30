@@ -99,9 +99,7 @@ fun MiuixUninstallerGlobalSettingsPage(
                 color = hazeState.getMiuixAppBarColor(),
                 title = stringResource(R.string.uninstaller_settings),
                 navigationIcon = {
-                    MiuixBackButton(
-                        modifier = Modifier.padding(start = 16.dp),
-                        onClick = { navController.navigateUp() })
+                    MiuixBackButton(onClick = { navController.navigateUp() })
                 },
                 scrollBehavior = scrollBehavior
             )

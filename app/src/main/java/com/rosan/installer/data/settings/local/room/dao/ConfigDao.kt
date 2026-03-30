@@ -9,7 +9,9 @@ import androidx.room.Query
 import androidx.room.RawQuery
 import androidx.room.Update
 import androidx.sqlite.db.SupportSQLiteQuery
+import com.rosan.installer.data.settings.local.room.entity.AppEntity
 import com.rosan.installer.data.settings.local.room.entity.ConfigEntity
+import com.rosan.installer.data.settings.local.room.entity.ConfigWithScopeCount
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -17,8 +19,9 @@ interface ConfigDao {
     @RawQuery
     suspend fun getAllDynamically(query: SupportSQLiteQuery): List<ConfigEntity>
 
-    @RawQuery(observedEntities = [ConfigEntity::class])
-    fun flowAllDynamically(query: SupportSQLiteQuery): Flow<List<ConfigEntity>>
+    // Observe BOTH entities to trigger flow updates when scope changes
+    @RawQuery(observedEntities = [ConfigEntity::class, AppEntity::class])
+    fun flowAllDynamically(query: SupportSQLiteQuery): Flow<List<ConfigWithScopeCount>>
 
     @Query("select * from config")
     suspend fun all(): List<ConfigEntity>

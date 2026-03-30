@@ -37,7 +37,6 @@ import androidx.compose.material.icons.twotone.BlurOn
 import androidx.compose.material.icons.twotone.Bolt
 import androidx.compose.material.icons.twotone.BugReport
 import androidx.compose.material.icons.twotone.CallToAction
-import androidx.compose.material.icons.twotone.ClearAll
 import androidx.compose.material.icons.twotone.Close
 import androidx.compose.material.icons.twotone.Code
 import androidx.compose.material.icons.twotone.ColorLens
@@ -48,6 +47,7 @@ import androidx.compose.material.icons.twotone.DeveloperMode
 import androidx.compose.material.icons.twotone.DoNotDisturbOnTotalSilence
 import androidx.compose.material.icons.twotone.Download
 import androidx.compose.material.icons.twotone.Downloading
+import androidx.compose.material.icons.twotone.DynamicFeed
 import androidx.compose.material.icons.twotone.Edit
 import androidx.compose.material.icons.twotone.Expand
 import androidx.compose.material.icons.twotone.Extension
@@ -155,7 +155,8 @@ object AppIcons {
     val AutoLockDefault = Icons.TwoTone.TaskAlt
     val LockDefault = Icons.TwoTone.Favorite
     val UnlockDefault = Icons.TwoTone.FavoriteBorder
-    val ClearAll = Icons.TwoTone.ClearAll
+    val StopWatch = Icons.TwoTone.Timer
+    val MiIsland = Icons.TwoTone.DynamicFeed
     val LiveActivity = Icons.AutoMirrored.TwoTone.Send
     val BiometricAuth = Icons.TwoTone.Badge
     val IconPack = Icons.TwoTone.Widgets

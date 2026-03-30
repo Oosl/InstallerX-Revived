@@ -80,7 +80,6 @@
     <string name="lab_module_flashing_desc">항상 모듈을 설치하기전에 두번 확인</string>
     <string name="lab_module_flashing_show_art">ASCII 아트 표시</string>
     <string name="lab_module_flashing_show_art_desc">InstallerX ASCII 아트가 설치할때 표시됩니다</string>
-    <string name="lab_module_always_use_root">모듈을 설치할때 ROOT 를 항상 사용합니다</string>
     <string name="lab_http_save_file">다운로드된 파일 저장</string>
     <string name="lab_http_save_file_desc">다운로드 완료 후 다운로드 폴더에 저장</string>
     <string name="lab_http_profile">HTTP 보안 정책</string>

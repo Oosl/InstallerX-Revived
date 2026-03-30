@@ -3,12 +3,13 @@
 package com.rosan.installer.data.settings.mapper
 
 import com.rosan.installer.data.settings.local.room.entity.ConfigEntity
+import com.rosan.installer.data.settings.local.room.entity.ConfigWithScopeCount
 import com.rosan.installer.domain.settings.model.ConfigModel
 
 /**
  * Map Room database entity to pure business domain model
  */
-fun ConfigEntity.toDomainModel(): ConfigModel {
+fun ConfigEntity.toDomainModel(scopeCount: Int = 0): ConfigModel {
     val model = ConfigModel(
         id = this.id,
         name = this.name,
@@ -41,17 +42,22 @@ fun ConfigEntity.toDomainModel(): ConfigModel {
         splitChooseAll = this.splitChooseAll,
         apkChooseAll = this.apkChooseAll,
         createdAt = this.createdAt,
-        modifiedAt = this.modifiedAt
+        modifiedAt = this.modifiedAt,
+        scopeCount = scopeCount,
+        // Pass runtime flags directly into the constructor
+        installFlags = this.installFlags,
+        bypassBlacklistInstallSetByUser = this.bypassBlacklistInstallSetByUser,
+        uninstallFlags = this.uninstallFlags,
+        callingFromUid = this.callingFromUid
     )
-
-    // Transfer runtime flags
-    model.installFlags = this.installFlags
-    model.bypassBlacklistInstallSetByUser = this.bypassBlacklistInstallSetByUser
-    model.uninstallFlags = this.uninstallFlags
-    model.callingFromUid = this.callingFromUid
 
     return model
 }
+
+/**
+ * Map the joined query result (Config + Scope Count) to the business domain model.
+ */
+fun ConfigWithScopeCount.toDomainModel() = this.config.toDomainModel(scopeCount = this.scopeCount)
 
 // Map business domain model back to Room database entity
 fun ConfigModel.toEntity(): ConfigEntity {

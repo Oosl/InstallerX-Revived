@@ -42,6 +42,7 @@ import com.rosan.installer.ui.icons.AppIcons
 import com.rosan.installer.ui.page.main.widget.card.InfoTipCard
 import com.rosan.installer.ui.page.main.widget.dialog.RootImplementationSelectionDialog
 import com.rosan.installer.ui.page.main.widget.setting.AppBackButton
+import com.rosan.installer.ui.page.main.widget.setting.IntNumberPickerWidget
 import com.rosan.installer.ui.page.main.widget.setting.LabHttpProfileWidget
 import com.rosan.installer.ui.page.main.widget.setting.LabRootImplementationWidget
 import com.rosan.installer.ui.page.main.widget.setting.LabelWidget
@@ -138,15 +139,6 @@ fun LegacyLabPage(
                             checked = uiState.labRootShowModuleArt,
                             onCheckedChange = { viewModel.dispatch(LabSettingsAction.LabChangeRootShowModuleArt(it)) }
                         )
-                        if (capabilityProvider.isSystemApp)
-                            SwitchWidget(
-                                icon = AppIcons.FlashPreferRoot,
-                                title = stringResource(R.string.lab_module_always_use_root),
-                                description = stringResource(R.string.lab_module_always_use_root_desc),
-                                isM3E = false,
-                                checked = uiState.labRootModuleAlwaysUseRoot,
-                                onCheckedChange = { viewModel.dispatch(LabSettingsAction.LabChangeRootModuleAlwaysUseRoot(it)) }
-                            )
                     }
                 }
             }
@@ -154,12 +146,29 @@ fun LegacyLabPage(
             item { LabelWidget(stringResource(R.string.lab_unstable_features)) }
             if (isMiIslandSupported) item {
                 SwitchWidget(
+                    icon = AppIcons.MiIsland,
                     title = stringResource(R.string.lab_mi_island),
                     description = stringResource(R.string.lab_mi_island_desc),
                     isM3E = false,
                     checked = uiState.labUseMiIsland,
                     onCheckedChange = { viewModel.dispatch(LabSettingsAction.LabChangeUseMiIsland(it)) }
                 )
+                AnimatedVisibility(
+                    visible = uiState.labUseMiIsland,
+                    enter = fadeIn() + expandVertically(),
+                    exit = fadeOut() + shrinkVertically()
+                ) {
+                    IntNumberPickerWidget(
+                        icon = AppIcons.StopWatch,
+                        title = stringResource(R.string.lab_mi_island_countdown),
+                        description = stringResource(R.string.lab_mi_island_countdown_desc),
+                        value = uiState.labMiIslandBlockingIntervalMs,
+                        startInt = 50,
+                        endInt = 350
+                    ) {
+                        viewModel.dispatch(LabSettingsAction.LabChangeMiIslandBlockingIntervalMs(it))
+                    }
+                }
             }
             item {
                 SwitchWidget(

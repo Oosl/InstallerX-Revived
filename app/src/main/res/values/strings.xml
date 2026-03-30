@@ -171,6 +171,7 @@
     <string name="filter">Filter</string>
     <string name="order">Sort</string>
     <string name="config_global_default">Global Default</string>
+    <string name="config_status_inactive">Inactive</string>
     <string name="config_name">Profile name</string>
     <string name="config_info">Info</string>
     <string name="config_scope">Scope</string>
@@ -188,6 +189,8 @@
     <string name="config_authorizer_dhizuku">Dhizuku</string>
     <string name="config_authorizer_customize">Custom</string>
     <string name="config_customize_authorizer">Custom authorizer</string>
+    <string name="config_always_use_root_in_system">Use root for privileged operations</string>
+    <string name="config_always_use_root_in_system_desc">When running as the system installer, always use root for privileged operations, such as flashing modules and deleting files</string>
     <string name="config_install_mode">Install mode</string>
     <string name="config_install_mode_desc">Default Install Mode and related settings</string>
     <string name="config_install_mode_global">Global</string>
@@ -721,8 +724,6 @@
     <string name="lab_module_flashing_desc">Always check twice before flashing any modules!</string>
     <string name="lab_module_flashing_show_art">Display ASCII art</string>
     <string name="lab_module_flashing_show_art_desc">Display InstallerX ASCII art when installation starts"</string>
-    <string name="lab_module_always_use_root">Always use root to flash modules</string>
-    <string name="lab_module_always_use_root_desc">While working as system installer, always use root to flash modules to get best performance</string>
     <string name="lab_module_select_root_impl">Choose root implementation</string>
     <string name="lab_http_save_file">Save downloaded files</string>
     <string name="lab_http_save_file_desc">Save files to the Downloads folder after download is complete</string>
@@ -736,6 +737,8 @@
     <string name="lab_set_install_requester_desc">Fill OriginatingUid field with caller package to match system behavior</string>
     <string name="lab_mi_island">Mi Super Island</string>
     <string name="lab_mi_island_desc">Global notification style. System signature verification can only be bypassed when the custom app-authenticator is set to Shizuku. Root users can enable this directly after manually disabling signature restrictions</string>
+    <string name="lab_mi_island_countdown">XMSF block duration (Only Shizuku)</string>
+    <string name="lab_mi_island_countdown_desc">Sets how long XMSF network access is blocked using Shizuku. Change only if you understand the impact！</string>
     <string name="lab_tap_icon_to_share">Tap icon to share apk</string>
     <string name="lab_tap_icon_to_share_desc">Tap icon on the prepare page to share apk</string>
 </resources>

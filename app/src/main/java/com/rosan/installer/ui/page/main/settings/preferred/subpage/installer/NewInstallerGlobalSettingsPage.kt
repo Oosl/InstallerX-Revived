@@ -52,6 +52,7 @@ import androidx.navigation.NavController
 import com.rosan.installer.R
 import com.rosan.installer.core.env.DeviceConfig
 import com.rosan.installer.domain.device.model.Manufacturer
+import com.rosan.installer.domain.device.provider.DeviceCapabilityProvider
 import com.rosan.installer.domain.settings.model.Authorizer
 import com.rosan.installer.domain.settings.model.InstallMode
 import com.rosan.installer.ui.icons.AppIcons
@@ -71,6 +72,7 @@ import com.rosan.installer.ui.theme.rememberMaterial3HazeStyle
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -80,6 +82,7 @@ fun NewInstallerGlobalSettingsPage(
 ) {
     val context = LocalContext.current
     val uiState by viewModel.state.collectAsStateWithLifecycle()
+    val capabilityProvider = koinInject<DeviceCapabilityProvider>()
     val topAppBarState = rememberTopAppBarState()
     val hazeState = if (uiState.useBlur) remember { HazeState() } else null
     val hazeStyle = rememberMaterial3HazeStyle()
@@ -158,6 +161,19 @@ fun NewInstallerGlobalSettingsPage(
                                 viewModel.dispatch(InstallerSettingsAction.ChangeGlobalAuthorizer(it))
                             }
                         ) {
+                            AnimatedVisibility(
+                                visible = uiState.authorizer == Authorizer.None && capabilityProvider.isSystemApp,
+                                enter = fadeIn() + expandVertically(),
+                                exit = fadeOut() + shrinkVertically()
+                            ) {
+                                SwitchWidget(
+                                    icon = AppIcons.FlashPreferRoot,
+                                    title = stringResource(R.string.config_always_use_root_in_system),
+                                    description = stringResource(R.string.config_always_use_root_in_system_desc),
+                                    checked = uiState.alwaysUseRootInSystem,
+                                    onCheckedChange = { viewModel.dispatch(InstallerSettingsAction.ChangeAlwaysUseRootInSystem(it)) }
+                                )
+                            }
                             // Nesting specific animations inside a widget is fine if the widget supports it
                             AnimatedVisibility(
                                 visible = uiState.authorizer == Authorizer.Dhizuku,
@@ -171,6 +187,7 @@ fun NewInstallerGlobalSettingsPage(
                                     value = uiState.dhizukuAutoCloseCountDown,
                                     startInt = 1,
                                     endInt = 10,
+                                    stepSize = 1,
                                     onValueChange = {
                                         viewModel.dispatch(InstallerSettingsAction.ChangeDhizukuAutoCloseCountDown(it))
                                     }

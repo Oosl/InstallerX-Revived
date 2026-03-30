@@ -40,9 +40,6 @@ class SettingsActivity : ComponentActivity(), KoinComponent {
         setContent {
             val uiState by themeStateProvider.themeStateFlow.collectAsStateWithLifecycle(initialValue = ThemeState())
             isThemeLoaded = uiState.isLoaded
-            /*CompositionLocalProvider(
-                LocalSessionInstallSupported provides capabilityProvider.isSessionInstallSupported
-            ) {*/
             InstallerTheme(
                 isExpressive = uiState.isExpressive,
                 useMiuix = uiState.useMiuix,
@@ -54,13 +51,15 @@ class SettingsActivity : ComponentActivity(), KoinComponent {
                 seedColor = uiState.seedColor
             ) {
                 if (uiState.useMiuix) {
-                    MiuixSurface(modifier = Modifier.fillMaxSize()) { MiuixSettingsPage() }
+                    MiuixSurface(modifier = Modifier.fillMaxSize()) {
+                        MiuixSettingsPage(uiState)
+                    }
                 } else {
                     Material3Surface(
                         modifier = Modifier.fillMaxSize(),
                         color = if (uiState.isExpressive) MaterialTheme.colorScheme.surfaceContainer
                         else MaterialTheme.colorScheme.surface
-                    ) { SettingsPage() }
+                    ) { SettingsPage(uiState) }
                 }
             }
         }

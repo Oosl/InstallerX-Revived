@@ -113,7 +113,7 @@ fun MiuixThemeSettingsPage(
                 color = hazeState.getMiuixAppBarColor(),
                 title = stringResource(R.string.theme_settings),
                 navigationIcon = {
-                    MiuixBackButton(modifier = Modifier.padding(start = 16.dp), onClick = { navController.navigateUp() })
+                    MiuixBackButton(onClick = { navController.navigateUp() })
                 },
                 scrollBehavior = scrollBehavior
             )

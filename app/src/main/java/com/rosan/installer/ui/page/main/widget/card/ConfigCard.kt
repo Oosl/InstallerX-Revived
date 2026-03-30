@@ -108,6 +108,15 @@ private fun DataItemWidget(
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                             text = stringResource(R.string.config_global_default),
                         )
+                    } else if (entity.scopeCount == 0) {
+                        Spacer(modifier = Modifier.size(8.dp))
+                        // Display a warning tag for configurations that are not default and have no scopes applied
+                        CapsuleTag(
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            text = stringResource(R.string.config_status_inactive),
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                            contentColor = MaterialTheme.colorScheme.onErrorContainer
+                        )
                     }
                 }
                 if (entity.description.isNotEmpty()) {

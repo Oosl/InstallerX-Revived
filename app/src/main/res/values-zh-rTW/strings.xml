@@ -690,8 +690,6 @@
     <string name="exception_authentication_failed">使用者身分驗證失敗</string>
     <string name="exception_zip_exception">開啟 ZIP 檔案失敗</string>
     <string name="old_version_uninstalled">解除安裝</string>
-    <string name="lab_module_always_use_root">始終以 root 權限刷入模組</string>
-    <string name="lab_module_always_use_root_desc">作為系統安裝程式執行時，為了獲得最佳效能，刷入模組時一律使用 root 權限</string>
     <string name="theme_settings_color_spec">顏色規格</string>
     <string name="theme_settings_color_spec_only_2021">當前調色板樣式僅支持 Spec 2021</string>
     <string name="config_label_preferences">偏好設定</string>

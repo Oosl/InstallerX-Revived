@@ -59,7 +59,7 @@ import androidx.navigation.NavController
 import com.rosan.installer.R
 import com.rosan.installer.domain.settings.model.ThemeState
 import com.rosan.installer.domain.settings.provider.ThemeStateProvider
-import com.rosan.installer.domain.settings.repository.ConfigRepo
+import com.rosan.installer.domain.settings.repository.ConfigRepository
 import com.rosan.installer.ui.icons.AppIcons
 import com.rosan.installer.ui.page.main.settings.SettingsSharedViewModel
 import com.rosan.installer.ui.page.main.settings.config.all.AllPage
@@ -88,7 +88,7 @@ fun MainPage(
     val useBlur = showExpressiveUI && uiState.useBlur
     val hazeState = if (useBlur) remember { HazeState() } else null
 
-    val configRepo = koinInject<ConfigRepo>()
+    val configRepo = koinInject<ConfigRepository>()
     val configCountFlow = remember { configRepo.flowAll().map { it.size } }
     val configCount by configCountFlow.collectAsStateWithLifecycle(initialValue = 0)
     val configLabel = stringResource(R.string.config)

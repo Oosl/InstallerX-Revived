@@ -6,9 +6,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import com.rosan.installer.domain.settings.model.ConfigModel
-import com.rosan.installer.domain.settings.repository.AppSettingsRepo
+import com.rosan.installer.domain.settings.repository.AppSettingsRepository
 import com.rosan.installer.domain.settings.repository.BooleanSetting
-import com.rosan.installer.domain.settings.repository.ConfigRepo
+import com.rosan.installer.domain.settings.repository.ConfigRepository
 import com.rosan.installer.domain.settings.util.ConfigOrder
 import com.rosan.installer.ui.page.main.settings.SettingsScreen
 import com.rosan.installer.ui.page.miuix.settings.MiuixSettingsScreen
@@ -26,8 +26,8 @@ import org.koin.core.component.KoinComponent
 
 class AllViewModel(
     var navController: NavController,
-    private val repo: ConfigRepo,
-    private val appSettingsRepo: AppSettingsRepo
+    private val repo: ConfigRepository,
+    private val appSettingsRepo: AppSettingsRepository
 ) : ViewModel(), KoinComponent {
 
     private val _uiState = MutableStateFlow(AllViewState())

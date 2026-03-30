@@ -9,7 +9,6 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -44,7 +43,6 @@ import com.rosan.installer.domain.engine.model.DataType
 import com.rosan.installer.domain.engine.model.InstalledAppInfo
 import com.rosan.installer.domain.engine.model.sortedBest
 import com.rosan.installer.domain.engine.usecase.AnalyzeInstallStateUseCase
-import com.rosan.installer.domain.session.repository.InstallerSessionRepository
 import com.rosan.installer.domain.settings.model.Authorizer
 import com.rosan.installer.ui.icons.AppIcons
 import com.rosan.installer.ui.page.main.installer.InstallerViewAction
@@ -68,10 +66,8 @@ import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.theme.MiuixTheme.isDynamicColor
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun InstallPrepareContent(
-    session: InstallerSessionRepository,
     viewModel: InstallerViewModel,
     appInfo: AppInfoState,
     onCancel: () -> Unit,
@@ -79,8 +75,9 @@ fun InstallPrepareContent(
 ) {
     val isDarkMode = InstallerTheme.isDark
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val config = uiState.config
     val currentPackageName = uiState.currentPackageName
-    val currentPackage = session.analysisResults.find { it.packageName == currentPackageName }
+    val currentPackage = uiState.analysisResults.find { it.packageName == currentPackageName }
     val settings = uiState.viewSettings
 
     var isExpanded by remember { mutableStateOf(false) }
@@ -256,10 +253,10 @@ fun InstallPrepareContent(
                             SDKComparison(
                                 entityToInstall = primaryEntity,
                                 preInstallAppInfo = currentPackage.installedAppInfo,
-                                installer = session
+                                displaySDK = config.displaySdk
                             )
 
-                            AnimatedVisibility(visible = session.config.displaySize && primaryEntity.size > 0) {
+                            AnimatedVisibility(visible = config.displaySize && primaryEntity.size > 0) {
                                 val oldSize = currentPackage.installedAppInfo?.packageSize ?: 0L
                                 val oldSizeStr = if (oldSize > 0 && !isSplitUpdateMode) oldSize.formatSize() else null
                                 val newSizeStr = totalSelectedSize.formatSize()
@@ -271,15 +268,21 @@ fun InstallPrepareContent(
                                 )
                             }
 
-                            if (DeviceConfig.currentManufacturer == Manufacturer.OPPO || DeviceConfig.currentManufacturer == Manufacturer.ONEPLUS) {
-                                AnimatedVisibility(visible = settings.showOPPOSpecial && primaryEntity.sourceType == DataType.APK) {
-                                    primaryEntity.minOsdkVersion?.let {
-                                        AdaptiveInfoRow(
-                                            labelResId = R.string.installer_package_minOsdkVersion_label,
-                                            newValue = it,
-                                            oldValue = null
-                                        )
-                                    }
+                            val isOppoOrOnePlus = DeviceConfig.currentManufacturer == Manufacturer.OPPO ||
+                                    DeviceConfig.currentManufacturer == Manufacturer.ONEPLUS
+                            val shouldShowOppoRow = isOppoOrOnePlus &&
+                                    settings.showOPPOSpecial &&
+                                    primaryEntity.sourceType == DataType.APK &&
+                                    primaryEntity.minOsdkVersion != null
+
+                            AnimatedVisibility(visible = shouldShowOppoRow) {
+                                // At this point, minOsdkVersion is guaranteed to be non-null
+                                primaryEntity.minOsdkVersion?.let { version ->
+                                    AdaptiveInfoRow(
+                                        labelResId = R.string.installer_package_minOsdkVersion_label,
+                                        newValue = version,
+                                        oldValue = null
+                                    )
                                 }
                             }
                         }
@@ -295,14 +298,14 @@ fun InstallPrepareContent(
                                 newValue = primaryEntity.versionCode.toString(),
                                 oldValue = null
                             )
-                            AnimatedVisibility(visible = session.config.displaySdk) {
+                            AnimatedVisibility(visible = config.displaySdk) {
                                 AdaptiveInfoRow(
                                     labelResId = R.string.installer_module_author_label,
                                     newValue = primaryEntity.author,
                                     oldValue = null
                                 )
                             }
-                            AnimatedVisibility(visible = session.config.displaySize) {
+                            AnimatedVisibility(visible = config.displaySize) {
                                 val newSizeStr = totalSelectedSize.formatSize()
                                 AdaptiveInfoRow(
                                     labelResId = R.string.installer_package_size_label,
@@ -324,11 +327,11 @@ fun InstallPrepareContent(
                             SDKComparison(
                                 entityToInstall = primaryEntity,
                                 preInstallAppInfo = currentPackage.installedAppInfo,
-                                installer = session
+                                displaySDK = config.displaySdk
                             )
 
                             // Size
-                            AnimatedVisibility(visible = session.config.displaySize) {
+                            AnimatedVisibility(visible = config.displaySize) {
                                 val newSizeStr = totalSelectedSize.formatSize()
                                 AdaptiveInfoRow(
                                     labelResId = R.string.installer_package_size_label,
@@ -370,8 +373,8 @@ fun InstallPrepareContent(
                         )
 
                     // Install Options
-                    if (session.config.authorizer != Authorizer.Dhizuku &&
-                        session.config.authorizer != Authorizer.None
+                    if (config.authorizer != Authorizer.Dhizuku &&
+                        config.authorizer != Authorizer.None
                     )
                         MiuixNavigationItemWidget(
                             title = stringResource(R.string.config_label_install_options),
@@ -422,7 +425,7 @@ fun InstallPrepareContent(
             AnimatedVisibility(
                 visible = (primaryEntity is AppEntity.ModuleEntity) &&
                         primaryEntity.description.isNotBlank() &&
-                        session.config.displaySdk,
+                        config.displaySdk,
                 enter = fadeIn() + expandVertically(),
                 exit = fadeOut() + shrinkVertically()
             ) {
@@ -667,9 +670,9 @@ private fun AdaptiveInfoRow(
 private fun SDKComparison(
     entityToInstall: AppEntity,
     preInstallAppInfo: InstalledAppInfo?,
-    installer: InstallerSessionRepository
+    displaySDK: Boolean
 ) {
-    AnimatedVisibility(visible = installer.config.displaySdk) {
+    AnimatedVisibility(visible = displaySDK) {
         Column(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.fillMaxWidth()

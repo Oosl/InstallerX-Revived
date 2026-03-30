@@ -2,7 +2,6 @@
 // Copyright (C) 2023-2026 iamr0s, InstallerX Revived contributors
 package com.rosan.installer.ui.page.main.installer.dialog.inner
 
-import android.annotation.SuppressLint
 import android.os.Build
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
@@ -10,7 +9,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -20,7 +18,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -38,7 +35,6 @@ import com.rosan.installer.domain.engine.model.AppEntity
 import com.rosan.installer.domain.engine.model.DataType
 import com.rosan.installer.domain.engine.model.sortedBest
 import com.rosan.installer.domain.engine.usecase.AnalyzeInstallStateUseCase
-import com.rosan.installer.domain.session.repository.InstallerSessionRepository
 import com.rosan.installer.ui.icons.AppIcons
 import com.rosan.installer.ui.page.main.installer.InstallerViewAction
 import com.rosan.installer.ui.page.main.installer.InstallerViewModel
@@ -80,7 +76,7 @@ private fun installPrepareEmptyDialog(
 
 @Composable
 private fun installPrepareTooManyDialog(
-    installer: InstallerSessionRepository, viewModel: InstallerViewModel
+    viewModel: InstallerViewModel
 ): DialogParams {
     return DialogParams(
         icon = DialogInnerParams(
@@ -104,22 +100,20 @@ private fun installPrepareTooManyDialog(
         })
 }
 
-
-@SuppressLint("UnrememberedMutableState")
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun installPrepareDialog(
-    session: InstallerSessionRepository, viewModel: InstallerViewModel
+    viewModel: InstallerViewModel
 ): DialogParams {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val config = uiState.config
     val currentPackageName = uiState.currentPackageName
-    val currentPackage = session.analysisResults.find { it.packageName == currentPackageName }
+    val currentPackage = uiState.analysisResults.find { it.packageName == currentPackageName }
     val settings = uiState.viewSettings
 
     // If there is no specific package to prepare, show an empty/error dialog.
     if (currentPackage == null) {
-        return if (session.analysisResults.size > 1) {
-            installPrepareTooManyDialog(session, viewModel)
+        return if (uiState.analysisResults.size > 1) {
+            installPrepareTooManyDialog(viewModel)
         } else {
             installPrepareEmptyDialog(viewModel)
         }
@@ -149,21 +143,8 @@ fun installPrepareDialog(
     val isSplitUpdateMode = (isBundleSplitUpdate || isPureSplit) && preInstallAppInfo != null
 
     var showChips by remember { mutableStateOf(false) }
-    var autoDelete by remember { mutableStateOf(session.config.autoDelete) }
-    var displaySdk by remember { mutableStateOf(session.config.displaySdk) }
-    var displaySize by remember { mutableStateOf(session.config.displaySize) }
-    var showOPPOSpecial by remember { mutableStateOf(settings.showOPPOSpecial) }
-
-    LaunchedEffect(autoDelete, displaySdk, displaySize) {
-        val currentConfig = session.config
-        if (currentConfig.autoDelete != autoDelete) session.config = session.config.copy(autoDelete = autoDelete)
-        if (currentConfig.displaySdk != displaySdk) session.config = session.config.copy(displaySdk = displaySdk)
-        if (currentConfig.displaySize != displaySize) session.config = session.config.copy(displaySize = displaySize)
-    }
-
     // Call InstallInfoDialog for base structure
     val baseParams = installInfoDialog(
-        session = session,
         viewModel = viewModel,
         onTitleExtraClick = { showChips = !showChips }
     )
@@ -263,7 +244,7 @@ fun installPrepareDialog(
                     AnimatedVisibility(
                         visible = (primaryEntity is AppEntity.ModuleEntity) &&
                                 primaryEntity.description.isNotBlank() &&
-                                displaySdk,
+                                config.displaySdk,
                         enter = fadeIn() + expandVertically(),
                         exit = fadeOut() + shrinkVertically()
                     ) {
@@ -294,42 +275,38 @@ fun installPrepareDialog(
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Chip(
-                                selected = autoDelete,
+                                selected = config.autoDelete, // Read directly from config
                                 onClick = {
-                                    val newValue = !autoDelete
-                                    autoDelete = newValue
-                                    session.config = session.config.copy(autoDelete = newValue)
+                                    // Update via ViewModel
+                                    viewModel.updateConfig { it.copy(autoDelete = !it.autoDelete) }
                                 },
                                 label = stringResource(id = R.string.config_auto_delete),
                                 icon = AppIcons.Delete
                             )
                             Chip(
-                                selected = displaySdk,
+                                selected = config.displaySdk, // Read directly from config
                                 onClick = {
-                                    val newValue = !displaySdk
-                                    displaySdk = newValue
-                                    session.config = session.config.copy(displaySdk = newValue)
+                                    // Update via ViewModel
+                                    viewModel.updateConfig { it.copy(displaySdk = !it.displaySdk) }
                                 },
                                 label = stringResource(id = R.string.config_display_sdk_version),
                                 icon = AppIcons.Info
                             )
                             Chip(
-                                selected = displaySize,
+                                selected = config.displaySize, // Read directly from config
                                 onClick = {
-                                    val newValue = !displaySize
-                                    displaySize = newValue
-                                    session.config = session.config.copy(displaySize = newValue)
+                                    // Update via ViewModel
+                                    viewModel.updateConfig { it.copy(displaySize = !it.displaySize) }
                                 },
                                 label = stringResource(id = R.string.config_display_size),
                                 icon = AppIcons.ShowSize
                             )
                             if (DeviceConfig.currentManufacturer == Manufacturer.OPPO || DeviceConfig.currentManufacturer == Manufacturer.ONEPLUS)
                                 Chip(
-                                    selected = showOPPOSpecial,
+                                    selected = settings.showOPPOSpecial, // From viewSettings
                                     onClick = {
-                                        val newValue = !showOPPOSpecial
-                                        showOPPOSpecial = newValue
-                                        settings.copy(showOPPOSpecial = newValue)
+                                        val newValue = !settings.showOPPOSpecial
+                                        viewModel.dispatch(InstallerViewAction.SetTempShowOPPOSpecial(newValue))
                                     },
                                     label = stringResource(id = R.string.installer_show_oem_special),
                                     icon = AppIcons.OEMSpecial
@@ -337,9 +314,11 @@ fun installPrepareDialog(
                         }
                     }
                 }
+
                 val isInvalidSplitInstall = currentPackage.installedAppInfo == null &&
                         entityToInstall == null &&
                         selectedEntities.any { it is AppEntity.SplitEntity }
+
                 if (isInvalidSplitInstall)
                     item {
                         WarningTextBlock(listOf(Pair(stringResource(R.string.installer_splits_invalid_tip), MaterialTheme.colorScheme.error)))
@@ -373,6 +352,7 @@ fun installPrepareDialog(
                 } ?: false
 
                 val canInstall = canInstallBaseEntity || canInstallModuleEntity || canInstallSplitEntity
+
                 // only when the entity is a split APK, XAPK, or APKM
                 if (canInstall && settings.showExtendedMenu && isAPK) {
                     add(DialogButton(stringResource(R.string.install_choice), 1f) {

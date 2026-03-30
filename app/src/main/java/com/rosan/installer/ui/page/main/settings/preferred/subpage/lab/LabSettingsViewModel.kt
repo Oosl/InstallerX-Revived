@@ -4,8 +4,9 @@ package com.rosan.installer.ui.page.main.settings.preferred.subpage.lab
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.rosan.installer.domain.settings.repository.AppSettingsRepo
+import com.rosan.installer.domain.settings.repository.AppSettingsRepository
 import com.rosan.installer.domain.settings.repository.BooleanSetting
+import com.rosan.installer.domain.settings.repository.IntSetting
 import com.rosan.installer.domain.settings.repository.StringSetting
 import com.rosan.installer.domain.settings.usecase.settings.UpdateSettingUseCase
 import kotlinx.coroutines.flow.SharingStarted
@@ -15,7 +16,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class LabSettingsViewModel(
-    appSettingsRepo: AppSettingsRepo,
+    appSettingsRepo: AppSettingsRepository,
     private val updateSetting: UpdateSettingUseCase
 ) : ViewModel() {
 
@@ -24,9 +25,9 @@ class LabSettingsViewModel(
             useBlur = prefs.useBlur,
             labRootEnableModuleFlash = prefs.labRootEnableModuleFlash,
             labRootShowModuleArt = prefs.labRootShowModuleArt,
-            labRootModuleAlwaysUseRoot = prefs.labRootModuleAlwaysUseRoot,
             labRootImplementation = prefs.labRootImplementation,
             labUseMiIsland = prefs.labUseMiIsland,
+            labMiIslandBlockingIntervalMs = prefs.labUseMiIslandBlockingIntervalMs,
             labSetInstallRequester = prefs.labSetInstallRequester,
             labHttpProfile = prefs.labHttpProfile,
             labHttpSaveFile = prefs.labHttpSaveFile,
@@ -54,13 +55,6 @@ class LabSettingsViewModel(
                 )
             }
 
-            is LabSettingsAction.LabChangeRootModuleAlwaysUseRoot -> viewModelScope.launch {
-                updateSetting(
-                    BooleanSetting.LabModuleAlwaysRoot,
-                    action.enable
-                )
-            }
-
             is LabSettingsAction.LabChangeRootImplementation -> viewModelScope.launch {
                 updateSetting(
                     StringSetting.LabRootImplementation,
@@ -72,6 +66,13 @@ class LabSettingsViewModel(
                 updateSetting(
                     BooleanSetting.ShowMiIsland,
                     action.enable
+                )
+            }
+
+            is LabSettingsAction.LabChangeMiIslandBlockingIntervalMs -> viewModelScope.launch {
+                updateSetting(
+                    IntSetting.ShowMiIslandBlockingInterval,
+                    action.ms
                 )
             }
 

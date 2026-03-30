@@ -43,11 +43,14 @@ data class ConfigModel(
     val createdAt: Long = System.currentTimeMillis(),
     val modifiedAt: Long = System.currentTimeMillis(),
 
+    // Added field to store the number of associated apps (scopes)
+    val scopeCount: Int = 0,
+
     // Runtime fields that are not saved in the database but needed for business logic
-    var installFlags: Int = 0,
-    var bypassBlacklistInstallSetByUser: Boolean = false,
-    var uninstallFlags: Int = 0,
-    var callingFromUid: Int? = null
+    val installFlags: Int = 0,
+    val bypassBlacklistInstallSetByUser: Boolean = false,
+    val uninstallFlags: Int = 0,
+    val callingFromUid: Int? = null
 ) {
     companion object {
         var default = ConfigModel(

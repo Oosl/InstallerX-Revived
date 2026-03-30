@@ -222,6 +222,13 @@ private fun DataItemWidget(
                     if (isDefault) {
                         Spacer(modifier = Modifier.size(8.dp))
                         MiuixBadge(stringResource(id = R.string.config_global_default))
+                    } else if (entity.scopeCount == 0) {
+                        Spacer(modifier = Modifier.size(8.dp))
+                        MiuixBadge(
+                            text = stringResource(id = R.string.config_status_inactive),
+                            textColor = MiuixTheme.colorScheme.error,
+                            containerColor = MiuixTheme.colorScheme.error.copy(alpha = 0.2f)
+                        )
                     }
                 }
                 Spacer(modifier = Modifier.size(4.dp))

@@ -43,6 +43,7 @@ import androidx.navigation.NavController
 import com.rosan.installer.R
 import com.rosan.installer.core.env.DeviceConfig
 import com.rosan.installer.domain.device.model.Manufacturer
+import com.rosan.installer.domain.device.provider.DeviceCapabilityProvider
 import com.rosan.installer.domain.settings.model.Authorizer
 import com.rosan.installer.domain.settings.model.InstallMode
 import com.rosan.installer.ui.icons.AppIcons
@@ -62,6 +63,7 @@ import com.rosan.installer.ui.theme.rememberMiuixHazeStyle
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.HorizontalDivider
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
@@ -77,6 +79,7 @@ fun MiuixInstallerGlobalSettingsPage(
     viewModel: InstallerSettingsViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.state.collectAsStateWithLifecycle()
+    val capabilityProvider = koinInject<DeviceCapabilityProvider>()
     val scrollBehavior = MiuixScrollBehavior()
     val hazeState = if (uiState.useBlur) remember { HazeState() } else null
     val hazeStyle = rememberMiuixHazeStyle()
@@ -96,7 +99,7 @@ fun MiuixInstallerGlobalSettingsPage(
                 color = hazeState.getMiuixAppBarColor(),
                 title = stringResource(R.string.installer_settings),
                 navigationIcon = {
-                    MiuixBackButton(modifier = Modifier.padding(start = 16.dp), onClick = { navController.navigateUp() })
+                    MiuixBackButton(onClick = { navController.navigateUp() })
                 },
                 scrollBehavior = scrollBehavior
             )
@@ -130,6 +133,19 @@ fun MiuixInstallerGlobalSettingsPage(
                             viewModel.dispatch(InstallerSettingsAction.ChangeGlobalAuthorizer(newAuthorizer))
                         }
                     ) {
+                        AnimatedVisibility(
+                            visible = uiState.authorizer == Authorizer.None && capabilityProvider.isSystemApp,
+                            enter = fadeIn() + expandVertically(),
+                            exit = fadeOut() + shrinkVertically()
+                        ) {
+                            MiuixSwitchWidget(
+                                icon = AppIcons.FlashPreferRoot,
+                                title = stringResource(R.string.config_always_use_root_in_system),
+                                description = stringResource(R.string.config_always_use_root_in_system_desc),
+                                checked = uiState.alwaysUseRootInSystem,
+                                onCheckedChange = { viewModel.dispatch(InstallerSettingsAction.ChangeAlwaysUseRootInSystem(it)) }
+                            )
+                        }
                         AnimatedVisibility(
                             visible = uiState.authorizer == Authorizer.Dhizuku,
                             enter = fadeIn() + expandVertically(),

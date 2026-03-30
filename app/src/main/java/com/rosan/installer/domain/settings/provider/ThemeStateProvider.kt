@@ -7,7 +7,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import com.kieronquinn.monetcompat.core.MonetCompat
 import com.rosan.installer.domain.settings.model.ThemeState
-import com.rosan.installer.domain.settings.repository.AppSettingsRepo
+import com.rosan.installer.domain.settings.repository.AppSettingsRepository
 import com.rosan.installer.domain.settings.repository.BooleanSetting
 import com.rosan.installer.domain.settings.repository.IntSetting
 import com.rosan.installer.domain.settings.repository.StringSetting
@@ -23,7 +23,7 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import timber.log.Timber
 
-class ThemeStateProvider(private val appSettingsRepo: AppSettingsRepo) {
+class ThemeStateProvider(private val appSettingsRepo: AppSettingsRepository) {
 
     val themeStateFlow: Flow<ThemeState> = combine(
         appSettingsRepo.getBoolean(BooleanSetting.UiUseMiuix, false),
@@ -39,7 +39,7 @@ class ThemeStateProvider(private val appSettingsRepo: AppSettingsRepo) {
         appSettingsRepo.getBoolean(BooleanSetting.UiUseAppleFloatingBar, false),
         appSettingsRepo.getInt(IntSetting.ThemeSeedColor, PresetColors.first().color.toArgb())
             .map { Color(it) },
-        appSettingsRepo.getBoolean(BooleanSetting.UiUseBlur, true),
+        appSettingsRepo.getBoolean(BooleanSetting.UiUseBlur, Build.VERSION.SDK_INT >= Build.VERSION_CODES.S),
         getWallpaperColorsFlow()
     ) { values: Array<Any?> ->
         var idx = 0

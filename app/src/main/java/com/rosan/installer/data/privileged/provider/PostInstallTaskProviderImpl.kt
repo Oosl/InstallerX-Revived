@@ -8,15 +8,39 @@ import com.rosan.installer.domain.device.provider.DeviceCapabilityProvider
 import com.rosan.installer.domain.privileged.model.PostInstallTaskInfo
 import com.rosan.installer.domain.privileged.provider.PostInstallTaskProvider
 import com.rosan.installer.domain.settings.model.Authorizer
+import com.rosan.installer.domain.settings.repository.AppSettingsRepository
+import com.rosan.installer.domain.settings.repository.BooleanSetting
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
 class PostInstallTaskProviderImpl(
+    private val appSettingsRepo: AppSettingsRepository,
     private val capabilityProvider: DeviceCapabilityProvider
 ) : PostInstallTaskProvider {
+
     override suspend fun executeTasks(authorizer: Authorizer, customizeAuthorizer: String, info: PostInstallTaskInfo) {
-        val noPerm = authorizer == Authorizer.None || authorizer == Authorizer.Dhizuku
+        // Early exit if no tasks are present
+        if (!info.hasTasks) return
+
+        // 1. Fetch configuration within the coroutine scope
+        val alwaysUseRootInSystem = appSettingsRepo
+            .getBoolean(BooleanSetting.AlwaysUseRootInSystem, false)
+            .first()
+
+        // 2. Elevation logic: If authorizer is None but it's a system app with AlwaysUseRoot enabled, elevate to Root
+        val finalAuthorizer = if (authorizer == Authorizer.None &&
+            capabilityProvider.isSystemApp &&
+            alwaysUseRootInSystem
+        ) {
+            Timber.d("Elevating Authorizer.None to Authorizer.Root due to system app status and AlwaysUseRoot configuration.")
+            Authorizer.Root
+        } else authorizer
+
+        // 3. Determine permission status based on the potentially elevated authorizer
+        val noPerm = finalAuthorizer == Authorizer.None || finalAuthorizer == Authorizer.Dhizuku
+
         coroutineScope {
             if (!info.hasTasks) return@coroutineScope
 

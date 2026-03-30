@@ -10,11 +10,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -24,7 +20,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rosan.installer.R
 import com.rosan.installer.core.env.DeviceConfig
 import com.rosan.installer.domain.device.model.Manufacturer
-import com.rosan.installer.domain.session.repository.InstallerSessionRepository
 import com.rosan.installer.ui.page.main.installer.InstallerViewAction
 import com.rosan.installer.ui.page.main.installer.InstallerViewModel
 import com.rosan.installer.ui.page.miuix.widgets.MiuixSwitchWidget
@@ -38,25 +33,17 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme.isDynamicColor
 
 @Composable
 fun PrepareSettingsContent(
-    session: InstallerSessionRepository,
     viewModel: InstallerViewModel
 ) {
     val isDarkMode = InstallerTheme.isDark
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val settings = uiState.viewSettings
-    var autoDelete by remember { mutableStateOf(session.config.autoDelete) }
-    var displaySdk by remember { mutableStateOf(session.config.displaySdk) }
-    var displaySize by remember { mutableStateOf(session.config.displaySize) }
-    var showOPPOSpecial by remember { mutableStateOf(settings.showOPPOSpecial) }
+
+    // Read directly from the reactive Single Source of Truth
+    val config = uiState.config
 
     BackHandler {
         viewModel.dispatch(InstallerViewAction.HideMiuixSheetRightActionSettings)
-    }
-
-    LaunchedEffect(autoDelete, displaySdk) {
-        val currentConfig = session.config
-        if (currentConfig.autoDelete != autoDelete) session.config = session.config.copy(autoDelete = autoDelete)
-        if (currentConfig.displaySdk != displaySdk) session.config = session.config.copy(displaySdk = displaySdk)
     }
 
     Column(
@@ -80,44 +67,39 @@ fun PrepareSettingsContent(
                     stringResource(id = R.string.config_display_sdk_version_desc),
                     stringResource(id = R.string.config_display_module_extra_info_desc)
                 ),
-                checked = displaySdk,
-                onCheckedChange = {
-                    val newValue = !displaySdk
-                    displaySdk = newValue
-                    session.config = session.config.copy(displaySdk = newValue)
+                checked = config.displaySdk,
+                onCheckedChange = { newValue ->
+                    // Update immutable config through ViewModel
+                    viewModel.updateConfig { it.copy(displaySdk = newValue) }
                 }
             )
             MiuixSwitchWidget(
                 title = stringResource(R.string.config_display_size),
                 description = stringResource(R.string.config_display_size_desc),
-                checked = displaySize,
-                onCheckedChange = {
-                    val newValue = !displaySize
-                    displaySize = newValue
-                    session.config = session.config.copy(displaySize = newValue)
+                checked = config.displaySize,
+                onCheckedChange = { newValue ->
+                    viewModel.updateConfig { it.copy(displaySize = newValue) }
                 }
             )
             MiuixSwitchWidget(
                 title = stringResource(R.string.config_auto_delete),
                 description = stringResource(R.string.config_auto_delete_desc),
-                checked = session.config.autoDelete,
-                onCheckedChange = {
-                    val newValue = !autoDelete
-                    autoDelete = newValue
-                    session.config = session.config.copy(autoDelete = newValue)
+                checked = config.autoDelete,
+                onCheckedChange = { newValue ->
+                    viewModel.updateConfig { it.copy(autoDelete = newValue) }
                 }
             )
-            if (DeviceConfig.currentManufacturer == Manufacturer.OPPO || DeviceConfig.currentManufacturer == Manufacturer.ONEPLUS)
+
+            if (DeviceConfig.currentManufacturer == Manufacturer.OPPO || DeviceConfig.currentManufacturer == Manufacturer.ONEPLUS) {
                 MiuixSwitchWidget(
                     title = stringResource(R.string.installer_show_oem_special),
                     description = stringResource(R.string.installer_show_oem_special_desc),
-                    checked = showOPPOSpecial,
-                    onCheckedChange = {
-                        val newValue = !showOPPOSpecial
-                        showOPPOSpecial = newValue
-                        settings.copy(showOPPOSpecial = newValue)
+                    checked = settings.showOPPOSpecial,
+                    onCheckedChange = { newValue ->
+                        viewModel.dispatch(InstallerViewAction.SetTempShowOPPOSpecial(newValue))
                     }
                 )
+            }
         }
         Spacer(
             modifier = Modifier

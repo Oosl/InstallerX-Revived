@@ -42,6 +42,7 @@ import com.rosan.installer.ui.icons.AppIcons
 import com.rosan.installer.ui.page.main.settings.preferred.subpage.lab.LabSettingsAction
 import com.rosan.installer.ui.page.main.settings.preferred.subpage.lab.LabSettingsViewModel
 import com.rosan.installer.ui.page.miuix.widgets.MiuixBackButton
+import com.rosan.installer.ui.page.miuix.widgets.MiuixIntNumberPickerWidget
 import com.rosan.installer.ui.page.miuix.widgets.MiuixRootImplementationDialog
 import com.rosan.installer.ui.page.miuix.widgets.MiuixSettingsTipCard
 import com.rosan.installer.ui.page.miuix.widgets.MiuixSwitchWidget
@@ -58,7 +59,7 @@ import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.SpinnerEntry
 import top.yukonga.miuix.kmp.basic.TopAppBar
-import top.yukonga.miuix.kmp.extra.SuperSpinner
+import top.yukonga.miuix.kmp.preference.WindowSpinnerPreference
 import top.yukonga.miuix.kmp.utils.overScrollVertical
 import top.yukonga.miuix.kmp.utils.scrollEndHaptic
 
@@ -97,7 +98,7 @@ fun MiuixLabPage(
                 color = hazeState.getMiuixAppBarColor(),
                 title = stringResource(R.string.lab),
                 navigationIcon = {
-                    MiuixBackButton(modifier = Modifier.padding(start = 16.dp), onClick = { navController.navigateUp() })
+                    MiuixBackButton(onClick = { navController.navigateUp() })
                 },
                 scrollBehavior = scrollBehavior
             )
@@ -163,7 +164,7 @@ fun MiuixLabPage(
                         }
 
                         Column {
-                            SuperSpinner(
+                            WindowSpinnerPreference(
                                 title = stringResource(R.string.lab_module_select_root_impl),
                                 items = spinnerEntries,
                                 selectedIndex = selectedIndex,
@@ -179,13 +180,6 @@ fun MiuixLabPage(
                                 checked = uiState.labRootShowModuleArt,
                                 onCheckedChange = { viewModel.dispatch(LabSettingsAction.LabChangeRootShowModuleArt(it)) }
                             )
-                            if (capabilityProvider.isSystemApp)
-                                MiuixSwitchWidget(
-                                    title = stringResource(R.string.lab_module_always_use_root),
-                                    description = stringResource(R.string.lab_module_always_use_root_desc),
-                                    checked = uiState.labRootModuleAlwaysUseRoot,
-                                    onCheckedChange = { viewModel.dispatch(LabSettingsAction.LabChangeRootModuleAlwaysUseRoot(it)) }
-                                )
                         }
                     }
                 }
@@ -204,6 +198,21 @@ fun MiuixLabPage(
                             checked = uiState.labUseMiIsland,
                             onCheckedChange = { viewModel.dispatch(LabSettingsAction.LabChangeUseMiIsland(it)) }
                         )
+                    AnimatedVisibility(
+                        visible = isMiIslandSupported && uiState.labUseMiIsland,
+                        enter = expandVertically() + fadeIn(),
+                        exit = shrinkVertically() + fadeOut()
+                    ) {
+                        MiuixIntNumberPickerWidget(
+                            title = stringResource(R.string.lab_mi_island_countdown),
+                            description = stringResource(R.string.lab_mi_island_countdown_desc),
+                            value = uiState.labMiIslandBlockingIntervalMs,
+                            startInt = 50,
+                            endInt = 350
+                        ) {
+                            viewModel.dispatch(LabSettingsAction.LabChangeMiIslandBlockingIntervalMs(it))
+                        }
+                    }
                     MiuixSwitchWidget(
                         icon = AppIcons.Share,
                         title = stringResource(R.string.lab_tap_icon_to_share),
@@ -256,7 +265,7 @@ fun MiuixLabPage(
                             profileData.keys.toList().indexOf(currentProfile).coerceAtLeast(0)
                         }
 
-                        SuperSpinner(
+                        WindowSpinnerPreference(
                             title = stringResource(R.string.lab_http_profile),
                             items = profileEntries,
                             selectedIndex = profileIndex,

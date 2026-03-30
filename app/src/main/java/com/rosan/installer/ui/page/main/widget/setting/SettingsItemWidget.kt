@@ -176,54 +176,6 @@ fun DataAuthorizerWidget(
     }
 }
 
-/*@Composable
-fun DataCustomizeAuthorizerWidget(viewModel: InstallerSettingsViewModel) {
-    val uiState by viewModel.state.collectAsStateWithLifecycle()
-    if (!uiState.authorizerCustomize) return
-    val customizeAuthorizer = uiState.customizeAuthorizer
-    TextField(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp, horizontal = 16.dp)
-            .focusable(),
-        leadingIcon = {
-            Icon(imageVector = AppIcons.Terminal, contentDescription = null)
-        },
-        label = {
-            Text(stringResource(R.string.config_customize_authorizer))
-        },
-        value = customizeAuthorizer,
-        onValueChange = { viewModel.dispatch(PreferredViewAction.ChangeGlobalCustomizeAuthorizer(it)) },
-        maxLines = 8,
-    )
-}*/
-
-/**
- * @author iamr0s
- */
-/*@Composable
-fun DataInstallModeWidget(viewModel: PreferredViewModel) {
-    val installMode = viewModel.state.installMode
-    val data = mapOf(
-        InstallMode.Dialog to stringResource(R.string.config_install_mode_dialog),
-        InstallMode.AutoDialog to stringResource(R.string.config_install_mode_auto_dialog),
-        InstallMode.Notification to stringResource(R.string.config_install_mode_notification),
-        InstallMode.AutoNotification to stringResource(R.string.config_install_mode_auto_notification),
-        InstallMode.Ignore to stringResource(R.string.config_install_mode_ignore),
-    )
-    DropDownMenuWidget(
-        icon = Icons.TwoTone.Downloading,
-        title = stringResource(R.string.config_install_mode),
-        description = if (data.containsKey(installMode)) data[installMode] else null,
-        choice = data.keys.toList().indexOf(installMode),
-        data = data.values.toList(),
-    ) {
-        data.keys.toList().getOrNull(it)?.let {
-            viewModel.dispatch(PreferredViewAction.ChangeGlobalInstallMode(it))
-        }
-    }
-}*/
-
 data class InstallModeInfo(
     @param:StringRes val labelResId: Int,
     val icon: ImageVector

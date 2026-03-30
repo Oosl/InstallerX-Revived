@@ -40,6 +40,9 @@ class AppDataStore(
         // Show Mi Island
         val SHOW_MI_ISLAND = booleanPreferencesKey("show_mi_island")
 
+        // The duration to keep the network blocked to bypass Xiaomi's notification scanner
+        val SHOW_MI_ISLAND_BLOCKING_INTERVAL_MS = intPreferencesKey("show_mi_island_blocking_interval")
+
         // Use Biometric Auth Install
         val INSTALLER_REQUIRE_BIOMETRIC_AUTH = booleanPreferencesKey("installer_use_biometric_auth")
 
@@ -100,11 +103,12 @@ class AppDataStore(
             stringPreferencesKey("managed_shared_user_id_blacklist")
         val MANAGED_SHARED_USER_ID_EXEMPTED_PACKAGES_LIST =
             stringPreferencesKey("managed_shared_user_id_blacklist_exempted_packages_list")
+        val ALWAYS_USE_ROOT_IN_SYSTEM =
+            booleanPreferencesKey("always_use_root_in_system")
 
         // Lab
         val LAB_ENABLE_MODULE_FLASH = booleanPreferencesKey("enable_module_flash")
         val LAB_MODULE_FLASH_SHOW_ART = booleanPreferencesKey("module_flash_show_art")
-        val LAB_MODULE_ALWAYS_ROOT = booleanPreferencesKey("module_always_root")
         val LAB_ROOT_IMPLEMENTATION = stringPreferencesKey("lab_root_implementation")
         val LAB_HTTP_PROFILE = stringPreferencesKey("lab_http_profile")
         val LAB_HTTP_SAVE_FILE = booleanPreferencesKey("lab_http_save_file")

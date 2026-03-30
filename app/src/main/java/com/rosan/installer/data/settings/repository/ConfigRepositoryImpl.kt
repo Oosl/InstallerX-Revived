@@ -7,15 +7,15 @@ import com.rosan.installer.data.settings.local.room.dao.ConfigDao
 import com.rosan.installer.data.settings.mapper.toDomainModel
 import com.rosan.installer.data.settings.mapper.toEntity
 import com.rosan.installer.domain.settings.model.ConfigModel
-import com.rosan.installer.domain.settings.repository.ConfigRepo
+import com.rosan.installer.domain.settings.repository.ConfigRepository
 import com.rosan.installer.domain.settings.util.ConfigOrder
 import com.rosan.installer.domain.settings.util.OrderType
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
-class ConfigRepoImpl(
+class ConfigRepositoryImpl(
     private val dao: ConfigDao
-) : ConfigRepo {
+) : ConfigRepository {
 
     private fun buildOrderQuery(order: ConfigOrder): SimpleSQLiteQuery {
         val column = when (order) {
@@ -25,17 +25,26 @@ class ConfigRepoImpl(
             is ConfigOrder.ModifiedAt -> "modifiedAt"
         }
         val direction = if (order.orderType == OrderType.Ascending) "ASC" else "DESC"
-        return SimpleSQLiteQuery("SELECT * FROM config ORDER BY $column $direction")
+
+        // Subquery to count related apps from the 'app' table
+        val queryString = """
+            SELECT config.*, 
+                   (SELECT COUNT(*) FROM app WHERE app.config_id = config.id) AS scope_count
+            FROM config 
+            ORDER BY config.$column $direction
+        """.trimIndent()
+
+        return SimpleSQLiteQuery(queryString)
     }
 
     override suspend fun all(order: ConfigOrder): List<ConfigModel> {
         val query = buildOrderQuery(order)
-        return dao.getAllDynamically(query).map { it.toDomainModel() }
+        return dao.getAllDynamically(query).map { it.toDomainModel() } // Requires Mapper update
     }
 
     override fun flowAll(order: ConfigOrder): Flow<List<ConfigModel>> {
         val query = buildOrderQuery(order)
-        return dao.flowAllDynamically(query).map { list -> list.map { it.toDomainModel() } }
+        return dao.flowAllDynamically(query).map { list -> list.map { it.toDomainModel() } } // Requires Mapper update
     }
 
     override suspend fun find(id: Long): ConfigModel? {

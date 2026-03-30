@@ -652,8 +652,6 @@
     <string name="old_version_uninstalled">Verwijderd</string>
     <string name="config_authorizer_none_system_app_tips">Uitvoerend als systeeminstallateur, de meeste opties hier zijn niet nodig.</string>
     <string name="installer_author">Auteur: %1$s</string>
-    <string name="lab_module_always_use_root">Altijd root gebruiken bij het flashen van modules</string>
-    <string name="lab_module_always_use_root_desc">Tijdens het werken als systeeminstallateur, altijd root gebruiken voor het flashen van modules voor de beste prestaties</string>
     <string name="open_source_license_settings_description">Bekijk open-sourcebibliotheken van derden en hun licenties</string>
     <string name="visit_home_page">Startpagina bezoeken</string>
     <string name="license">Licentie: %s</string>

@@ -669,8 +669,6 @@
     <string name="lab_module_flashing_desc">Selalu periksa dua kali sebelum flashing modul apa pun!</string>
     <string name="lab_module_flashing_show_art">Tampilkan seni ASCII</string>
     <string name="lab_module_flashing_show_art_desc">Tampilkan seni ASCII InstallerX saat instalasi dimulai</string>
-    <string name="lab_module_always_use_root">Selalu gunakan root untuk flash modul</string>
-    <string name="lab_module_always_use_root_desc">Saat bekerja sebagai installer sistem, selalu gunakan root untuk flash modul untuk mendapatkan performa terbaik</string>
     <string name="lab_module_select_root_impl">Pilih implementasi root</string>
     <string name="lab_http_save_file">Simpan file yang diunduh</string>
     <string name="lab_http_save_file_desc">Simpan file ke folder Unduhan setelah unduhan selesai</string>

@@ -4,9 +4,9 @@ package com.rosan.installer.domain.settings.usecase.config
 
 import com.rosan.installer.domain.settings.model.Authorizer
 import com.rosan.installer.domain.settings.model.ConfigModel
-import com.rosan.installer.domain.settings.repository.ConfigRepo
+import com.rosan.installer.domain.settings.repository.ConfigRepository
 
-class SaveConfigUseCase(private val configRepo: ConfigRepo) {
+class SaveConfigUseCase(private val configRepo: ConfigRepository) {
 
     enum class Error {
         NAME_EMPTY,

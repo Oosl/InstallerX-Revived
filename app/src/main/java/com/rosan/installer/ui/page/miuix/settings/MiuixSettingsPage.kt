@@ -64,7 +64,6 @@ import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.rosan.installer.R
 import com.rosan.installer.domain.settings.model.ThemeState
-import com.rosan.installer.domain.settings.provider.ThemeStateProvider
 import com.rosan.installer.ui.icons.AppIcons
 import com.rosan.installer.ui.page.main.settings.SettingsSharedViewModel
 import com.rosan.installer.ui.page.miuix.settings.config.all.MiuixAllPage
@@ -72,6 +71,7 @@ import com.rosan.installer.ui.page.miuix.settings.config.apply.MiuixApplyPage
 import com.rosan.installer.ui.page.miuix.settings.config.edit.MiuixEditPage
 import com.rosan.installer.ui.page.miuix.settings.preferred.MiuixPreferredPage
 import com.rosan.installer.ui.page.miuix.settings.preferred.subpage.about.MiuixAboutPage
+import com.rosan.installer.ui.page.miuix.settings.preferred.subpage.about.MiuixBlendAboutPage
 import com.rosan.installer.ui.page.miuix.settings.preferred.subpage.about.ossLicensePage.MiuixOpenSourceLicensePage
 import com.rosan.installer.ui.page.miuix.settings.preferred.subpage.installer.MiuixInstallerGlobalSettingsPage
 import com.rosan.installer.ui.page.miuix.settings.preferred.subpage.lab.MiuixLabPage
@@ -88,7 +88,6 @@ import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
-import org.koin.compose.koinInject
 import top.yukonga.miuix.kmp.basic.FloatingActionButton
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.NavigationBar
@@ -105,11 +104,10 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 @OptIn(ExperimentalHazeMaterialsApi::class)
 @Composable
 fun MiuixSettingsPage(
+    uiState: ThemeState,
     sharedViewModel: SettingsSharedViewModel = koinViewModel(viewModelStoreOwner = LocalActivity.current as ComponentActivity)
 ) {
     val navController = rememberNavController()
-    val themeStateProvider = koinInject<ThemeStateProvider>()
-    val uiState by themeStateProvider.themeStateFlow.collectAsStateWithLifecycle(initialValue = ThemeState())
     val sharedState by sharedViewModel.state.collectAsStateWithLifecycle()
     val useBlur = uiState.useBlur
     val useFloatingBottomBar = uiState.useAppleFloatingBar
@@ -248,7 +246,9 @@ fun MiuixSettingsPage(
             )
         }
         composable(route = MiuixSettingsScreen.MiuixAbout.route) {
-            MiuixAboutPage(navController = navController)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA)
+                MiuixBlendAboutPage(navController = navController)
+            else MiuixAboutPage(navController = navController)
         }
         composable(route = MiuixSettingsScreen.MiuixOpenSourceLicense.route) {
             MiuixOpenSourceLicensePage(navController = navController)

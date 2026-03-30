@@ -279,7 +279,9 @@ fun NewApplyPage(
                         modifier = Modifier.fillMaxSize(),
                         indicator = {
                             PullToRefreshDefaults.LoadingIndicator(
-                                modifier = Modifier.align(Alignment.TopCenter),
+                                modifier = Modifier
+                                    .align(Alignment.TopCenter)
+                                    .padding(top = paddingValues.calculateTopPadding()),
                                 state = pullToRefreshState,
                                 isRefreshing = refreshing,
                                 color = MaterialTheme.colorScheme.primary,

@@ -8,7 +8,7 @@ import com.rosan.installer.domain.settings.util.OrderType
 import kotlinx.coroutines.flow.Flow
 
 // Repository interface in domain layer
-interface ConfigRepo {
+interface ConfigRepository {
     suspend fun all(order: ConfigOrder = ConfigOrder.Id(OrderType.Ascending)): List<ConfigModel>
 
     fun flowAll(order: ConfigOrder = ConfigOrder.Id(OrderType.Ascending)): Flow<List<ConfigModel>>

@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -75,6 +76,7 @@ fun MiuixIntNumberPickerWidget(
             // The current integer value is displayed next to the slider.
             Text(
                 text = value.toString(),
+                modifier = Modifier.defaultMinSize(minWidth = 36.dp),
                 style = MiuixTheme.textStyles.button,
                 color = MiuixTheme.colorScheme.primary
             )

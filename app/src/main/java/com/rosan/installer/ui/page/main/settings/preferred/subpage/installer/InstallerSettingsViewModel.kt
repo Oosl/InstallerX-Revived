@@ -5,7 +5,7 @@ package com.rosan.installer.ui.page.main.settings.preferred.subpage.installer
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.rosan.installer.domain.settings.provider.SystemEnvProvider
-import com.rosan.installer.domain.settings.repository.AppSettingsRepo
+import com.rosan.installer.domain.settings.repository.AppSettingsRepository
 import com.rosan.installer.domain.settings.repository.BooleanSetting
 import com.rosan.installer.domain.settings.repository.IntSetting
 import com.rosan.installer.domain.settings.repository.NamedPackageListSetting
@@ -21,7 +21,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class InstallerSettingsViewModel(
-    appSettingsRepo: AppSettingsRepo,
+    appSettingsRepo: AppSettingsRepository,
     private val systemEnvProvider: SystemEnvProvider,
     private val updateSetting: UpdateSettingUseCase,
     private val managePackageListUseCase: ManagePackageListUseCase,
@@ -32,6 +32,7 @@ class InstallerSettingsViewModel(
         InstallerSettingsState(
             useBlur = prefs.useBlur,
             authorizer = prefs.authorizer,
+            alwaysUseRootInSystem = prefs.alwaysUseRootInSystem,
             dhizukuAutoCloseCountDown = prefs.dhizukuAutoCloseCountDown,
             installMode = prefs.installMode,
             showLiveActivity = prefs.showLiveActivity,
@@ -62,6 +63,13 @@ class InstallerSettingsViewModel(
                 updateSetting(
                     StringSetting.Authorizer,
                     action.authorizer.value
+                )
+            }
+
+            is InstallerSettingsAction.ChangeAlwaysUseRootInSystem -> viewModelScope.launch {
+                updateSetting(
+                    BooleanSetting.AlwaysUseRootInSystem,
+                    action.alwaysUseRootInSystem
                 )
             }
 

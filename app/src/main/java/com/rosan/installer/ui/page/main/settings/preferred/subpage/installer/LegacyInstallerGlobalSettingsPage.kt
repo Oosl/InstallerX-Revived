@@ -44,6 +44,7 @@ import androidx.navigation.NavController
 import com.rosan.installer.R
 import com.rosan.installer.core.env.DeviceConfig
 import com.rosan.installer.domain.device.model.Manufacturer
+import com.rosan.installer.domain.device.provider.DeviceCapabilityProvider
 import com.rosan.installer.domain.settings.model.Authorizer
 import com.rosan.installer.domain.settings.model.InstallMode
 import com.rosan.installer.ui.icons.AppIcons
@@ -58,6 +59,7 @@ import com.rosan.installer.ui.page.main.widget.setting.ManagedUidsWidget
 import com.rosan.installer.ui.page.main.widget.setting.SwitchWidget
 import com.rosan.installer.ui.theme.none
 import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -67,6 +69,7 @@ fun LegacyInstallerGlobalSettingsPage(
 ) {
     val context = LocalContext.current
     val uiState by viewModel.state.collectAsStateWithLifecycle()
+    val capabilityProvider = koinInject<DeviceCapabilityProvider>()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
     val layoutDirection = LocalLayoutDirection.current
@@ -101,28 +104,42 @@ fun LegacyInstallerGlobalSettingsPage(
                     currentAuthorizer = uiState.authorizer,
                     changeAuthorizer = { newAuthorizer ->
                         viewModel.dispatch(InstallerSettingsAction.ChangeGlobalAuthorizer(newAuthorizer))
-                    },
-                    trailingContent = {
-                        AnimatedVisibility(
-                            visible = uiState.authorizer == Authorizer.Dhizuku,
-                            enter = fadeIn() + expandVertically(),
-                            exit = fadeOut() + shrinkVertically()
+                    }
+                ) {
+                    AnimatedVisibility(
+                        visible = uiState.authorizer == Authorizer.None && capabilityProvider.isSystemApp,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically()
+                    ) {
+                        SwitchWidget(
+                            icon = AppIcons.FlashPreferRoot,
+                            title = stringResource(R.string.config_always_use_root_in_system),
+                            description = stringResource(R.string.config_always_use_root_in_system_desc),
+                            isM3E = false,
+                            checked = uiState.alwaysUseRootInSystem,
+                            onCheckedChange = { viewModel.dispatch(InstallerSettingsAction.ChangeAlwaysUseRootInSystem(it)) }
+                        )
+                    }
+                    AnimatedVisibility(
+                        visible = uiState.authorizer == Authorizer.Dhizuku,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically()
+                    ) {
+                        IntNumberPickerWidget(
+                            icon = AppIcons.Working,
+                            title = stringResource(R.string.set_countdown),
+                            description = stringResource(R.string.dhizuku_auto_close_countdown_desc),
+                            value = uiState.dhizukuAutoCloseCountDown,
+                            startInt = 1,
+                            endInt = 10,
+                            showTooltip = false
                         ) {
-                            IntNumberPickerWidget(
-                                icon = AppIcons.Working,
-                                title = stringResource(R.string.set_countdown),
-                                description = stringResource(R.string.dhizuku_auto_close_countdown_desc),
-                                value = uiState.dhizukuAutoCloseCountDown,
-                                startInt = 1,
-                                endInt = 10
-                            ) {
-                                viewModel.dispatch(
-                                    InstallerSettingsAction.ChangeDhizukuAutoCloseCountDown(it)
-                                )
-                            }
+                            viewModel.dispatch(
+                                InstallerSettingsAction.ChangeDhizukuAutoCloseCountDown(it)
+                            )
                         }
                     }
-                )
+                }
             }
             item {
                 DataInstallModeWidget(

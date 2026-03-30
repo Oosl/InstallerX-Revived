@@ -12,7 +12,7 @@ import com.rosan.installer.domain.session.model.ProgressEntity
 import com.rosan.installer.domain.session.model.SelectInstallEntity
 import com.rosan.installer.domain.settings.model.ConfigModel
 import com.rosan.installer.domain.settings.model.RootImplementation
-import com.rosan.installer.domain.settings.repository.AppSettingsRepo
+import com.rosan.installer.domain.settings.repository.AppSettingsRepository
 import com.rosan.installer.domain.settings.repository.BooleanSetting
 import com.rosan.installer.domain.settings.repository.NamedPackageListSetting
 import com.rosan.installer.domain.settings.repository.SharedUidListSetting
@@ -28,7 +28,7 @@ import timber.log.Timber
  * of the underlying implementation details.
  */
 class ProcessInstallationUseCase(
-    private val appSettingsRepo: AppSettingsRepo,
+    private val appSettingsRepo: AppSettingsRepository,
     private val appInstaller: AppInstallerRepository,
     private val moduleInstaller: ModuleInstallerRepository,
     private val capabilityProvider: DeviceCapabilityProvider
@@ -115,7 +115,7 @@ class ProcessInstallationUseCase(
             appSettingsRepo.getString(StringSetting.LabRootImplementation).first()
         )
         val systemUseRoot = capabilityProvider.isSystemApp &&
-                appSettingsRepo.getBoolean(BooleanSetting.LabModuleAlwaysRoot, false).first()
+                appSettingsRepo.getBoolean(BooleanSetting.AlwaysUseRootInSystem, false).first()
 
         moduleInstaller.doInstallWork(
             config = config,

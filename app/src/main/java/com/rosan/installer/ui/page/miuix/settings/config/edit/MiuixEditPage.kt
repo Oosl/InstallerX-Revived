@@ -164,14 +164,12 @@ fun MiuixEditPage(
                 title = stringResource(id = if (id == null) R.string.add else R.string.update),
                 navigationIcon = {
                     MiuixBackButton(
-                        modifier = Modifier.padding(start = 16.dp),
                         icon = MiuixIcons.Regular.Close,
                         onClick = { navController.navigateUp() }
                     )
                 },
                 actions = {
                     IconButton(
-                        modifier = Modifier.padding(end = 16.dp),
                         onClick = { dispatch(EditViewAction.SaveData) },
                     ) {
                         Icon(
