@@ -22,7 +22,6 @@ import com.rosan.installer.domain.engine.model.AnalyseExtraEntity
 import com.rosan.installer.domain.engine.model.AppEntity
 import com.rosan.installer.domain.engine.model.DataEntity
 import com.rosan.installer.domain.engine.model.XposedModuleInfo
-import com.rosan.installer.domain.settings.model.ConfigModel
 import timber.log.Timber
 import java.io.File
 import java.io.IOException
@@ -71,7 +70,6 @@ class ApkParser(
     }
 
     fun parseZipEntryFull(
-        config: ConfigModel,
         zipFile: ZipFile,
         entry: ZipEntry,
         parentData: DataEntity,

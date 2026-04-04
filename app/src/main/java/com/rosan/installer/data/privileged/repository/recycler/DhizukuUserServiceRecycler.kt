@@ -1,19 +1,19 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2023-2026 iamr0s, InstallerX Revived contributors
 package com.rosan.installer.data.privileged.repository.recycler
 
-import android.annotation.SuppressLint
 import android.content.ComponentName
 import android.content.Context
 import android.content.ServiceConnection
 import android.os.DeadObjectException
 import android.os.IBinder
-import android.util.Log
 import androidx.annotation.Keep
 import com.rosan.dhizuku.api.Dhizuku
 import com.rosan.dhizuku.api.DhizukuUserServiceArgs
 import com.rosan.installer.IDhizukuUserService
 import com.rosan.installer.IPrivilegedService
-import com.rosan.installer.data.privileged.model.DhizukuPrivilegedService
 import com.rosan.installer.data.privileged.exception.DhizukuDeadServiceException
+import com.rosan.installer.data.privileged.model.DhizukuPrivilegedService
 import com.rosan.installer.data.privileged.repository.recyclable.Recycler
 import com.rosan.installer.data.privileged.repository.recyclable.UserService
 import com.rosan.installer.data.privileged.util.requireDhizukuPermissionGranted
@@ -24,11 +24,12 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import org.koin.core.context.startKoin
+import timber.log.Timber
 
-@SuppressLint("LogNotTimber")
-object DhizukuUserServiceRecycler : Recycler<DhizukuUserServiceRecycler.UserServiceProxy>(),
+class DhizukuUserServiceRecycler(
+    private val context: Context
+) : Recycler<DhizukuUserServiceRecycler.UserServiceProxy>(),
     KoinComponent {
     class UserServiceProxy(
         private val connection: ServiceConnection,
@@ -44,10 +45,7 @@ object DhizukuUserServiceRecycler : Recycler<DhizukuUserServiceRecycler.UserServ
     class DhizukuUserService @Keep constructor(context: Context) : IDhizukuUserService.Stub() {
         init {
             Dhizuku.init(context)
-            Log.d(
-                "DhizukuUserService",
-                "Dhizuku.mOwnerComponent: ${Dhizuku.getOwnerComponent()}"
-            )
+            Timber.tag("DhizukuUserService").d("Dhizuku.mOwnerComponent: ${Dhizuku.getOwnerComponent()}")
             startKoin {
                 modules(processModules)
                 androidContext(context)
@@ -59,8 +57,6 @@ object DhizukuUserServiceRecycler : Recycler<DhizukuUserServiceRecycler.UserServ
         override fun getPrivilegedService(): IPrivilegedService = privileged
     }
 
-    private val context by inject<Context>()
-
     override fun onMake(): UserServiceProxy = runBlocking {
         requireDhizukuPermissionGranted {
             onInnerMake()
@@ -71,10 +67,7 @@ object DhizukuUserServiceRecycler : Recycler<DhizukuUserServiceRecycler.UserServ
         val connection = object : ServiceConnection {
             override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
                 if (service == null) {
-                    Log.e(
-                        "onServiceConnected",
-                        "Failed to connect to DhizukuUserService because the remote service failed to start."
-                    )
+                    Timber.tag("onServiceConnected").e("Failed to connect to DhizukuUserService because the remote service failed to start.")
                     close(IllegalStateException("Remote service connection failed, binder is null."))
                     return
                 }
@@ -88,10 +81,10 @@ object DhizukuUserServiceRecycler : Recycler<DhizukuUserServiceRecycler.UserServ
                     }, 0)
 
                 } catch (e: DeadObjectException) {
-                    Log.e("onServiceConnected", "Remote Dhizuku process died during the connection attempt.", e)
+                    Timber.tag("onServiceConnected").e(e, "Remote Dhizuku process died during the connection attempt.")
                     close(DhizukuDeadServiceException("Failed to connect: The remote Dhizuku process has died.", e))
                 } catch (e: Exception) {
-                    Log.e("onServiceConnected", "An unexpected error occurred during service connection.", e)
+                    Timber.tag("onServiceConnected").e(e, "An unexpected error occurred during service connection.")
                     close(IllegalStateException("An unexpected error occurred during service connection.", e))
                 }
             }

@@ -37,7 +37,7 @@ import com.rosan.installer.R
 import com.rosan.installer.core.env.AppConfig
 import com.rosan.installer.core.env.DeviceConfig
 import com.rosan.installer.domain.device.model.Manufacturer
-import com.rosan.installer.domain.settings.model.RootImplementation
+import com.rosan.installer.domain.settings.model.RootMode
 import com.rosan.installer.ui.icons.AppIcons
 import com.rosan.installer.util.help
 
@@ -240,17 +240,17 @@ fun HideLauncherIconWarningDialog(
  */
 @Composable
 fun RootImplementationSelectionDialog(
-    currentSelection: RootImplementation,
+    currentSelection: RootMode,
     onDismiss: () -> Unit,
-    onConfirm: (RootImplementation) -> Unit
+    onConfirm: (RootMode) -> Unit
 ) {
     // Temporary state for the dialog selection
     val (selectedOption, onOptionSelected) = remember { mutableStateOf(currentSelection) }
 
     val options = mapOf(
-        RootImplementation.Magisk to "Magisk",
-        RootImplementation.KernelSU to "KernelSU",
-        RootImplementation.APatch to "APatch"
+        RootMode.Magisk to "Magisk",
+        RootMode.KernelSU to "KernelSU",
+        RootMode.APatch to "APatch"
     )
 
     AlertDialog(

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2023-2026 iamr0s, InstallerX Revived contributors
 package com.rosan.installer.data.privileged.repository.recyclable
 
 import kotlinx.coroutines.CoroutineScope
@@ -14,13 +16,13 @@ import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
 /**
- * 资源回收器基类
+ * Base class for resource recycling.
  *
- * 特性：
- * - 引用计数管理
- * - 延迟回收（可配置）
- * - 线程安全
- * - 支持强制回收
+ * Features:
+ * - Reference counting management
+ * - Delayed recycling (configurable)
+ * - Thread-safe
+ * - Supports forced recycling
  */
 abstract class Recycler<T : Closeable> : Closeable {
 
@@ -41,18 +43,18 @@ abstract class Recycler<T : Closeable> : Closeable {
     private var closed = false
 
     /**
-     * 延迟回收时间（毫秒）
+     * Delay duration for recycling (in milliseconds)
      */
     protected open val delayDuration: Long = 15_000L
 
     /**
-     * 获取资源句柄
-     * @throws IllegalStateException 如果 Recycler 已关闭
+     * Obtains a resource handle.
+     * @throws IllegalStateException if the Recycler is closed.
      */
     fun make(): Recyclable<T> = lock.withLock {
         check(!closed) { "Recycler is closed" }
 
-        // 取消待执行的回收任务
+        // Cancel any pending recycling task
         recycleJob?.cancel()
         recycleJob = null
 
@@ -70,17 +72,17 @@ abstract class Recycler<T : Closeable> : Closeable {
     }
 
     /**
-     * 创建实体的工厂方法
+     * Factory method to create the entity.
      */
     protected abstract fun onMake(): T
 
     /**
-     * 实体被回收时的回调
+     * Callback triggered when the entity is recycled.
      */
     protected open fun onRecycle() {}
 
     /**
-     * 减少引用计数并调度回收
+     * Decrements the reference count and schedules recycling.
      */
     private fun decrementAndScheduleRecycle() {
         lock.withLock {
@@ -89,7 +91,7 @@ abstract class Recycler<T : Closeable> : Closeable {
 
             if (count > 0 || closed) return
 
-            // 调度延迟回收
+            // Schedule delayed recycling
             recycleJob?.cancel()
             recycleJob = scope.launch {
                 delay(delayDuration)
@@ -99,7 +101,7 @@ abstract class Recycler<T : Closeable> : Closeable {
     }
 
     /**
-     * 强制立即回收
+     * Forcibly recycles immediately.
      */
     fun recycleForcibly() {
         lock.withLock {
@@ -108,12 +110,12 @@ abstract class Recycler<T : Closeable> : Closeable {
     }
 
     /**
-     * 执行实际回收逻辑
-     * 必须在锁内调用
+     * Performs the actual recycling logic.
+     * Must be called within a lock.
      */
     private fun doRecycle(force: Boolean) {
         lock.withLock {
-            // 再次检查引用计数（除非强制回收）
+            // Re-check reference count (unless forced)
             if (!force && _referenceCount.get() > 0) {
                 Timber.d("${this::class.simpleName}: Recycle cancelled, refCount=${_referenceCount.get()}")
                 return
@@ -139,7 +141,7 @@ abstract class Recycler<T : Closeable> : Closeable {
     }
 
     /**
-     * 关闭 Recycler，释放所有资源
+     * Closes the Recycler and releases all resources.
      */
     override fun close() {
         lock.withLock {

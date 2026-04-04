@@ -3,12 +3,12 @@
 package com.rosan.installer.ui.page.main.settings.preferred.subpage.lab
 
 import com.rosan.installer.domain.settings.model.HttpProfile
-import com.rosan.installer.domain.settings.model.RootImplementation
+import com.rosan.installer.domain.settings.model.RootMode
 
 sealed class LabSettingsAction {
     data class LabChangeRootModuleFlash(val enable: Boolean) : LabSettingsAction()
     data class LabChangeRootShowModuleArt(val enable: Boolean) : LabSettingsAction()
-    data class LabChangeRootImplementation(val implementation: RootImplementation) : LabSettingsAction()
+    data class LabChangeRootImplementation(val implementation: RootMode) : LabSettingsAction()
     data class LabChangeUseMiIsland(val enable: Boolean) : LabSettingsAction()
     data class LabChangeMiIslandBlockingIntervalMs(val ms: Int) : LabSettingsAction()
     data class LabChangeSetInstallRequester(val enable: Boolean) : LabSettingsAction()

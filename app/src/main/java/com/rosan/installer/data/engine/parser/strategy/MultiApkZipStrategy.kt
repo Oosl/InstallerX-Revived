@@ -39,7 +39,6 @@ class MultiApkZipStrategy(
             async(Dispatchers.IO) {
                 // Use ApkParser to handle extraction and deep analysis
                 apkParser.parseZipEntryFull(
-                    config,
                     zipFile,
                     entry,
                     data,

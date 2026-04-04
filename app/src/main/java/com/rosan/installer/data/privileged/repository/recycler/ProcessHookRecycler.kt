@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2025-2026 InstallerX Revived contributors
 package com.rosan.installer.data.privileged.repository.recycler
 
 import android.content.Context
@@ -7,9 +9,9 @@ import com.rosan.installer.IPrivilegedService
 import com.rosan.installer.data.privileged.model.DefaultPrivilegedService
 import com.rosan.installer.data.privileged.repository.recyclable.Recyclable
 import com.rosan.installer.data.privileged.repository.recyclable.Recycler
+import com.rosan.installer.data.privileged.repository.recyclable.RecyclerManager
 import com.rosan.installer.data.privileged.repository.recyclable.UserService
 import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 
 /**
  * A Recycler that provides a UserService operating in "Process Hook Mode" (Root Hook).
@@ -17,10 +19,11 @@ import org.koin.core.component.inject
  * It creates a local [DefaultPrivilegedService] but proxies underlying Binder calls
  * through a remote [AppProcess] (Root/Shell).
  */
-class ProcessHookRecycler(private val shell: String) :
-    Recycler<ProcessHookRecycler.HookedUserService>(), KoinComponent {
-
-    private val context by inject<Context>()
+class ProcessHookRecycler(
+    private val shell: String,
+    private val context: Context,
+    private val appProcessRecyclerManager: RecyclerManager<String, AppProcessRecycler>
+) : Recycler<ProcessHookRecycler.HookedUserService>(), KoinComponent {
 
     class HookedUserService(
         private val appProcessHandle: Recyclable<AppProcess>
@@ -45,8 +48,8 @@ class ProcessHookRecycler(private val shell: String) :
     }
 
     override fun onMake(): HookedUserService {
-        // Obtain a raw AppProcess shell from the existing recyclers
-        val appProcessHandle = AppProcessRecyclers.get(shell).make()
+        // Obtain a raw AppProcess shell from the injected manager
+        val appProcessHandle = appProcessRecyclerManager.get(shell).make()
 
         // Critical Fix: Ensure the reused AppProcess is initialized.
         // If the process was previously closed/recycled, its context/manager might be null.

@@ -12,8 +12,13 @@ import com.rosan.installer.core.env.DeviceConfig
 import com.rosan.installer.core.reflection.ReflectionProvider
 import com.rosan.installer.core.reflection.invokeStatic
 import com.rosan.installer.domain.device.model.Manufacturer
+import com.rosan.installer.domain.device.model.ShizukuMode
 import com.rosan.installer.domain.device.provider.DeviceCapabilityProvider
 import com.rosan.installer.util.hasFlag
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import rikka.shizuku.Shizuku
 import timber.log.Timber
 
 class DeviceCapabilityProviderImpl(
@@ -78,6 +83,80 @@ class DeviceCapabilityProviderImpl(
         val subApi = getSystemProperty(KEY_OPLUS_SUB_API)
         if (!subApi.isNullOrEmpty()) "$api.$subApi" else api
     }
+
+    // --- Shizuku Dynamic Flow ---
+    private val _shizukuModeFlow = MutableStateFlow(ShizukuMode.NONE)
+    override val shizukuModeFlow: StateFlow<ShizukuMode> = _shizukuModeFlow.asStateFlow()
+
+    // --- Root Static State ---
+    // override var rootMode: RootMode = RootMode.None
+
+    init {
+        // Register Shizuku listeners to drive state automatically
+        Shizuku.addBinderReceivedListenerSticky {
+            updateShizukuModeInternal()
+        }
+
+        Shizuku.addBinderDeadListener {
+            _shizukuModeFlow.value = ShizukuMode.NONE
+            Timber.d("Shizuku binder is dead. Status updated to NONE.")
+        }
+    }
+
+    private fun updateShizukuModeInternal() {
+        try {
+            if (Shizuku.pingBinder()) {
+                val mode = ShizukuMode.fromUid(Shizuku.getUid())
+                _shizukuModeFlow.value = mode
+                Timber.d("Shizuku binder received. Status updated to: $mode")
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to parse Shizuku UID.")
+            _shizukuModeFlow.value = ShizukuMode.NONE
+        }
+    }
+
+    /*    override suspend fun refreshPrivilegeStatus() {
+            // 1. Manually trigger a fallback refresh for Shizuku
+            // Already handled in init { }
+            // updateShizukuModeInternal()
+
+            // 2. Fetch the Root status once and assign it to the static variable
+            rootMode = detectRootMode()
+        }*/
+
+    /* private suspend fun detectRootMode(): RootMode = withContext(Dispatchers.IO) {
+         if (checkBinaryViaSu("ksud -V")) return@withContext RootMode.KernelSU
+         if (checkBinaryViaSu("magisk -v")) return@withContext RootMode.Magisk
+         if (checkBinaryViaSu("apd -v")) return@withContext RootMode.APatch
+
+         RootMode.None
+     }*/
+
+    /*  private fun checkBinaryViaSu(command: String): Boolean {
+          return try {
+              // Execute the specific binary check within the su environment
+              val process = ProcessBuilder("su", "-c", command)
+                  .redirectErrorStream(true)
+                  .start()
+
+              val exitCode = process.waitFor()
+              if (exitCode == 0) {
+                  Timber.d("RootDetection: Successfully executed -> su -c '$command'")
+                  true
+              } else {
+                  Timber.d("RootDetection: Command 'su -c \'$command\'' failed with exit code: $exitCode")
+                  false
+              }
+          } catch (e: CancellationException) {
+              // Rethrow to maintain structured concurrency
+              throw e
+          } catch (e: Exception) {
+              // Catch IOExceptions or other runtime errors
+              Timber.d("RootDetection: Execution failed for 'su -c '$command\': ${e.message}")
+              false
+          }
+      }*/
 
     private fun calculateSessionInstallSupport(): Boolean {
         val isMi = DeviceConfig.currentManufacturer == Manufacturer.XIAOMI

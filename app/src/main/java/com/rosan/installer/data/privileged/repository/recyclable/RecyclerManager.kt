@@ -1,4 +1,6 @@
-package com.rosan.installer.data.privileged.repository.recycler
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2025-2026 InstallerX Revived contributors
+package com.rosan.installer.data.privileged.repository.recyclable
 
 import java.io.Closeable
 import java.util.concurrent.ConcurrentHashMap
@@ -7,8 +9,8 @@ import kotlin.concurrent.read
 import kotlin.concurrent.write
 
 /**
- * Recycler 管理器
- * 支持清理不再使用的 Recycler
+ * Recycler Manager
+ * Supports clearing unused Recyclers
  */
 class RecyclerManager<K, V : Closeable>(
     private val factory: (K) -> V
@@ -31,14 +33,4 @@ class RecyclerManager<K, V : Closeable>(
     }
 
     override fun close() = clear()
-}
-
-object AppProcessRecyclers {
-    private val manager = RecyclerManager { shell: String ->
-        AppProcessRecycler(shell)
-    }
-
-    fun get(shell: String): AppProcessRecycler = manager.get(shell)
-
-    fun clear() = manager.clear()
 }

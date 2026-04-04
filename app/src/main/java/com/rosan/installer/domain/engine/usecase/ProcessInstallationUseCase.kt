@@ -11,7 +11,7 @@ import com.rosan.installer.domain.engine.repository.ModuleInstallerRepository
 import com.rosan.installer.domain.session.model.ProgressEntity
 import com.rosan.installer.domain.session.model.SelectInstallEntity
 import com.rosan.installer.domain.settings.model.ConfigModel
-import com.rosan.installer.domain.settings.model.RootImplementation
+import com.rosan.installer.domain.settings.model.RootMode
 import com.rosan.installer.domain.settings.repository.AppSettingsRepository
 import com.rosan.installer.domain.settings.repository.BooleanSetting
 import com.rosan.installer.domain.settings.repository.NamedPackageListSetting
@@ -111,7 +111,7 @@ class ProcessInstallationUseCase(
         // Emit initial state
         emit(ProgressEntity.InstallingModule(output.toList()))
 
-        val rootImpl = RootImplementation.fromString(
+        val rootImpl = RootMode.fromString(
             appSettingsRepo.getString(StringSetting.LabRootImplementation).first()
         )
         val systemUseRoot = capabilityProvider.isSystemApp &&
@@ -121,7 +121,7 @@ class ProcessInstallationUseCase(
             config = config,
             module = module,
             useRoot = systemUseRoot,
-            rootImplementation = rootImpl
+            rootMode = rootImpl
         ).collect { line ->
             output.add(line)
             // Continually emit updated logs

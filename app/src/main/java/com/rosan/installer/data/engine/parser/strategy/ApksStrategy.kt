@@ -49,7 +49,7 @@ class ApksStrategy(
         // 2. Parse Base APK (Heavy operation - needs Icon/Label)
         val baseDeferred = async {
             Timber.d("ApksStrategy: Parsing base entry full details...")
-            apkParser.parseZipEntryFull(config, zipFile, baseEntry, data, extra)
+            apkParser.parseZipEntryFull(zipFile, baseEntry, data, extra)
         }
 
         // 3. Process Splits (Lightweight operation)

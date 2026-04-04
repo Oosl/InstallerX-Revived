@@ -16,6 +16,8 @@ import com.rosan.installer.data.session.notification.LegacyNotificationBuilder
 import com.rosan.installer.data.session.notification.MiIslandNotificationBuilder
 import com.rosan.installer.data.session.notification.ModernNotificationBuilder
 import com.rosan.installer.data.session.notification.NotificationHelper
+import com.rosan.installer.domain.device.model.ShizukuMode
+import com.rosan.installer.domain.device.provider.DeviceCapabilityProvider
 import com.rosan.installer.domain.engine.usecase.GetAppIconUseCase
 import com.rosan.installer.domain.privileged.provider.AppOpsProvider
 import com.rosan.installer.domain.session.model.ProgressEntity
@@ -25,7 +27,6 @@ import com.rosan.installer.domain.settings.model.InstallMode
 import com.rosan.installer.domain.settings.repository.AppSettingsRepository
 import com.rosan.installer.domain.settings.repository.BooleanSetting
 import com.rosan.installer.domain.settings.repository.IntSetting
-import com.rosan.installer.domain.settings.usecase.config.GetResolvedConfigUseCase
 import com.rosan.installer.util.toast
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -71,8 +72,8 @@ class ForegroundInfoHandler(scope: CoroutineScope, session: InstallerSessionRepo
     private var sessionStartTime: Long = 0L
     private val context by inject<Context>()
     private val appSettingsRepo by inject<AppSettingsRepository>()
-    private val appOpsProvider by inject<AppOpsProvider>()
-    private val getResolvedConfig by inject<GetResolvedConfigUseCase>()
+    private val appOps by inject<AppOpsProvider>()
+    private val capabilityProvider by inject<DeviceCapabilityProvider>()
     private val getAppIcon by inject<GetAppIconUseCase>()
 
     private val notificationManager = NotificationManagerCompat.from(context)
@@ -116,7 +117,7 @@ class ForegroundInfoHandler(scope: CoroutineScope, session: InstallerSessionRepo
         isXiaomiNetworkBlocked = false
 
         // Initialize synchronously in the suspend function to avoid race conditions with onFinish
-        globalAuthorizer = getResolvedConfig(null).authorizer
+        globalAuthorizer = appSettingsRepo.preferencesFlow.first().authorizer
 
         val settings = NotificationSettings(
             showDialog = appSettingsRepo.getBoolean(BooleanSetting.ShowDialogWhenPressingNotification, true).first(),
@@ -338,21 +339,31 @@ class ForegroundInfoHandler(scope: CoroutineScope, session: InstallerSessionRepo
         notification: Notification,
         blockInterval: Int
     ) {
-        val hasPrivilege = globalAuthorizer == Authorizer.Shizuku
+        // Read the current Shizuku working mode
+        val currentShizukuMode = capabilityProvider.shizukuModeFlow.value
+
+        // Ensure the authorizer is Shizuku AND the identity is explicitly ADB/Shell
+        val isShizukuShell = currentShizukuMode == ShizukuMode.SHELL
+
+        val shouldExecuteMagic = globalAuthorizer == Authorizer.Shizuku && isShizukuShell
         val targetUid = xmsfUid
 
-        // Abort magic if no privilege or if the target package UID cannot be resolved
-        if (!hasPrivilege || targetUid == null) {
+        Timber.tag("XiaomiMagic")
+            .d("Global Authorizer: $globalAuthorizer, Shizuku Mode: $currentShizukuMode")
+
+        // Abort magic if not in Shizuku Shell mode, or if the target UID is missing
+        if (!shouldExecuteMagic || targetUid == null) {
             notificationManager.notify(notificationId, notification)
             return
         }
 
+        Timber.tag("XiaomiMagic").d("Xiaomi magic execution triggered")
         // Launch asynchronously so it does not block the Flow's collect mechanism
         scope.launch(Dispatchers.IO) {
             networkMutex.withLock {
                 try {
                     // 1. Block the network and update state
-                    appOpsProvider.setPackageNetworkingEnabled(
+                    appOps.setPackageNetworkingEnabled(
                         authorizer = globalAuthorizer,
                         uid = targetUid,
                         enabled = false
@@ -371,7 +382,7 @@ class ForegroundInfoHandler(scope: CoroutineScope, session: InstallerSessionRepo
                     // Use NonCancellable to ensure network is restored even if the coroutine is cancelled
                     withContext(NonCancellable) {
                         try {
-                            appOpsProvider.setPackageNetworkingEnabled(
+                            appOps.setPackageNetworkingEnabled(
                                 authorizer = globalAuthorizer,
                                 uid = targetUid,
                                 enabled = true
@@ -395,12 +406,16 @@ class ForegroundInfoHandler(scope: CoroutineScope, session: InstallerSessionRepo
         val targetUid = xmsfUid
 
         // Double-check initialization to be absolutely safe, though onStart now guarantees it
-        if (::globalAuthorizer.isInitialized && globalAuthorizer == Authorizer.Shizuku && targetUid != null) {
+        if (::globalAuthorizer.isInitialized &&
+            globalAuthorizer == Authorizer.Shizuku &&
+            capabilityProvider.shizukuModeFlow.value == ShizukuMode.SHELL &&
+            targetUid != null
+        ) {
             withContext(Dispatchers.IO + NonCancellable) {
                 networkMutex.withLock {
                     if (isXiaomiNetworkBlocked) {
                         try {
-                            appOpsProvider.setPackageNetworkingEnabled(
+                            appOps.setPackageNetworkingEnabled(
                                 authorizer = globalAuthorizer,
                                 uid = targetUid,
                                 enabled = true

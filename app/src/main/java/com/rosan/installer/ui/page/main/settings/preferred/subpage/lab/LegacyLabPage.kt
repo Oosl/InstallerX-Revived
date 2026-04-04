@@ -64,7 +64,7 @@ fun LegacyLabPage(
 
     if (showRootImplementationDialog.value) {
         RootImplementationSelectionDialog(
-            currentSelection = uiState.labRootImplementation,
+            currentSelection = uiState.labRootMode,
             onDismiss = { showRootImplementationDialog.value = false },
             onConfirm = { selectedImplementation ->
                 showRootImplementationDialog.value = false

@@ -9,10 +9,12 @@ import com.rosan.installer.domain.engine.model.AppEntity
 import com.rosan.installer.domain.engine.repository.ModuleInstallerRepository
 import com.rosan.installer.domain.settings.model.Authorizer
 import com.rosan.installer.domain.settings.model.ConfigModel
-import com.rosan.installer.domain.settings.model.RootImplementation
+import com.rosan.installer.domain.settings.model.RootMode
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.flowOn
 import timber.log.Timber
 
 /**
@@ -23,7 +25,7 @@ class LocalModuleInstallerRepositoryImpl : ModuleInstallerRepository {
         config: ConfigModel,
         module: AppEntity.ModuleEntity,
         useRoot: Boolean,
-        rootImplementation: RootImplementation
+        rootMode: RootMode
     ): Flow<String> = callbackFlow {
         // 1. Resolve Path using Helper
         val modulePath = ModuleInstallerUtils.getModulePathOrThrow(module)
@@ -38,7 +40,7 @@ class LocalModuleInstallerRepositoryImpl : ModuleInstallerRepository {
         }
 
         // 3. Construct Command String using Helper (Safe for Shell)
-        val installCmd = ModuleInstallerUtils.buildShellCommandString(rootImplementation, modulePath)
+        val installCmd = ModuleInstallerUtils.buildShellCommandString(rootMode, modulePath)
 
         val commandList = shellParts + listOf("-c", installCmd)
         Timber.d("Locally executing module install: $commandList")
@@ -75,5 +77,5 @@ class LocalModuleInstallerRepositoryImpl : ModuleInstallerRepository {
             Timber.d("Local installation flow cancelled. Killing process.")
             process?.destroy()
         }
-    }
+    }.flowOn(Dispatchers.IO)
 }

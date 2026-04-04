@@ -37,7 +37,7 @@ import com.rosan.installer.R
 import com.rosan.installer.core.env.AppConfig
 import com.rosan.installer.domain.device.provider.DeviceCapabilityProvider
 import com.rosan.installer.domain.settings.model.HttpProfile
-import com.rosan.installer.domain.settings.model.RootImplementation
+import com.rosan.installer.domain.settings.model.RootMode
 import com.rosan.installer.ui.icons.AppIcons
 import com.rosan.installer.ui.page.main.settings.preferred.subpage.lab.LabSettingsAction
 import com.rosan.installer.ui.page.main.settings.preferred.subpage.lab.LabSettingsViewModel
@@ -144,12 +144,12 @@ fun MiuixLabPage(
                         enter = expandVertically() + fadeIn(),
                         exit = shrinkVertically() + fadeOut()
                     ) {
-                        val currentRootImpl = uiState.labRootImplementation
+                        val currentRootImpl = uiState.labRootMode
                         val data = remember {
                             mapOf(
-                                RootImplementation.Magisk to "Magisk",
-                                RootImplementation.KernelSU to "KernelSU",
-                                RootImplementation.APatch to "APatch"
+                                RootMode.Magisk to "Magisk",
+                                RootMode.KernelSU to "KernelSU",
+                                RootMode.APatch to "APatch"
                             )
                         }
 

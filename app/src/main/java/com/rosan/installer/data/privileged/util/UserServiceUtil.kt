@@ -1,16 +1,22 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2023-2026 iamr0s, InstallerX Revived contributors
 package com.rosan.installer.data.privileged.util
 
 import com.rosan.installer.IPrivilegedService
-import com.rosan.installer.data.privileged.model.DefaultPrivilegedService
 import com.rosan.installer.data.privileged.exception.ShizukuNotWorkException
+import com.rosan.installer.data.privileged.model.DefaultPrivilegedService
 import com.rosan.installer.data.privileged.repository.recyclable.Recyclable
+import com.rosan.installer.data.privileged.repository.recyclable.RecyclerManager
 import com.rosan.installer.data.privileged.repository.recyclable.UserService
 import com.rosan.installer.data.privileged.repository.recycler.DhizukuUserServiceRecycler
 import com.rosan.installer.data.privileged.repository.recycler.ProcessHookRecycler
-import com.rosan.installer.data.privileged.repository.recycler.ProcessUserServiceRecyclers
+import com.rosan.installer.data.privileged.repository.recycler.ProcessUserServiceRecycler
 import com.rosan.installer.data.privileged.repository.recycler.ShizukuHookRecycler
 import com.rosan.installer.data.privileged.repository.recycler.ShizukuUserServiceRecycler
+import com.rosan.installer.di.RecyclerNames
 import com.rosan.installer.domain.settings.model.Authorizer
+import org.koin.core.context.GlobalContext
+import org.koin.core.parameter.parametersOf
 import timber.log.Timber
 import java.lang.reflect.InvocationTargetException
 
@@ -86,6 +92,9 @@ private fun getRecyclableInstance(
 ): Recyclable<out UserService>? {
     val specialShell = special?.invoke()
 
+    // Retrieve the active Koin instance
+    val koin = GlobalContext.get()
+
     return when (authorizer) {
         Authorizer.None -> null
 
@@ -94,30 +103,34 @@ private fun getRecyclableInstance(
 
             if (useHookMode) {
                 Timber.tag(TAG).d("Using ProcessHookRecycler with shell: $targetShell")
-                ProcessHookRecycler(targetShell).make()
+                koin.get<ProcessHookRecycler> { parametersOf(targetShell) }.make()
             } else {
                 Timber.tag(TAG).d("Using ProcessUserServiceRecycler with shell: $targetShell")
-                ProcessUserServiceRecyclers.get(targetShell).make()
+                koin.get<RecyclerManager<String, ProcessUserServiceRecycler>>(RecyclerNames.USER_SERVICE).get(targetShell).make()
             }
         }
 
         Authorizer.Shizuku -> {
             if (useHookMode) {
                 Timber.tag(TAG).i("Using Shizuku Hook Mode.")
-                ShizukuHookRecycler.make()
+                koin.get<ShizukuHookRecycler>().make()
             } else {
                 Timber.tag(TAG).i("Using Shizuku UserService Mode (Default).")
-                ShizukuUserServiceRecycler.make()
+                koin.get<ShizukuUserServiceRecycler>().make()
             }
         }
 
-        Authorizer.Dhizuku -> DhizukuUserServiceRecycler.make()
+        Authorizer.Dhizuku -> koin.get<DhizukuUserServiceRecycler>().make()
 
         Authorizer.Customize -> {
             val targetShell = customizeAuthorizer.ifBlank { SHELL_ROOT }
-            ProcessUserServiceRecyclers.get(targetShell).make()
+            Timber.tag(TAG).d("Using ProcessUserServiceRecycler with shell: $targetShell")
+            koin.get<RecyclerManager<String, ProcessUserServiceRecycler>>(RecyclerNames.USER_SERVICE).get(targetShell).make()
         }
 
-        else -> specialShell?.let { ProcessUserServiceRecyclers.get(it).make() }
+        else -> specialShell?.let {
+            Timber.tag(TAG).d("Using ProcessUserServiceRecycler with shell: $it")
+            koin.get<RecyclerManager<String, ProcessUserServiceRecycler>>(RecyclerNames.USER_SERVICE).get(it).make()
+        }
     }
 }

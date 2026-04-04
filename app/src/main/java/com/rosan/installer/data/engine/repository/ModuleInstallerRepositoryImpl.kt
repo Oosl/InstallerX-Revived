@@ -11,7 +11,7 @@ import com.rosan.installer.domain.engine.model.AppEntity
 import com.rosan.installer.domain.engine.repository.ModuleInstallerRepository
 import com.rosan.installer.domain.settings.model.Authorizer
 import com.rosan.installer.domain.settings.model.ConfigModel
-import com.rosan.installer.domain.settings.model.RootImplementation
+import com.rosan.installer.domain.settings.model.RootMode
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
@@ -22,7 +22,7 @@ class ModuleInstallerRepositoryImpl(
         config: ConfigModel,
         module: AppEntity.ModuleEntity,
         useRoot: Boolean,
-        rootImplementation: RootImplementation
+        rootMode: RootMode
     ): Flow<String> {
         // 1. Select the appropriate repository implementation
         val repo = when (config.authorizer) {
@@ -52,7 +52,7 @@ class ModuleInstallerRepositoryImpl(
 
         // 3. Execute with error handling
         return try {
-            repo.doInstallWork(config, module, useRoot, rootImplementation)
+            repo.doInstallWork(config, module, useRoot, rootMode)
         } catch (e: IllegalStateException) {
             // Catch immediate configuration errors
             if (repo is ShizukuModuleInstallerRepositoryImpl && e.message?.contains("binder") == true

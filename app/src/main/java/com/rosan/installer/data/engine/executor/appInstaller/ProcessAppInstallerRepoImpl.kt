@@ -13,12 +13,14 @@ import com.rosan.installer.domain.engine.model.InstallEntity
 import com.rosan.installer.domain.privileged.provider.PostInstallTaskProvider
 import com.rosan.installer.domain.settings.model.Authorizer
 import com.rosan.installer.domain.settings.model.ConfigModel
+import org.koin.core.context.GlobalContext
+import org.koin.core.parameter.parametersOf
 
 class ProcessAppInstallerRepoImpl(
     context: Context,
     reflect: ReflectionProvider,
     capabilityProvider: DeviceCapabilityProvider,
-    postInstallTaskProvider: PostInstallTaskProvider
+    postInstallTaskProvider: PostInstallTaskProvider,
 ) : IBinderAppInstallerRepoImpl(context, reflect, capabilityProvider, postInstallTaskProvider) {
     private var localService: ProcessHookRecycler.HookedUserService? = null
 
@@ -76,15 +78,14 @@ class ProcessAppInstallerRepoImpl(
             else -> SHELL_SH
         }
 
-        val recycler = ProcessHookRecycler(shell)
-        val recyclableHandle = recycler.make()
+        val handle = GlobalContext.get().get<ProcessHookRecycler> { parametersOf(shell) }.make()
 
-        localService = recyclableHandle.entity
-        try {
-            return block()
+        return try {
+            localService = handle.entity
+            block()
         } finally {
             localService = null
-            recyclableHandle.recycle()
+            handle.recycle()
         }
     }
 }

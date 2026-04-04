@@ -3,13 +3,13 @@
 package com.rosan.installer.ui.page.main.settings.preferred.subpage.lab
 
 import com.rosan.installer.domain.settings.model.HttpProfile
-import com.rosan.installer.domain.settings.model.RootImplementation
+import com.rosan.installer.domain.settings.model.RootMode
 
 data class LabSettingsState(
     val useBlur: Boolean = true,
     val labRootEnableModuleFlash: Boolean = false,
     val labRootShowModuleArt: Boolean = true,
-    val labRootImplementation: RootImplementation = RootImplementation.Magisk,
+    val labRootMode: RootMode = RootMode.Magisk,
     val labUseMiIsland: Boolean = false,
     val labMiIslandBlockingIntervalMs: Int = 100,
     val labSetInstallRequester: Boolean = false,

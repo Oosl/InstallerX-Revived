@@ -25,7 +25,7 @@ class LabSettingsViewModel(
             useBlur = prefs.useBlur,
             labRootEnableModuleFlash = prefs.labRootEnableModuleFlash,
             labRootShowModuleArt = prefs.labRootShowModuleArt,
-            labRootImplementation = prefs.labRootImplementation,
+            labRootMode = prefs.labRootMode,
             labUseMiIsland = prefs.labUseMiIsland,
             labMiIslandBlockingIntervalMs = prefs.labUseMiIslandBlockingIntervalMs,
             labSetInstallRequester = prefs.labSetInstallRequester,

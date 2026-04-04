@@ -38,7 +38,7 @@ data class AppPreferences(
     // Lab Settings
     val labRootEnableModuleFlash: Boolean,
     val labRootShowModuleArt: Boolean,
-    val labRootImplementation: RootImplementation,
+    val labRootMode: RootMode,
     val labUseMiIsland: Boolean,
     val labUseMiIslandBlockingIntervalMs: Int,
     val labHttpProfile: HttpProfile,

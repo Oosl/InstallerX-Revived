@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2023-2026 iamr0s, InstallerX Revived contributors
 package com.rosan.installer.data.privileged.repository.recycler
 
 import android.content.ComponentName
@@ -11,21 +13,25 @@ import androidx.annotation.Keep
 import com.rosan.app_process.AppProcess
 import com.rosan.installer.IAppProcessService
 import com.rosan.installer.IPrivilegedService
+import com.rosan.installer.core.env.AppConfig
 import com.rosan.installer.data.privileged.model.DefaultPrivilegedService
 import com.rosan.installer.data.privileged.repository.recyclable.Recyclable
 import com.rosan.installer.data.privileged.repository.recyclable.Recycler
+import com.rosan.installer.data.privileged.repository.recyclable.RecyclerManager
 import com.rosan.installer.data.privileged.repository.recyclable.UserService
 import com.rosan.installer.di.init.processModules
 import org.koin.android.ext.koin.androidContext
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import org.koin.core.context.GlobalContext
 import org.koin.core.context.startKoin
 import timber.log.Timber
 import kotlin.system.exitProcess
 
-class ProcessUserServiceRecycler(private val shell: String) :
-    Recycler<ProcessUserServiceRecycler.UserServiceProxy>(), KoinComponent {
+class ProcessUserServiceRecycler(
+    private val shell: String,
+    private val context: Context,
+    private val appProcessRecyclerManager: RecyclerManager<String, AppProcessRecycler>
+) :
+    Recycler<ProcessUserServiceRecycler.UserServiceProxy>() {
 
     class UserServiceProxy(
         val service: IAppProcessService,
@@ -39,7 +45,7 @@ class ProcessUserServiceRecycler(private val shell: String) :
             // Unlink death recipient to prevent false alarm during normal close
             try {
                 binder.unlinkToDeath(deathRecipient, 0)
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 // Ignore if already dead or unlinked
             }
 
@@ -51,6 +57,7 @@ class ProcessUserServiceRecycler(private val shell: String) :
 
     class AppProcessService @Keep constructor(context: Context) : IAppProcessService.Stub() {
         init {
+            if (AppConfig.isDebug && Timber.treeCount == 0) Timber.plant(Timber.DebugTree())
             if (GlobalContext.getOrNull() == null) {
                 startKoin {
                     modules(processModules)
@@ -90,10 +97,8 @@ class ProcessUserServiceRecycler(private val shell: String) :
         }
     }
 
-    private val context by inject<Context>()
-
     override fun onMake(): UserServiceProxy {
-        val appProcessRecycler = AppProcessRecyclers.get(shell)
+        val appProcessRecycler = appProcessRecyclerManager.get(shell)
         val appProcessHandle = appProcessRecycler.make()
 
         val maxRetries = 5

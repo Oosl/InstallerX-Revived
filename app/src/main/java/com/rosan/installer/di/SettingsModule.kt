@@ -32,19 +32,14 @@ import com.rosan.installer.domain.settings.usecase.settings.ManageSharedUidListU
 import com.rosan.installer.domain.settings.usecase.settings.SetLauncherIconUseCase
 import com.rosan.installer.domain.settings.usecase.settings.ToggleUninstallFlagUseCase
 import com.rosan.installer.domain.settings.usecase.settings.UpdateSettingUseCase
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.factoryOf
 import org.koin.core.module.dsl.singleOf
+import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
 val settingsModule = module {
-    // Provide a global coroutineScope
-    single<CoroutineScope> { CoroutineScope(SupervisorJob() + Dispatchers.IO) }
-
     // Room
     single { InstallerRoom.createInstance() }
 
@@ -67,7 +62,13 @@ val settingsModule = module {
 
     singleOf(::AppDataStore)
 
-    singleOf(::AppSettingsRepositoryImpl) { bind<AppSettingsRepository>() }
+    single<AppSettingsRepository> {
+        AppSettingsRepositoryImpl(
+            appDataStore = get(),
+            capabilityProvider = get(),
+            appScope = get(named("AppScope"))
+        )
+    }
 
     // Providers
     singleOf(::SystemEnvProviderImpl) { bind<SystemEnvProvider>() }

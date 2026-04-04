@@ -192,7 +192,6 @@ fun MiuixBlendAboutPage(
                 scrollBehavior = topAppBarScrollBehavior,
                 color = MiuixTheme.colorScheme.surface.copy(alpha = if (scrollProgress == 1f) 1f else 0f),
                 titleColor = MiuixTheme.colorScheme.onSurface.copy(alpha = scrollProgress),
-                defaultWindowInsetsPadding = false,
                 navigationIcon = { MiuixBackButton(onClick = { navController.navigateUp() }) }
             )
         },

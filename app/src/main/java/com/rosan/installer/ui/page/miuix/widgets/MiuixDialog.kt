@@ -30,7 +30,7 @@ import androidx.compose.ui.unit.dp
 import com.rosan.installer.R
 import com.rosan.installer.core.env.DeviceConfig
 import com.rosan.installer.domain.device.model.Manufacturer
-import com.rosan.installer.domain.settings.model.RootImplementation
+import com.rosan.installer.domain.settings.model.RootMode
 import top.yukonga.miuix.kmp.basic.BasicComponent
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.Card
@@ -362,24 +362,24 @@ fun ErrorDisplaySheet(
 fun MiuixRootImplementationDialog(
     showState: MutableState<Boolean>,
     onDismiss: () -> Unit,
-    onConfirm: (RootImplementation) -> Unit,
+    onConfirm: (RootMode) -> Unit,
 ) {
-    val rootImplementations = remember {
+    val rootModes = remember {
         listOf(
-            RootImplementation.Magisk,
-            RootImplementation.KernelSU,
-            RootImplementation.APatch
+            RootMode.Magisk,
+            RootMode.KernelSU,
+            RootMode.APatch
         )
     }
     val implementationNames = remember {
         mapOf(
-            RootImplementation.Magisk to "Magisk",
-            RootImplementation.KernelSU to "KernelSU",
-            RootImplementation.APatch to "APatch"
+            RootMode.Magisk to "Magisk",
+            RootMode.KernelSU to "KernelSU",
+            RootMode.APatch to "APatch"
         )
     }
 
-    var selectedImpl by remember { mutableStateOf(rootImplementations.first()) }
+    var selectedImpl by remember { mutableStateOf(rootModes.first()) }
 
     WindowDialog(
         show = showState.value,
@@ -389,7 +389,7 @@ fun MiuixRootImplementationDialog(
         content = {
             Column {
                 Column(Modifier.verticalScroll(rememberScrollState())) {
-                    rootImplementations.forEach { impl ->
+                    rootModes.forEach { impl ->
                         val isSelected = selectedImpl == impl
 
                         SelectableRow(

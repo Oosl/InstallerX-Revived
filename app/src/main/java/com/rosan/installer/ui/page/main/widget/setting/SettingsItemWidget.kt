@@ -71,7 +71,7 @@ import com.rosan.installer.domain.settings.model.Authorizer
 import com.rosan.installer.domain.settings.model.HttpProfile
 import com.rosan.installer.domain.settings.model.InstallMode
 import com.rosan.installer.domain.settings.model.NamedPackage
-import com.rosan.installer.domain.settings.model.RootImplementation
+import com.rosan.installer.domain.settings.model.RootMode
 import com.rosan.installer.domain.settings.model.SharedUid
 import com.rosan.installer.ui.icons.AppIcons
 import com.rosan.installer.ui.page.main.settings.preferred.subpage.about.AboutAction
@@ -843,13 +843,13 @@ fun ManagedUidsWidget(
 @Composable
 fun LabRootImplementationWidget(viewModel: LabSettingsViewModel) {
     val uiState by viewModel.state.collectAsStateWithLifecycle()
-    val currentRootImpl = uiState.labRootImplementation
+    val currentRootImpl = uiState.labRootMode
 
     val data = remember {
         mapOf(
-            RootImplementation.Magisk to "Magisk",
-            RootImplementation.KernelSU to "KernelSU",
-            RootImplementation.APatch to "APatch"
+            RootMode.Magisk to "Magisk",
+            RootMode.KernelSU to "KernelSU",
+            RootMode.APatch to "APatch"
         )
     }
 

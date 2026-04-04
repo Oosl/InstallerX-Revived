@@ -2,7 +2,7 @@ package com.rosan.installer.domain.engine.repository
 
 import com.rosan.installer.domain.engine.model.AppEntity
 import com.rosan.installer.domain.settings.model.ConfigModel
-import com.rosan.installer.domain.settings.model.RootImplementation
+import com.rosan.installer.domain.settings.model.RootMode
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -18,6 +18,6 @@ interface ModuleInstallerRepository {
         config: ConfigModel,
         module: AppEntity.ModuleEntity,
         useRoot: Boolean,
-        rootImplementation: RootImplementation
+        rootMode: RootMode
     ): Flow<String> // Return a Flow of strings
 }

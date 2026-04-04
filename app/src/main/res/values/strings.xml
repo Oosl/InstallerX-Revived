@@ -541,6 +541,8 @@
     <string name="exception_uninstall_failed_hyperos_system_app">HyperOS does not allow uninstalling this app!</string>
     <string name="exception_uninstall_failed_internal_error">Package Manager internal error</string>
     <string name="exception_uninstall_failed_aborted">Uninstallation cancelled by user</string>
+    <string name="exception_uninstall_failed_device_policy">Uninstallation blocked by device policy</string>
+    <string name="exception_uninstall_failed_owner_blocked">Uninstallation blocked by owner</string>
     <string name="exception_package_manager_name_not_found">Package name not found</string>
     <string name="exception_shizuku_not_work">Please activate Sui or Shizuku and grant permission</string>
     <string name="exception_dhizuku_not_work">Please activate Dhizuku and grant permission</string>
@@ -738,7 +740,7 @@
     <string name="lab_mi_island">Mi Super Island</string>
     <string name="lab_mi_island_desc">Global notification style. System signature verification can only be bypassed when the custom app-authenticator is set to Shizuku. Root users can enable this directly after manually disabling signature restrictions</string>
     <string name="lab_mi_island_countdown">XMSF block duration (Only Shizuku)</string>
-    <string name="lab_mi_island_countdown_desc">Sets how long XMSF network access is blocked using Shizuku. Change only if you understand the impact！</string>
+    <string name="lab_mi_island_countdown_desc">Sets how long XMSF network access is blocked using Shizuku, will not work if Shizuku is activated using root. Change only if you understand the impact！</string>
     <string name="lab_tap_icon_to_share">Tap icon to share apk</string>
     <string name="lab_tap_icon_to_share_desc">Tap icon on the prepare page to share apk</string>
 </resources>

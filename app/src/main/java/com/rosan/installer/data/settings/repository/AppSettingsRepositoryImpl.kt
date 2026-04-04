@@ -12,7 +12,7 @@ import com.rosan.installer.domain.settings.model.Authorizer
 import com.rosan.installer.domain.settings.model.HttpProfile
 import com.rosan.installer.domain.settings.model.InstallMode
 import com.rosan.installer.domain.settings.model.NamedPackage
-import com.rosan.installer.domain.settings.model.RootImplementation
+import com.rosan.installer.domain.settings.model.RootMode
 import com.rosan.installer.domain.settings.model.SharedUid
 import com.rosan.installer.domain.settings.repository.AppSettingsRepository
 import com.rosan.installer.domain.settings.repository.BooleanSetting
@@ -139,7 +139,7 @@ class AppSettingsRepositoryImpl(
             uninstallFlags = values[idx++] as Int,
             labRootEnableModuleFlash = values[idx++] as Boolean,
             labRootShowModuleArt = values[idx++] as Boolean,
-            labRootImplementation = RootImplementation.fromString(values[idx++] as String),
+            labRootMode = RootMode.fromString(values[idx++] as String),
             labUseMiIsland = values[idx++] as Boolean,
             labUseMiIslandBlockingIntervalMs = values[idx++] as Int,
             labHttpProfile = HttpProfile.fromString(values[idx++] as String),

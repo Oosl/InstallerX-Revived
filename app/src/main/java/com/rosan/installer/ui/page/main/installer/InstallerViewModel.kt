@@ -359,10 +359,23 @@ class InstallerViewModel(
                 val oldPackageName = _localState.value.currentPackageName
 
                 _localState.update { currentState ->
+                    // Prevent UI flickering by retaining old metadata during uninstallation
+                    val mergedUninstallInfo = uninstallInfo?.let { incoming ->
+                        val current = currentState.uiUninstallInfo
+                        if (current != null && incoming.packageName == current.packageName && incoming.appLabel == null) {
+                            // The app is being uninstalled and the system can no longer provide the label,
+                            // so we fall back to our cached rich metadata.
+                            current
+                        } else {
+                            // Normal state updates
+                            incoming
+                        }
+                    } ?: currentState.uiUninstallInfo
+
                     val updatedState = currentState.copy(
                         stage = newStage,
                         currentPackageName = newPackageName, // Explicitly assign the new value, no fallback needed
-                        uiUninstallInfo = uninstallInfo ?: currentState.uiUninstallInfo, // Synchronize uninstall info in real-time
+                        uiUninstallInfo = mergedUninstallInfo,
                         error = session.error
                     )
 

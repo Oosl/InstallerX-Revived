@@ -9,7 +9,7 @@ import com.rosan.installer.domain.engine.exception.ModuleInstallExitCodeNonZeroE
 import com.rosan.installer.domain.engine.model.AppEntity
 import com.rosan.installer.domain.engine.repository.ModuleInstallerRepository
 import com.rosan.installer.domain.settings.model.ConfigModel
-import com.rosan.installer.domain.settings.model.RootImplementation
+import com.rosan.installer.domain.settings.model.RootMode
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -26,13 +26,13 @@ class ShizukuModuleInstallerRepositoryImpl(
         config: ConfigModel,
         module: AppEntity.ModuleEntity,
         useRoot: Boolean,
-        rootImplementation: RootImplementation
+        rootMode: RootMode
     ): Flow<String> = callbackFlow {
         // 1. Resolve Path using Helper
         val modulePath = ModuleInstallerUtils.getModulePathOrThrow(module)
 
         // 2. Get Command Array using Helper (Best for IPC/exec)
-        val command = ModuleInstallerUtils.getInstallCommandArgs(rootImplementation, modulePath)
+        val command = ModuleInstallerUtils.getInstallCommandArgs(rootMode, modulePath)
 
         Timber.d("Executing remote module install command via IPC: ${command.joinToString(" ")}")
 

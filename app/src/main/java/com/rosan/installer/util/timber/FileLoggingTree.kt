@@ -23,7 +23,7 @@ import java.util.Locale
 @Suppress("LogNotTimber")
 class FileLoggingTree(
     private val context: Context
-) : Timber.Tree() {
+) : Timber.DebugTree() {
 
     companion object {
         private const val TAG = "FileLoggingTree"
@@ -58,6 +58,13 @@ class FileLoggingTree(
                 writeToFile(logContent)
             }
         }
+    }
+
+    // Override to ensure the tag formatting matches the logic in App.kt
+    override fun createStackElementTag(element: StackTraceElement): String? {
+        return super.createStackElementTag(element)
+            ?.substringBefore('$')
+            ?.take(23)
     }
 
     override fun log(priority: Int, tag: String?, message: String, t: Throwable?) {

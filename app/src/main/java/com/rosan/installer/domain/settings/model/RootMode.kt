@@ -1,19 +1,20 @@
 package com.rosan.installer.domain.settings.model
 
-enum class RootImplementation {
+enum class RootMode {
     Magisk,
     KernelSU,
-    APatch;
+    APatch,
+    None;
 
     companion object {
         /**
-         * Converts a string to a RootImplementation enum, defaulting to Magisk if the string is invalid.
+         * Converts a string to a RootMode enum, defaulting to Magisk if the string is invalid.
          * @param value The string to convert.
          * @return The corresponding RootImplementation instance.
          */
-        fun fromString(value: String?): RootImplementation = try {
+        fun fromString(value: String?): RootMode = try {
             value?.let { valueOf(it) } ?: Magisk
-        } catch (e: IllegalArgumentException) {
+        } catch (_: IllegalArgumentException) {
             Magisk
         }
     }
