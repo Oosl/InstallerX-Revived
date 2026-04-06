@@ -10,6 +10,7 @@ import com.rosan.installer.domain.settings.model.Authorizer
 import com.rosan.installer.domain.settings.model.DexoptMode
 import com.rosan.installer.domain.settings.model.InstallMode
 import com.rosan.installer.domain.settings.model.InstallReason
+import com.rosan.installer.domain.settings.model.InstallerMode
 import com.rosan.installer.domain.settings.model.PackageSource
 import com.rosan.installer.domain.settings.repository.AppSettingsRepository
 import com.rosan.installer.domain.settings.repository.BooleanSetting
@@ -67,7 +68,7 @@ class EditViewModel(
                     is EditViewAction.ChangeDataInstallReason -> changeDataInstallReason(action.installReason)
                     is EditViewAction.ChangeDataEnableCustomizeInstallRequester -> changeDataEnableCustomInstallRequester(action.enable)
                     is EditViewAction.ChangeDataInstallRequester -> changeDataInstallRequester(action.packageName)
-                    is EditViewAction.ChangeDataDeclareInstaller -> changeDataDeclareInstaller(action.declareInstaller)
+                    is EditViewAction.ChangeDataInstallerMode -> changeDataInstallerMode(action.installerMode)
                     is EditViewAction.ChangeDataInstaller -> changeDataInstaller(action.installer)
                     is EditViewAction.ChangeDataCustomizeUser -> changeDataCustomizeUser(action.enable)
                     is EditViewAction.ChangeDataTargetUserId -> changeDataTargetUserId(action.userId)
@@ -117,7 +118,7 @@ class EditViewModel(
             if (effectiveAuthorizer == Authorizer.Dhizuku) {
                 updatedData = updatedData.copy(
                     enableCustomizePackageSource = false,
-                    declareInstaller = false,
+                    installerMode = InstallerMode.Self,
                     enableCustomizeUser = false,
                     enableManualDexopt = false
                 )
@@ -162,10 +163,6 @@ class EditViewModel(
         _state.update { it.copy(data = it.data.copy(packageSource = packageSource)) }
     }
 
-    private fun changeDataDeclareInstaller(declareInstaller: Boolean) {
-        _state.update { it.copy(data = it.data.copy(declareInstaller = declareInstaller)) }
-    }
-
     private fun changeDataEnableCustomInstallRequester(enable: Boolean) {
         _state.update { it.copy(data = it.data.copy(enableCustomizeInstallRequester = enable)) }
         if (enable) {
@@ -194,6 +191,10 @@ class EditViewModel(
                 } else currentState
             }
         }
+    }
+
+    private fun changeDataInstallerMode(mode: InstallerMode) {
+        _state.update { it.copy(data = it.data.copy(installerMode = mode)) }
     }
 
     private fun changeDataInstaller(installer: String) {

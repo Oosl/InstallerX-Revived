@@ -23,6 +23,7 @@ import com.rosan.installer.domain.settings.model.Authorizer
 import com.rosan.installer.domain.settings.model.DexoptMode
 import com.rosan.installer.domain.settings.model.InstallMode
 import com.rosan.installer.domain.settings.model.InstallReason
+import com.rosan.installer.domain.settings.model.InstallerMode
 import com.rosan.installer.domain.settings.model.PackageSource
 import com.rosan.installer.ui.icons.AppIcons
 import com.rosan.installer.ui.page.main.settings.config.edit.EditViewAction
@@ -375,27 +376,52 @@ fun MiuixDataInstallRequesterWidget(state: EditViewState, dispatch: (EditViewAct
 fun MiuixDataDeclareInstallerWidget(state: EditViewState, dispatch: (EditViewAction) -> Unit) {
     val stateAuthorizer = state.data.authorizer
     val globalAuthorizer = state.globalAuthorizer
+    val currentMode = state.data.installerMode
 
-    val description =
-        if (isDhizukuActive(stateAuthorizer, globalAuthorizer)) stringResource(R.string.dhizuku_cannot_set_installer_desc)
-        else stringResource(id = R.string.config_declare_installer_desc)
+    val isDhizuku = isDhizukuActive(stateAuthorizer, globalAuthorizer)
 
-    MiuixSwitchWidget(
-        title = stringResource(id = R.string.config_declare_installer),
-        checked = state.data.declareInstaller,
-        onCheckedChange = {
-            dispatch(EditViewAction.ChangeDataDeclareInstaller(it))
-        },
-        description = description,
-        enabled = !isDhizukuActive(stateAuthorizer, globalAuthorizer),
-    )
+    val description = if (isDhizuku) {
+        stringResource(R.string.dhizuku_cannot_set_installer_desc)
+    } else {
+        stringResource(id = R.string.config_declare_installer_desc)
+    }
 
-    AnimatedVisibility(
-        visible = state.data.declareInstaller,
-        enter = expandVertically() + fadeIn(),
-        exit = shrinkVertically() + fadeOut()
-    ) {
-        MiuixDataInstallerWidget(state, dispatch)
+    Column {
+        val data = mapOf(
+            InstallerMode.Self to stringResource(R.string.config_installer_mode_self),
+            InstallerMode.Initiator to stringResource(R.string.config_installer_mode_initiator),
+            InstallerMode.Custom to stringResource(R.string.config_installer_mode_custom)
+        )
+
+        val spinnerEntries = remember(data) {
+            data.values.map { modeName -> SpinnerEntry(title = modeName) }
+        }
+
+        val selectedIndex = remember(currentMode, data) {
+            data.keys.toList().indexOf(currentMode).coerceAtLeast(0)
+        }
+
+        WindowSpinnerPreference(
+            title = stringResource(id = R.string.config_declare_installer),
+            summary = description,
+            items = spinnerEntries,
+            selectedIndex = selectedIndex,
+            onSelectedIndexChange = { newIndex ->
+                if (!isDhizuku) {
+                    data.keys.elementAtOrNull(newIndex)?.let { mode ->
+                        dispatch(EditViewAction.ChangeDataInstallerMode(mode))
+                    }
+                }
+            }
+        )
+
+        AnimatedVisibility(
+            visible = currentMode == InstallerMode.Custom && !isDhizuku,
+            enter = expandVertically() + fadeIn(),
+            exit = shrinkVertically() + fadeOut()
+        ) {
+            MiuixDataInstallerWidget(state, dispatch)
+        }
     }
 }
 
@@ -403,25 +429,33 @@ fun MiuixDataDeclareInstallerWidget(state: EditViewState, dispatch: (EditViewAct
 fun MiuixDataInstallerWidget(state: EditViewState, dispatch: (EditViewAction) -> Unit) {
     val stateData = state.data
     val currentInstaller = stateData.installer
+    val isError = stateData.errorInstaller
 
-    AnimatedVisibility(
-        visible = stateData.declareInstaller,
-        enter = expandVertically() + fadeIn(),
-        exit = shrinkVertically() + fadeOut()
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 12.dp)
     ) {
-        Column(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            TextField(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp, horizontal = 16.dp)
-                    .focusable(),
-                value = currentInstaller,
-                onValueChange = { dispatch(EditViewAction.ChangeDataInstaller(it)) },
-                label = stringResource(id = R.string.config_installer),
-                useLabelAsPlaceholder = true,
-                singleLine = true
+        TextField(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp, horizontal = 16.dp)
+                .focusable(),
+            value = currentInstaller,
+            onValueChange = { dispatch(EditViewAction.ChangeDataInstaller(it)) },
+            borderColor = if (isError) MiuixTheme.colorScheme.error else MiuixTheme.colorScheme.primary,
+            label = stringResource(id = R.string.config_installer),
+            useLabelAsPlaceholder = true,
+            singleLine = true
+        )
+
+        if (isError) {
+            Text(
+                text = stringResource(R.string.config_error_installer),
+                fontSize = MiuixTheme.textStyles.subtitle.fontSize,
+                fontWeight = FontWeight.Bold,
+                color = MiuixTheme.colorScheme.error,
+                modifier = Modifier.padding(horizontal = 32.dp)
             )
         }
     }

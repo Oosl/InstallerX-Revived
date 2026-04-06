@@ -6,6 +6,7 @@ import com.rosan.installer.domain.settings.model.Authorizer
 import com.rosan.installer.domain.settings.model.DexoptMode
 import com.rosan.installer.domain.settings.model.InstallMode
 import com.rosan.installer.domain.settings.model.InstallReason
+import com.rosan.installer.domain.settings.model.InstallerMode
 import com.rosan.installer.domain.settings.model.PackageSource
 
 sealed class EditViewAction {
@@ -21,7 +22,7 @@ sealed class EditViewAction {
     data class ChangeDataInstallReason(val installReason: InstallReason) : EditViewAction()
     data class ChangeDataInstallRequester(val packageName: String) : EditViewAction()
     data class ChangeDataEnableCustomizeInstallRequester(val enable: Boolean) : EditViewAction()
-    data class ChangeDataDeclareInstaller(val declareInstaller: Boolean) : EditViewAction()
+    data class ChangeDataInstallerMode(val installerMode: InstallerMode) : EditViewAction()
     data class ChangeDataInstaller(val installer: String) : EditViewAction()
     data class ChangeDataCustomizeUser(val enable: Boolean) : EditViewAction()
     data class ChangeDataTargetUserId(val userId: Int) : EditViewAction()

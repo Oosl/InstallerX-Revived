@@ -90,7 +90,7 @@ class AboutViewModel(
         val bitmap = getAppIcon(
             sessionId = SETTINGS_APP_LIST,
             packageName = systemEnvProvider.packageName,
-            iconSizePx = 256,
+            iconSizePx = 512,
             preferSystemIcon = true
         )
         _appIcon.value = bitmap?.asImageBitmap()

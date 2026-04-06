@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
-// Copyright (C) 2023-2026 iamr0s InstallerX Revived contributors
+// Copyright (C) 2023-2026 iamr0s, InstallerX Revived contributors
 package com.rosan.installer.data.settings.local.room
 
 import androidx.room.AutoMigration
@@ -9,6 +9,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import androidx.room.migration.AutoMigrationSpec
+import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.rosan.installer.data.settings.local.room.dao.AppDao
 import com.rosan.installer.data.settings.local.room.dao.ConfigDao
@@ -18,6 +19,7 @@ import com.rosan.installer.data.settings.local.room.entity.converter.AuthorizerC
 import com.rosan.installer.data.settings.local.room.entity.converter.DexoptModeConverter
 import com.rosan.installer.data.settings.local.room.entity.converter.InstallModeConverter
 import com.rosan.installer.data.settings.local.room.entity.converter.InstallReasonConverter
+import com.rosan.installer.data.settings.local.room.entity.converter.InstallerModeConverter
 import com.rosan.installer.data.settings.local.room.entity.converter.PackageSourceConverter
 import com.rosan.installer.data.settings.mapper.toEntity
 import com.rosan.installer.domain.settings.model.ConfigModel
@@ -29,7 +31,7 @@ import org.koin.core.component.get
 
 @Database(
     entities = [AppEntity::class, ConfigEntity::class],
-    version = 12,
+    version = 13,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 3, to = 4),
@@ -46,26 +48,38 @@ import org.koin.core.component.get
 @TypeConverters(
     AuthorizerConverter::class,
     InstallModeConverter::class,
+    InstallerModeConverter::class,
     DexoptModeConverter::class,
     PackageSourceConverter::class,
     InstallReasonConverter::class
 )
 abstract class InstallerRoom : RoomDatabase() {
     companion object : KoinComponent {
+        val MIGRATION_12_13 = object : Migration(12, 13) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Add new column with default value 0 (Self)
+                db.execSQL("ALTER TABLE config ADD COLUMN installer_mode INTEGER NOT NULL DEFAULT 0")
+                // Update mode to 2 (Custom) for rows that already have a custom installer set
+                db.execSQL("UPDATE config SET installer_mode = 2 WHERE installer IS NOT NULL")
+            }
+        }
+
         fun createInstance(): InstallerRoom {
             return Room.databaseBuilder(
                 get(),
                 InstallerRoom::class.java,
                 "installer.db",
-            ).addCallback(object : Callback() {
-                override fun onCreate(db: SupportSQLiteDatabase) {
-                    val database = get<InstallerRoom>()
-                    val defaultConfig = ConfigModel.generateOptimalDefault().toEntity()
-                    CoroutineScope(Dispatchers.IO).launch {
-                        database.configDao.insert(defaultConfig)
+            )
+                .addMigrations(MIGRATION_12_13)
+                .addCallback(object : Callback() {
+                    override fun onCreate(db: SupportSQLiteDatabase) {
+                        val database = get<InstallerRoom>()
+                        val defaultConfig = ConfigModel.generateOptimalDefault().toEntity()
+                        CoroutineScope(Dispatchers.IO).launch {
+                            database.configDao.insert(defaultConfig)
+                        }
                     }
-                }
-            })
+                })
                 .build()
         }
     }
@@ -77,4 +91,3 @@ abstract class InstallerRoom : RoomDatabase() {
     @DeleteColumn(tableName = "config", columnName = "allow_restricted_permissions")
     class Migration7To8 : AutoMigrationSpec
 }
-

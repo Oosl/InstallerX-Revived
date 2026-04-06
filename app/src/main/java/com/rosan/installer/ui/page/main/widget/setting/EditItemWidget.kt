@@ -43,6 +43,7 @@ import com.rosan.installer.domain.settings.model.Authorizer
 import com.rosan.installer.domain.settings.model.DexoptMode
 import com.rosan.installer.domain.settings.model.InstallMode
 import com.rosan.installer.domain.settings.model.InstallReason
+import com.rosan.installer.domain.settings.model.InstallerMode
 import com.rosan.installer.domain.settings.model.PackageSource
 import com.rosan.installer.ui.icons.AppIcons
 import com.rosan.installer.ui.page.main.settings.config.edit.EditViewAction
@@ -373,28 +374,51 @@ fun DataInstallRequesterWidget(state: EditViewState, dispatch: (EditViewAction) 
 fun DataDeclareInstallerWidget(state: EditViewState, dispatch: (EditViewAction) -> Unit, isM3E: Boolean = true) {
     val stateAuthorizer = state.data.authorizer
     val globalAuthorizer = state.globalAuthorizer
+    val currentMode = state.data.installerMode
 
-    val description =
-        if (isDhizukuActive(stateAuthorizer, globalAuthorizer)) stringResource(R.string.dhizuku_cannot_set_installer_desc)
-        else stringResource(id = R.string.config_declare_installer_desc)
+    val isDhizuku = isDhizukuActive(stateAuthorizer, globalAuthorizer)
 
-    SwitchWidget(
-        icon = AppIcons.InstallSource,
-        title = stringResource(id = R.string.config_declare_installer),
-        checked = state.data.declareInstaller,
-        onCheckedChange = { dispatch(EditViewAction.ChangeDataDeclareInstaller(it)) },
-        isM3E = isM3E,
-        description = description,
-        enabled = !isDhizukuActive(stateAuthorizer, globalAuthorizer),
-        isError = isDhizukuActive(stateAuthorizer, globalAuthorizer)
-    )
+    // Dynamically calculate description based on the selected mode
+    val description = if (isDhizuku) {
+        stringResource(R.string.dhizuku_cannot_set_installer_desc)
+    } else {
+        when (currentMode) {
+            InstallerMode.Self -> stringResource(R.string.config_declare_installer_desc)
+            InstallerMode.Initiator -> stringResource(R.string.config_installer_mode_initiator)
+            InstallerMode.Custom -> stringResource(R.string.config_installer_mode_custom)
+        }
+    }
 
-    AnimatedVisibility(
-        visible = state.data.declareInstaller,
-        enter = expandVertically() + fadeIn(),
-        exit = shrinkVertically() + fadeOut()
-    ) {
-        DataInstallerWidget(state, dispatch)
+    Column {
+        val data = mapOf(
+            InstallerMode.Self to stringResource(R.string.config_installer_mode_self),
+            InstallerMode.Initiator to stringResource(R.string.config_installer_mode_initiator),
+            InstallerMode.Custom to stringResource(R.string.config_installer_mode_custom)
+        )
+
+        DropDownMenuWidget(
+            icon = AppIcons.InstallSource,
+            title = stringResource(id = R.string.config_declare_installer),
+            description = description,
+            choice = data.keys.toList().indexOf(currentMode),
+            data = data.values.toList(),
+            enabled = !isDhizuku,
+            isError = isDhizuku
+        ) { index ->
+            if (!isDhizuku) {
+                data.keys.toList().getOrNull(index)?.let { mode ->
+                    dispatch(EditViewAction.ChangeDataInstallerMode(mode))
+                }
+            }
+        }
+
+        AnimatedVisibility(
+            visible = currentMode == InstallerMode.Custom && !isDhizuku,
+            enter = expandVertically() + fadeIn(),
+            exit = shrinkVertically() + fadeOut()
+        ) {
+            DataInstallerWidget(state, dispatch)
+        }
     }
 }
 
@@ -410,67 +434,61 @@ fun DataInstallerWidget(state: EditViewState, dispatch: (EditViewAction) -> Unit
         managedPackages.find { it.packageName == currentInstaller }
     }
 
-    AnimatedVisibility(
-        visible = stateData.declareInstaller,
-        enter = expandVertically() + fadeIn(),
-        exit = shrinkVertically() + fadeOut()
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded },
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp, horizontal = 16.dp)
     ) {
-        ExposedDropdownMenuBox(
-            expanded = expanded,
-            onExpandedChange = { expanded = !expanded },
+        OutlinedTextField(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 8.dp, horizontal = 16.dp)
-        ) {
-            OutlinedTextField(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .focusable()
-                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable),
-                value = currentInstaller,
-                onValueChange = {
-                    dispatch(EditViewAction.ChangeDataInstaller(it))
-                },
-                label = { Text(text = stringResource(id = R.string.config_installer)) },
-                leadingIcon = {
-                    Icon(imageVector = AppIcons.InstallSourceInput, contentDescription = null)
-                },
-                trailingIcon = {
-                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
-                },
-                supportingText = {
-                    matchingPackage?.let {
-                        Text(stringResource(R.string.config_installer_matches, it.name))
-                    }
-                },
-                singleLine = true,
-                isError = stateData.errorInstaller
-            )
+                .focusable()
+                .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable),
+            value = currentInstaller,
+            onValueChange = {
+                dispatch(EditViewAction.ChangeDataInstaller(it))
+            },
+            label = { Text(text = stringResource(id = R.string.config_installer)) },
+            leadingIcon = {
+                Icon(imageVector = AppIcons.InstallSourceInput, contentDescription = null)
+            },
+            trailingIcon = {
+                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+            },
+            supportingText = {
+                matchingPackage?.let {
+                    Text(stringResource(R.string.config_installer_matches, it.name))
+                }
+            },
+            singleLine = true,
+            isError = stateData.errorInstaller
+        )
 
-            ExposedDropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false }
-            ) {
-                if (managedPackages.isEmpty()) {
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            if (managedPackages.isEmpty()) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.config_no_managed_packages_to_suggest)) },
+                    onClick = { expanded = false },
+                    enabled = false
+                )
+            } else {
+                managedPackages.forEach { item ->
+                    val isSelected = currentInstaller == item.packageName
                     DropdownMenuItem(
-                        text = { Text(stringResource(R.string.config_no_managed_packages_to_suggest)) },
-                        onClick = { expanded = false },
-                        enabled = false
+                        text = { Text("${item.name} (${item.packageName})") },
+                        onClick = {
+                            dispatch(EditViewAction.ChangeDataInstaller(item.packageName))
+                            expanded = false
+                        },
+                        colors = if (isSelected) MenuDefaults.itemColors(
+                            textColor = MaterialTheme.colorScheme.primary
+                        ) else MenuDefaults.itemColors()
                     )
-                } else {
-                    managedPackages.forEach { item ->
-                        val isSelected = currentInstaller == item.packageName
-                        DropdownMenuItem(
-                            text = { Text("${item.name} (${item.packageName})") },
-                            onClick = {
-                                dispatch(EditViewAction.ChangeDataInstaller(item.packageName))
-                                expanded = false
-                            },
-                            colors = if (isSelected) MenuDefaults.itemColors(
-                                textColor = MaterialTheme.colorScheme.primary
-                            ) else MenuDefaults.itemColors()
-                        )
-                    }
                 }
             }
         }

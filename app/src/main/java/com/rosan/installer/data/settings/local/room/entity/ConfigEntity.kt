@@ -10,6 +10,7 @@ import com.rosan.installer.domain.settings.model.Authorizer
 import com.rosan.installer.domain.settings.model.DexoptMode
 import com.rosan.installer.domain.settings.model.InstallMode
 import com.rosan.installer.domain.settings.model.InstallReason
+import com.rosan.installer.domain.settings.model.InstallerMode
 import com.rosan.installer.domain.settings.model.PackageSource
 
 @Entity(
@@ -38,6 +39,7 @@ data class ConfigEntity(
         defaultValue = "1" // Corresponds to PACKAGE_SOURCE_OTHER
     ) var packageSource: PackageSource = PackageSource.OTHER,
     @ColumnInfo(name = "install_requester") var installRequester: String? = null,
+    @ColumnInfo(name = "installer_mode", defaultValue = "0") var installerMode: InstallerMode = InstallerMode.Self,
     @ColumnInfo(name = "installer") var installer: String?,
     @ColumnInfo(name = "enable_customize_user", defaultValue = "0") var enableCustomizeUser: Boolean = false,
     @ColumnInfo(name = "target_user_id", defaultValue = "0") var targetUserId: Int = 0,

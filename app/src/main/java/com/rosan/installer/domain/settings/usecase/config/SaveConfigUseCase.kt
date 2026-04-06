@@ -4,6 +4,7 @@ package com.rosan.installer.domain.settings.usecase.config
 
 import com.rosan.installer.domain.settings.model.Authorizer
 import com.rosan.installer.domain.settings.model.ConfigModel
+import com.rosan.installer.domain.settings.model.InstallerMode
 import com.rosan.installer.domain.settings.repository.ConfigRepository
 
 class SaveConfigUseCase(private val configRepo: ConfigRepository) {
@@ -25,11 +26,11 @@ class SaveConfigUseCase(private val configRepo: ConfigRepository) {
         if (model.authorizer == Authorizer.Customize && model.customizeAuthorizer.isEmpty()) {
             return Result.failure(SaveConfigException(Error.CUSTOM_AUTHORIZER_EMPTY))
         }
-        if (model.installer != null && model.installer.isEmpty()) {
-            return Result.failure(SaveConfigException(Error.INSTALLER_EMPTY))
-        }
         if (model.installRequester != null && !hasRequesterUid) {
             return Result.failure(SaveConfigException(Error.REQUESTER_NOT_FOUND))
+        }
+        if (model.installerMode == InstallerMode.Custom && model.installer.isNullOrBlank()) {
+            return Result.failure(SaveConfigException(Error.INSTALLER_EMPTY))
         }
 
         // Execution

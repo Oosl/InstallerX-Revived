@@ -16,7 +16,7 @@ class GetAppIconUseCase(
         packageName: String,
         entityToInstall: AppEntity? = null,
         userId: Int = 0,
-        iconSizePx: Int = 256,
+        iconSizePx: Int = 512,
         preferSystemIcon: Boolean = true
     ): Bitmap? = try {
         appIconRepo.getIcon(

@@ -25,6 +25,7 @@ fun DropDownMenuWidget(
     title: String,
     description: String? = null,
     enabled: Boolean = true,
+    isError: Boolean = false,
     choice: Int,
     data: List<String>,
     onChoiceChange: (Int) -> Unit
@@ -38,6 +39,7 @@ fun DropDownMenuWidget(
         title = title,
         description = description,
         enabled = enabled,
+        isError = isError,
         onClick = {
             expanded = !expanded
         },

@@ -27,6 +27,15 @@ enum class InstallMode(val value: String) {
 }
 
 /**
+ * Define Installer Modes used by InstallerX
+ */
+enum class InstallerMode(val value: Int) {
+    Self(0),
+    Initiator(1),
+    Custom(2)
+}
+
+/**
  * Define Dexopt Modes used by InstallerX
  * Sync with Android's Dexopt Mode
  */

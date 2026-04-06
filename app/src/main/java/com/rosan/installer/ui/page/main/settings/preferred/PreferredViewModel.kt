@@ -122,7 +122,7 @@ class PreferredViewModel(
 
     private fun checkUpdate() = viewModelScope.launch(Dispatchers.IO) {
         val result = updateRepo.checkUpdate()
-        if (result != null) updateInfoFlow.value = result
+        result?.let { updateInfo -> updateInfoFlow.value = updateInfo }
     }
 
     private fun setDefaultInstaller(lock: Boolean, action: PreferredViewAction) = viewModelScope.launch {

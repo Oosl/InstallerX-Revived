@@ -36,6 +36,7 @@ import com.rosan.installer.domain.privileged.model.PostInstallTaskInfo
 import com.rosan.installer.domain.privileged.provider.PostInstallTaskProvider
 import com.rosan.installer.domain.settings.model.Authorizer
 import com.rosan.installer.domain.settings.model.ConfigModel
+import com.rosan.installer.domain.settings.model.InstallerMode
 import com.rosan.installer.domain.settings.model.PackageSource
 import com.rosan.installer.util.addFlag
 import com.rosan.installer.util.pm.isFreshInstallCandidate
@@ -69,7 +70,13 @@ abstract class IBinderAppInstallerRepoImpl(
         val installerPackageName = when (config.authorizer) {
             Authorizer.Dhizuku -> getDhizukuComponentName()
             Authorizer.None -> if (capabilityProvider.isSystemApp) context.packageName else BuildConfig.APPLICATION_ID
-            else -> config.installer ?: BuildConfig.APPLICATION_ID
+            else -> when (config.installerMode) {
+                InstallerMode.Self -> BuildConfig.APPLICATION_ID
+                // Initiator mode: use the dedicated runtime field; fall back to self if null.
+                InstallerMode.Initiator -> config.initiatorPackageName ?: BuildConfig.APPLICATION_ID
+                // Custom mode: use the user-provided value as-is; fall back to self if null.
+                InstallerMode.Custom -> config.installer ?: BuildConfig.APPLICATION_ID
+            }
         }
 
         return (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)

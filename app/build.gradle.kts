@@ -62,7 +62,7 @@ android {
         //   (e.g., "25.07.abc1234"), configured in productFlavors.
         // - Stable builds use the base versionName as-is (e.g., "25.07").
         // - versionCode must be incremented manually before each Stable release.
-        versionCode = 47
+        versionCode = 48
         versionName = baseVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

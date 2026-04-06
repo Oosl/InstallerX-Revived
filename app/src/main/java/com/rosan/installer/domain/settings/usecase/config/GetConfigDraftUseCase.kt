@@ -4,6 +4,7 @@ package com.rosan.installer.domain.settings.usecase.config
 
 import com.rosan.installer.domain.settings.model.Authorizer
 import com.rosan.installer.domain.settings.model.ConfigModel
+import com.rosan.installer.domain.settings.model.InstallerMode
 import com.rosan.installer.domain.settings.provider.SystemEnvProvider
 import com.rosan.installer.domain.settings.repository.ConfigRepository
 
@@ -23,7 +24,7 @@ class GetConfigDraftUseCase(
         val effectiveAuthorizer = if (model.authorizer == Authorizer.Global) globalAuthorizer else model.authorizer
         if (effectiveAuthorizer == Authorizer.Dhizuku) {
             model = model.copy(
-                installer = null,
+                installerMode = InstallerMode.Self,
                 enableCustomizeUser = false,
                 enableManualDexopt = false
             )

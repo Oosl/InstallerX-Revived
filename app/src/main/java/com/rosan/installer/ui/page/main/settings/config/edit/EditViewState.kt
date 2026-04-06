@@ -8,6 +8,7 @@ import com.rosan.installer.domain.settings.model.ConfigModel
 import com.rosan.installer.domain.settings.model.DexoptMode
 import com.rosan.installer.domain.settings.model.InstallMode
 import com.rosan.installer.domain.settings.model.InstallReason
+import com.rosan.installer.domain.settings.model.InstallerMode
 import com.rosan.installer.domain.settings.model.NamedPackage
 import com.rosan.installer.domain.settings.model.PackageSource
 
@@ -56,7 +57,7 @@ data class EditViewState(
         val enableCustomizeInstallRequester: Boolean,
         val installRequester: String,
         val installRequesterUid: Int? = null,
-        val declareInstaller: Boolean,
+        val installerMode: InstallerMode,
         val installer: String,
         val enableCustomizeUser: Boolean,
         val targetUserId: Int,
@@ -79,7 +80,7 @@ data class EditViewState(
         val errorName = name.isEmpty()// || name == "Default"
         val authorizerCustomize = authorizer == Authorizer.Customize
         val errorCustomizeAuthorizer = authorizerCustomize && customizeAuthorizer.isEmpty()
-        val errorInstaller = declareInstaller && installer.isEmpty()
+        val errorInstaller = installerMode == InstallerMode.Custom && installer.isEmpty()
         val errorInstallRequester = enableCustomizeInstallRequester && (installRequester.isEmpty() || installRequesterUid == null)
 
         fun toConfigModel(): ConfigModel = ConfigModel(
@@ -94,7 +95,8 @@ data class EditViewState(
             enableCustomizePackageSource = this.enableCustomizePackageSource,
             packageSource = this.packageSource,
             installRequester = if (this.enableCustomizeInstallRequester) this.installRequester else null,
-            installer = if (this.declareInstaller) this.installer else null,
+            installerMode = this.installerMode,
+            installer = this.installer.takeIf { it.isNotEmpty() },
             enableCustomizeUser = this.enableCustomizeUser,
             targetUserId = this.targetUserId,
             enableManualDexopt = this.enableManualDexopt,
@@ -129,7 +131,7 @@ data class EditViewState(
                 enableCustomizeInstallRequester = config.installRequester != null,
                 installRequester = config.installRequester ?: "",
                 installRequesterUid = null,
-                declareInstaller = config.installer != null,
+                installerMode = config.installerMode,
                 installer = config.installer ?: "",
                 enableCustomizeUser = config.enableCustomizeUser,
                 targetUserId = config.targetUserId,

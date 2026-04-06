@@ -21,6 +21,7 @@ data class ConfigModel(
     val enableCustomizePackageSource: Boolean = false,
     val packageSource: PackageSource = PackageSource.OTHER,
     val installRequester: String? = null,
+    val installerMode: InstallerMode = InstallerMode.Self,
     val installer: String?,
     val enableCustomizeUser: Boolean = false,
     val targetUserId: Int = 0,
@@ -50,7 +51,8 @@ data class ConfigModel(
     val installFlags: Int = 0,
     val bypassBlacklistInstallSetByUser: Boolean = false,
     val uninstallFlags: Int = 0,
-    val callingFromUid: Int? = null
+    val callingFromUid: Int? = null,
+    val initiatorPackageName: String? = null
 ) {
     companion object {
         var default = ConfigModel(
@@ -63,6 +65,7 @@ data class ConfigModel(
             installReason = InstallReason.UNKNOWN,
             enableCustomizePackageSource = false,
             packageSource = PackageSource.OTHER,
+            installerMode = InstallerMode.Self,
             installer = null,
             enableCustomizeUser = false,
             targetUserId = 0,
@@ -93,6 +96,7 @@ data class ConfigModel(
             installReason = InstallReason.UNKNOWN,
             enableCustomizePackageSource = false,
             packageSource = PackageSource.OTHER,
+            installerMode = InstallerMode.Custom,
             installer = "com.android.shell",
             enableCustomizeUser = false,
             targetUserId = 0,

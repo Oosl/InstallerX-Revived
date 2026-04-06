@@ -85,6 +85,7 @@ sealed class AppEntity {
         val author: String,
         val description: String,
         override val data: DataEntity,
+        val icon: Drawable? = null,
         override val size: Long = data.getSize(),
         override val sourceType: DataType? = null
     ) : AppEntity() {

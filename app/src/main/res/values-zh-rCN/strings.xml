@@ -219,7 +219,10 @@
     <string name="config_declare_install_requester_error_desc">输入的应用必须已经安装在设备上</string>
     <string name="config_install_requester">安装发起者（安装请求方）</string>
     <string name="config_declare_installer">声明安装者（安装来源）</string>
-    <string name="config_declare_installer_desc">关闭时默认填写本应用包名</string>
+    <string name="config_declare_installer_desc">默认填写本应用包名</string>
+    <string name="config_installer_mode_self">默认</string>
+    <string name="config_installer_mode_initiator">发起安装的应用</string>
+    <string name="config_installer_mode_custom">自定义</string>
     <string name="config_installer">安装者（包名）</string>
     <string name="config_customize_user">设定用户</string>
     <string name="config_customize_user_desc">手动设置为目标用户安装应用</string>

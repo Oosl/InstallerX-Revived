@@ -223,7 +223,10 @@
     <string name="config_declare_install_requester_error_desc">The entered package name must be installed</string>
     <string name="config_install_requester">Install requested by (package name)</string>
     <string name="config_declare_installer">Set install source</string>
-    <string name="config_declare_installer_desc">Defaults to this app when off</string>
+    <string name="config_declare_installer_desc">Defaults to this app\'s package name</string>
+    <string name="config_installer_mode_self">Default</string>
+    <string name="config_installer_mode_initiator">Initiating app</string>
+    <string name="config_installer_mode_custom">Custom</string>
     <string name="config_installer">installed by (package name)</string>
     <string name="config_customize_user">Set user to install</string>
     <string name="config_customize_user_desc">Manually set the user you want to install app to</string>
