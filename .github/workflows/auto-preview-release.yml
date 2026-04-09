@@ -31,7 +31,12 @@ jobs:
       - name: Get commit short SHA & Date
         id: vars
         run: |
-          echo "SHORT_SHA=$(git rev-parse --short=7 HEAD)" >> $GITHUB_OUTPUT
+          UPSTREAM_SHA=$(git log --pretty='%H%x09%an' | awk -F '\t' '$2 != "oosl" && $2 != "github-actions[bot]" {print substr($1,1,7); exit}')
+          if [ -n "$UPSTREAM_SHA" ]; then
+            echo "SHORT_SHA=$UPSTREAM_SHA" >> $GITHUB_OUTPUT
+          else
+            echo "SHORT_SHA=$(git rev-parse --short=7 HEAD)" >> $GITHUB_OUTPUT
+          fi
           echo "YY_MM=$(date +'%y.%m')" >> $GITHUB_OUTPUT
 
       - name: Set up JDK 25
