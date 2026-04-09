@@ -30,8 +30,11 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SmallExtendedFloatingActionButton
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -46,10 +49,11 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavController
 import com.rosan.installer.R
 import com.rosan.installer.ui.icons.AppIcons
-import com.rosan.installer.ui.page.main.settings.SettingsScreen
+import com.rosan.installer.ui.navigation.LocalNavigator
+import com.rosan.installer.ui.navigation.Navigator
+import com.rosan.installer.ui.navigation.Route
 import com.rosan.installer.ui.page.main.widget.card.ShowDataWidget
 import com.rosan.installer.ui.page.main.widget.util.DeleteEventCollector
 import com.rosan.installer.ui.theme.getM3TopBarColor
@@ -64,13 +68,13 @@ import org.koin.core.parameter.parametersOf
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun NewAllPage(
-    navController: NavController,
-    viewModel: AllViewModel = koinViewModel { parametersOf(navController) },
+    navigator: Navigator = LocalNavigator.current,
+    viewModel: AllViewModel = koinViewModel { parametersOf(navigator) },
     outerPadding: PaddingValues = PaddingValues(0.dp),
     hazeState: HazeState? = null
 ) {
     LaunchedEffect(Unit) {
-        viewModel.navController = navController
+        viewModel.navigator = navigator
     }
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -149,12 +153,27 @@ fun NewAllPage(
                         Text(text = stringResource(id = R.string.add))
                     },
                     onClick = {
-                        navController.navigate(SettingsScreen.Builder.EditConfig(null).route)
+                        navigator.push(Route.EditConfig(-1))
                     }
                 )
             }
         },
-        snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
+        snackbarHost = {
+            val state = rememberSwipeToDismissBoxState()
+            LaunchedEffect(snackBarHostState.currentSnackbarData) {
+                state.snapTo(SwipeToDismissBoxValue.Settled)
+            }
+
+            SwipeToDismissBox(
+                state = state,
+                backgroundContent = {},
+                onDismiss = {
+                    snackBarHostState.currentSnackbarData?.dismiss()
+                }
+            ) {
+                SnackbarHost(hostState = snackBarHostState)
+            }
+        },
     ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize()) {
             when (uiState.data.progress) {

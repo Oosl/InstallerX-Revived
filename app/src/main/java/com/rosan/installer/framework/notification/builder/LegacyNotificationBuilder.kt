@@ -18,15 +18,18 @@ class LegacyNotificationBuilder(
     private val context: Context,
     private val session: InstallerSessionRepository,
     private val helper: NotificationHelper
-) {
+) : InstallerNotificationBuilder {
 
-    suspend fun build(
-        progress: ProgressEntity,
-        background: Boolean,
-        showDialog: Boolean,
-        preferSystemIcon: Boolean
-    ): Notification? {
-        val builder = createBaseBuilder(progress, background, showDialog)
+    override suspend fun build(payload: NotificationPayload): Notification? {
+        val progress = payload.state.progress
+
+        if (progress is ProgressEntity.Finish || progress is ProgressEntity.Error || progress is ProgressEntity.InstallAnalysedUnsupported) {
+            return null
+        }
+
+        val builder = createBaseBuilder(progress, payload.state.background, payload.settings.showDialog)
+        val preferSystemIcon = payload.settings.preferSystemIcon
+
         return when (progress) {
             is ProgressEntity.Ready -> onReady(builder)
             is ProgressEntity.InstallResolving -> onResolving(builder)
@@ -41,7 +44,6 @@ class LegacyNotificationBuilder(
             is ProgressEntity.InstallFailed -> onInstallFailed(builder, preferSystemIcon).build()
             is ProgressEntity.InstallSuccess -> onInstallSuccess(builder, preferSystemIcon).build()
             is ProgressEntity.InstallCompleted -> onInstallCompleted(builder, progress).build()
-            is ProgressEntity.Finish, is ProgressEntity.Error, is ProgressEntity.InstallAnalysedUnsupported -> null
             else -> null
         }
     }
@@ -82,7 +84,9 @@ class LegacyNotificationBuilder(
         .addAction(0, context.getString(R.string.cancel), helper.finishIntent).build()
 
     private fun onResolving(builder: NotificationCompat.Builder) =
-        builder.setContentTitle(context.getString(R.string.installer_resolving)).build()
+        builder.setContentTitle(context.getString(R.string.installer_resolving))
+            .setContentText(context.getString(R.string.installer_resolving_desc))
+            .build()
 
     private fun onPreparing(builder: NotificationCompat.Builder, progress: ProgressEntity.InstallPreparing) =
         builder.setContentTitle(context.getString(R.string.installer_preparing))

@@ -29,15 +29,20 @@ class SelectOptimalSplitsUseCase {
                 sessionType == DataType.MIXED_MODULE_APK ||
                 sessionType == DataType.MIXED_MODULE_ZIP
 
+        // Extract bases early to determine the effective choice logic
+        val bases = entities.filterIsInstance<AppEntity.BaseEntity>()
+
+        // Only rely on apkChooseAll if there are actually multiple bases.
+        // If there is 1 or 0 bases, we implicitly treat it as true to ensure the primary app is selected.
+        val effectiveApkChooseAll = if (bases.size > 1) apkChooseAll else true
+
         // 1. Mixed Modules
         if (sessionType == DataType.MIXED_MODULE_APK || sessionType == DataType.MIXED_MODULE_ZIP) {
             return entities.map {
-                val isSelected = if (it is AppEntity.BaseEntity) apkChooseAll else false
+                val isSelected = if (it is AppEntity.BaseEntity) effectiveApkChooseAll else false
                 SelectInstallEntity(it, selected = isSelected)
             }
         }
-
-        val bases = entities.filterIsInstance<AppEntity.BaseEntity>()
 
         // 2. Multi-App Mode
         val isMultiAppMode = (sessionType == DataType.MULTI_APK || sessionType == DataType.MULTI_APK_ZIP)
@@ -45,7 +50,7 @@ class SelectOptimalSplitsUseCase {
             val bestBase = findBestBase(bases)
             return entities.map { entity ->
                 val isSelected = if (entity is AppEntity.BaseEntity) {
-                    if (apkChooseAll) true else (entity == bestBase)
+                    if (effectiveApkChooseAll) true else (entity == bestBase)
                 } else false
                 SelectInstallEntity(entity, selected = isSelected)
             }
@@ -66,7 +71,8 @@ class SelectOptimalSplitsUseCase {
 
         return entities.map { entity ->
             val isSelected = when (entity) {
-                is AppEntity.BaseEntity -> if (isBatchMode) apkChooseAll else true
+                // Apply the corrected effective choice flag here as well
+                is AppEntity.BaseEntity -> if (isBatchMode) effectiveApkChooseAll else true
                 is AppEntity.DexMetadataEntity -> true
                 is AppEntity.SplitEntity -> entity in selectedSplits
                 is AppEntity.ModuleEntity -> true

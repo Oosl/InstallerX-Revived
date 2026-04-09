@@ -22,7 +22,7 @@ class MiIslandNotificationBuilder(
     private val context: Context,
     private val session: InstallerSessionRepository,
     private val helper: NotificationHelper
-) {
+) : InstallerNotificationBuilder {
 
     private data class IslandAction(
         val key: String,
@@ -34,39 +34,37 @@ class MiIslandNotificationBuilder(
     private val highlightBgColor = "#006EFF"
     private val highlightTitleColor = "#FFFFFF"
 
-    suspend fun build(
-        progress: ProgressEntity,
-        background: Boolean,
-        showDialog: Boolean,
-        preferSystemIcon: Boolean,
-        fakeItemProgress: Float = 0f
-    ): Notification? {
+    override suspend fun build(payload: NotificationPayload): Notification? {
+        val progress = payload.state.progress
+
         if (progress is ProgressEntity.Finish || progress is ProgressEntity.Error || progress is ProgressEntity.InstallAnalysedUnsupported) {
             return null
         }
 
-        val builder = createBaseBuilder(progress, background, showDialog)
+        val builder = createBaseBuilder(progress, payload.state.background, payload.settings.showDialog)
 
         var title = context.getString(R.string.installer_ready)
         var contentText = ""
         var shortText = context.getString(R.string.installer_ready)
         var progressValue = -1
-        var isError = false
-        var isSuccess = false
         var isOngoing = false
+        var showAppIcon = true // Flag to determine whether to display the app icon or the default logo
         val actionsList = mutableListOf<IslandAction>()
 
         when (progress) {
             is ProgressEntity.InstallResolving -> {
                 title = context.getString(R.string.installer_resolving)
                 shortText = context.getString(R.string.installer_live_channel_short_text_resolving)
+                contentText = context.getString(R.string.installer_resolving_desc)
                 isOngoing = true
+                showAppIcon = false
                 actionsList.add(IslandAction("miui_action_cancel", context.getString(R.string.cancel), helper.finishIntent))
             }
 
             is ProgressEntity.InstallResolveSuccess -> {
                 title = context.getString(R.string.installer_resolve_success)
                 shortText = context.getString(R.string.installer_live_channel_short_text_resolving)
+                showAppIcon = false
                 actionsList.add(IslandAction("miui_action_cancel", context.getString(R.string.cancel), helper.finishIntent))
             }
 
@@ -76,13 +74,14 @@ class MiIslandNotificationBuilder(
                 contentText = context.getString(R.string.installer_preparing_desc)
                 progressValue = (progress.progress * 100).toInt()
                 isOngoing = true
+                showAppIcon = false
             }
 
             is ProgressEntity.InstallResolvedFailed -> {
                 title = context.getString(R.string.installer_resolve_failed)
                 shortText = context.getString(R.string.installer_live_channel_short_text_resolve_failed)
                 contentText = session.error.getErrorMessage(context)
-                isError = true
+                showAppIcon = false
                 actionsList.add(IslandAction("miui_action_cancel", context.getString(R.string.cancel), helper.finishIntent))
             }
 
@@ -90,6 +89,7 @@ class MiIslandNotificationBuilder(
                 title = context.getString(R.string.installer_analysing)
                 shortText = context.getString(R.string.installer_live_channel_short_text_analysing)
                 isOngoing = true
+                showAppIcon = false
                 actionsList.add(IslandAction("miui_action_cancel", context.getString(R.string.cancel), helper.finishIntent))
             }
 
@@ -109,15 +109,16 @@ class MiIslandNotificationBuilder(
                 if (hasComplexType) {
                     title = context.getString(R.string.installer_prepare_install)
                     contentText = context.getString(R.string.installer_mixed_module_apk_description_notification)
+                    showAppIcon = false
                     actionsList.add(IslandAction("miui_action_cancel", context.getString(R.string.cancel), helper.finishIntent))
                 } else if (isMultiPackage) {
                     title = context.getString(R.string.installer_prepare_install)
                     contentText = context.getString(R.string.installer_multi_apk_description_notification)
+                    showAppIcon = false
                     actionsList.add(IslandAction("miui_action_cancel", context.getString(R.string.cancel), helper.finishIntent))
                 } else {
                     title = context.getString(R.string.installer_prepare_type_unknown_confirm)
                     contentText = selectedApps.getInfo(context).title
-
                     actionsList.add(IslandAction("miui_action_cancel", context.getString(R.string.cancel), helper.finishIntent))
                     actionsList.add(IslandAction("miui_action_install", context.getString(R.string.install), helper.installIntent, true))
                 }
@@ -127,7 +128,7 @@ class MiIslandNotificationBuilder(
                 title = context.getString(R.string.installer_analyse_failed)
                 shortText = context.getString(R.string.installer_live_channel_short_text_analyse_failed)
                 contentText = session.error.getErrorMessage(context)
-                isError = true
+                showAppIcon = false
                 actionsList.add(IslandAction("miui_action_cancel", context.getString(R.string.cancel), helper.finishIntent))
                 actionsList.add(IslandAction("miui_action_retry", context.getString(R.string.retry), helper.analyseIntent))
             }
@@ -140,7 +141,9 @@ class MiIslandNotificationBuilder(
                 isOngoing = true
                 val total = progress.total.coerceAtLeast(1).toFloat()
                 val currentBase = (progress.current - 1).coerceAtLeast(0).toFloat()
-                val batchFraction = (currentBase + fakeItemProgress).coerceIn(0f, total) / total
+
+                // Calculate actual static progress without fake animation ticks
+                val batchFraction = currentBase / total
                 progressValue = (100 * batchFraction).toInt()
             }
 
@@ -155,7 +158,6 @@ class MiIslandNotificationBuilder(
                 title = context.getString(R.string.installer_install_success)
                 shortText = context.getString(R.string.installer_live_channel_short_text_success)
                 contentText = session.analysisResults.flatMap { it.appEntities }.filter { it.selected }.map { it.app }.getInfo(context).title
-                isSuccess = true
 
                 actionsList.add(IslandAction("miui_action_finish", context.getString(R.string.finish), helper.finishIntent))
                 val openIntent =
@@ -176,7 +178,6 @@ class MiIslandNotificationBuilder(
                         context.getString(R.string.installer_live_channel_short_text_success)
                     }"
                 contentText = context.getString(R.string.installer_live_channel_short_text_success)
-                isSuccess = true
                 actionsList.add(IslandAction("miui_action_finish", context.getString(R.string.finish), helper.finishIntent))
             }
 
@@ -184,7 +185,6 @@ class MiIslandNotificationBuilder(
                 title = context.getString(R.string.installer_install_failed)
                 shortText = context.getString(R.string.installer_live_channel_short_text_install_failed)
                 contentText = session.analysisResults.flatMap { it.appEntities }.filter { it.selected }.map { it.app }.getInfo(context).title
-                isError = true
                 actionsList.add(IslandAction("miui_action_cancel", context.getString(R.string.cancel), helper.finishIntent))
                 actionsList.add(IslandAction("miui_action_retry", context.getString(R.string.retry), helper.installIntent))
             }
@@ -199,7 +199,7 @@ class MiIslandNotificationBuilder(
         }
 
         val appIconBitmap = helper.getLargeIconBitmap(
-            preferSystemIcon,
+            payload.settings.preferSystemIcon,
             if (progress is ProgressEntity.Installing && progress.total > 1) progress.current - 1 else null
         )
 
@@ -211,18 +211,10 @@ class MiIslandNotificationBuilder(
         val islandExtras = FocusNotification.buildV3 {
             val lightLogoKey = createPicture("key_logo_light", lightLogoIcon)
             val darkLogoKey = createPicture("key_logo_dark", darkLogoIcon)
-
             val appIconKey = appIconBitmap?.let { createPicture("key_app_icon", Icon.createWithBitmap(it)) } ?: lightLogoKey
 
-            val displayIconKey = if (progress is ProgressEntity.InstallPreparing ||
-                progress is ProgressEntity.InstallResolving ||
-                progress is ProgressEntity.InstallResolveSuccess ||
-                progress is ProgressEntity.InstallAnalysing
-            ) {
-                darkLogoKey
-            } else {
-                appIconKey
-            }
+            // Use the dark logo for the black capsule if showAppIcon is false
+            val displayIconKey = if (showAppIcon) appIconKey else darkLogoKey
 
             if (isAutoMode) {
                 islandFirstFloat = false
@@ -234,7 +226,9 @@ class MiIslandNotificationBuilder(
             updatable = true
             ticker = title
             tickerPic = lightLogoKey
-            outEffectSrc = "outer_glow"
+            if (payload.settings.miIslandOuterGlow) { // Control the outer glow
+                outEffectSrc = "outer_glow"
+            }
 
             // 1. Xiaomi Island configuration (includes capsule summary state and large island expanded state)
             island {
@@ -287,11 +281,7 @@ class MiIslandNotificationBuilder(
                 displayContent = title
             }
 
-            if (progress is ProgressEntity.InstallPreparing ||
-                progress is ProgressEntity.InstallResolving ||
-                progress is ProgressEntity.InstallResolveSuccess ||
-                progress is ProgressEntity.InstallAnalysing
-            ) {
+            if (!showAppIcon) {
                 // Apply official template [No. 19]: Text component 2 (baseInfo type=2) + Progress component 3 (multiProgressInfo)
                 baseInfo {
                     type = 2

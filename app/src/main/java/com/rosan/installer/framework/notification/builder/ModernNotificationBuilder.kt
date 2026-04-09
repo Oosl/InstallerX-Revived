@@ -31,7 +31,8 @@ class ModernNotificationBuilder(
     private val context: Context,
     private val session: InstallerSessionRepository,
     private val helper: NotificationHelper
-) {
+) : InstallerNotificationBuilder {
+
     companion object {
         private const val M3_ERROR_COLOR_LIGHT = 0xFFB3261E
         private const val M3_ERROR_COLOR_DARK = 0xFFF2B8B5
@@ -60,20 +61,23 @@ class ModernNotificationBuilder(
             .setRequestPromotedOngoing(true)
     }
 
-    suspend fun build(
-        progress: ProgressEntity,
-        showDialog: Boolean,
-        preferSystemIcon: Boolean,
-        preferDynamicColor: Boolean,
-        fakeItemProgress: Float,
-        isSameState: Boolean
-    ): Notification? {
-        if (progress is ProgressEntity.Finish || progress is ProgressEntity.Error || progress is ProgressEntity.InstallAnalysedUnsupported)
+    override suspend fun build(payload: NotificationPayload): Notification? {
+        val progress = payload.state.progress
+
+        if (progress is ProgressEntity.Finish || progress is ProgressEntity.Error || progress is ProgressEntity.InstallAnalysedUnsupported) {
             return null
+        }
+
+        val showDialog = payload.settings.showDialog
+        val preferSystemIcon = payload.settings.preferSystemIcon
+        val preferDynamicColor = payload.settings.preferDynamicColor
+        val fakeItemProgress = payload.animation.fakeItemProgress
+        val isSameState = payload.state.isSameState
 
         val builder = createBaseBuilder(progress, showDialog, preferDynamicColor, fakeItemProgress)
 
         return when (progress) {
+            is ProgressEntity.InstallResolving -> builder.setContentText(context.getString(R.string.installer_resolving_desc)).build()
             is ProgressEntity.InstallPreparing -> builder.addAction(0, context.getString(R.string.cancel), helper.cancelIntent).build()
             is ProgressEntity.InstallResolvedFailed -> onResolvedFailed(builder).build()
             is ProgressEntity.InstallAnalysedSuccess -> onAnalysedSuccess(builder, preferSystemIcon, isSameState).build()
@@ -108,6 +112,7 @@ class ModernNotificationBuilder(
 
             else -> helper.openIntent
         }
+
         val isDarkTheme = context.resources.configuration.uiMode.hasFlag(Configuration.UI_MODE_NIGHT_YES)
         val brandColor = if (isDarkTheme) primaryDark else primaryLight
 
