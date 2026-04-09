@@ -1,5 +1,5 @@
+- chore: update GitHub workflows for upstream sync and auto-preview release (oosl)
+- chore(release): update module update.json for 26.04.535a4a7 [skip ci] (github-actions[bot])
 - refactor: refactor module (oosl)
 - auto sync upstream (8f7cd1d6) (github-actions[bot])
 - fix: make AOSP predictive animation direction configurable (wxxsfxyzm)
-- fix(deps): update all non-major dependencies to v1.1.0 (#594) (renovate[bot])
-- i18n: Translations update from Hosted Weblate (#589) (Weblate (bot))
