@@ -121,6 +121,10 @@ class AppDataStore(
 
         // Debug
         val ENABLE_FILE_LOGGING = booleanPreferencesKey("enable_file_logging")
+
+        // Updater
+        val GITHUB_UPDATE_CHANNEL = stringPreferencesKey("github_update_channel")
+        val CUSTOM_GITHUB_PROXY_URL = stringPreferencesKey("custom_github_proxy_url")
     }
 
     suspend fun putString(key: Preferences.Key<String>, value: String) {

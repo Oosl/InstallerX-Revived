@@ -9,6 +9,7 @@ import com.rosan.installer.data.settings.local.datastore.AppDataStore
 import com.rosan.installer.domain.device.provider.DeviceCapabilityProvider
 import com.rosan.installer.domain.settings.model.AppPreferences
 import com.rosan.installer.domain.settings.model.Authorizer
+import com.rosan.installer.domain.settings.model.GithubUpdateChannel
 import com.rosan.installer.domain.settings.model.HttpProfile
 import com.rosan.installer.domain.settings.model.InstallMode
 import com.rosan.installer.domain.settings.model.NamedPackage
@@ -78,6 +79,8 @@ class AppSettingsRepositoryImpl(
             appDataStore.getInt(AppDataStore.UNINSTALL_FLAGS, 0),
 
             // Lab settings
+            appDataStore.getString(AppDataStore.GITHUB_UPDATE_CHANNEL, GithubUpdateChannel.OFFICIAL.name),
+            appDataStore.getString(AppDataStore.CUSTOM_GITHUB_PROXY_URL, ""),
             appDataStore.getBoolean(AppDataStore.LAB_ENABLE_MODULE_FLASH, false),
             appDataStore.getBoolean(AppDataStore.LAB_MODULE_FLASH_SHOW_ART, true),
             appDataStore.getString(AppDataStore.LAB_ROOT_IMPLEMENTATION, "Default"),
@@ -147,6 +150,11 @@ class AppSettingsRepositoryImpl(
             managedSharedUserIdExemptedPackages = values[idx++] as List<NamedPackage>,
 
             uninstallFlags = values[idx++] as Int,
+            githubUpdateChannel = run {
+                val value = values[idx++] as String
+                runCatching { GithubUpdateChannel.valueOf(value) }.getOrDefault(GithubUpdateChannel.OFFICIAL)
+            },
+            customGithubProxyUrl = values[idx++] as String,
             labRootEnableModuleFlash = values[idx++] as Boolean,
             labRootShowModuleArt = values[idx++] as Boolean,
             labRootMode = RootMode.fromString(values[idx++] as String),
@@ -235,6 +243,8 @@ class AppSettingsRepositoryImpl(
             StringSetting.LabHttpProfile -> AppDataStore.LAB_HTTP_PROFILE
             StringSetting.PredictiveBackAnimation -> AppDataStore.PREDICTIVE_BACK_ANIMATION
             StringSetting.PredictiveBackExitDirection -> AppDataStore.PREDICTIVE_BACK_EXIT_DIRECTION
+            StringSetting.GithubUpdateChannel -> AppDataStore.GITHUB_UPDATE_CHANNEL
+            StringSetting.CustomGithubProxyUrl -> AppDataStore.CUSTOM_GITHUB_PROXY_URL
         }
 
     private fun intKey(setting: IntSetting): Preferences.Key<Int> =

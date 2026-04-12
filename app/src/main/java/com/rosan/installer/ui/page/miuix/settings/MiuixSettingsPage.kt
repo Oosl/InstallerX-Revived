@@ -33,12 +33,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.kyant.backdrop.backdrops.LayerBackdrop
-import com.kyant.backdrop.backdrops.layerBackdrop
 import com.rosan.installer.R
 import com.rosan.installer.ui.icons.AppIcons
 import com.rosan.installer.ui.navigation.LocalNavigator
@@ -47,10 +47,6 @@ import com.rosan.installer.ui.page.miuix.settings.config.all.MiuixAllPage
 import com.rosan.installer.ui.page.miuix.settings.preferred.MiuixPreferredPage
 import com.rosan.installer.ui.page.miuix.widgets.FloatingBottomBar
 import com.rosan.installer.ui.page.miuix.widgets.FloatingBottomBarItem
-import com.rosan.installer.ui.theme.getMiuixAppBarColor
-import com.rosan.installer.ui.theme.installerHazeEffect
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.HazeStyle
 import kotlinx.coroutines.launch
 import top.yukonga.miuix.kmp.basic.FloatingActionButton
 import top.yukonga.miuix.kmp.basic.Icon
@@ -63,7 +59,18 @@ import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.SnackbarHost
 import top.yukonga.miuix.kmp.basic.SnackbarHostState
 import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.blur.BlendColorEntry
+import top.yukonga.miuix.kmp.blur.BlurColors
+import top.yukonga.miuix.kmp.blur.textureBlur
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+
+// -------------------------------------------------------------
+// 【关键修改】使用别名导入两套不同的 Backdrop 以避免冲突
+// -------------------------------------------------------------
+import com.kyant.backdrop.backdrops.LayerBackdrop as KyantLayerBackdrop
+import com.kyant.backdrop.backdrops.layerBackdrop as kyantLayerBackdrop
+import top.yukonga.miuix.kmp.blur.LayerBackdrop as MiuixLayerBackdrop
+import top.yukonga.miuix.kmp.blur.layerBackdrop as miuixLayerBackdrop
 
 /**
  * Reusable Floating Bottom Bar
@@ -73,7 +80,7 @@ private fun SettingsFloatingBottomBar(
     pagerState: PagerState,
     navigationItems: List<NavigationItem>,
     useFloatingBottomBarBlur: Boolean,
-    backdrop: LayerBackdrop
+    floatingBackdrop: KyantLayerBackdrop // 悬浮底栏依然使用 Kyant 的
 ) {
     val coroutineScope = rememberCoroutineScope()
     Box(
@@ -97,7 +104,7 @@ private fun SettingsFloatingBottomBar(
                     pagerState.animateScrollToPage(index)
                 }
             },
-            backdrop = backdrop,
+            backdrop = floatingBackdrop,
             tabsCount = navigationItems.size,
             isBlurEnabled = useFloatingBottomBarBlur
         ) {
@@ -140,42 +147,61 @@ fun SettingsCompactLayout(
     snackbarHostState: SnackbarHostState,
     useFloatingBottomBar: Boolean,
     useFloatingBottomBarBlur: Boolean,
-    hazeState: HazeState?,
-    hazeStyle: HazeStyle,
-    backdrop: LayerBackdrop
+    floatingBackdrop: KyantLayerBackdrop?, // 接收 Kyant 类型
+    miuixBackdrop: MiuixLayerBackdrop?     // 接收 Miuix 类型
 ) {
     val navigator = LocalNavigator.current
     val coroutineScope = rememberCoroutineScope()
 
-    // Removed explicit contentWindowInsets override.
-    // Let the Scaffold pass default insets (which won't consume status bar cutouts),
-    // allowing inner pages to handle their own statusBarsPadding().
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
-            if (useFloatingBottomBar) {
+            if (useFloatingBottomBar && floatingBackdrop != null) {
                 SettingsFloatingBottomBar(
                     pagerState = pagerState,
                     navigationItems = navigationItems,
                     useFloatingBottomBarBlur = useFloatingBottomBarBlur,
-                    backdrop = backdrop
+                    floatingBackdrop = floatingBackdrop
                 )
-            } else {
-                NavigationBar(
-                    modifier = Modifier.installerHazeEffect(hazeState, hazeStyle),
-                    color = hazeState.getMiuixAppBarColor()
-                ) {
-                    navigationItems.forEachIndexed { index, item ->
-                        NavigationBarItem(
-                            selected = pagerState.currentPage == index,
-                            onClick = {
-                                coroutineScope.launch {
-                                    pagerState.animateScrollToPage(index)
-                                }
-                            },
-                            icon = item.icon,
-                            label = item.label
+            } else if (!useFloatingBottomBar) {
+                // 原生底栏使用 Miuix 的 Backdrop 和 Blur
+                val blurActive = miuixBackdrop != null
+                val barColor = if (blurActive) Color.Transparent else MiuixTheme.colorScheme.surface
+                Box(
+                    modifier = Modifier
+                        .then(
+                            if (blurActive) {
+                                Modifier.textureBlur(
+                                    backdrop = miuixBackdrop,
+                                    shape = RectangleShape,
+                                    blurRadius = 25f,
+                                    colors = BlurColors(
+                                        blendColors = listOf(
+                                            BlendColorEntry(color = MiuixTheme.colorScheme.surface.copy(0.8f)),
+                                        ),
+                                    ),
+                                )
+                            } else {
+                                Modifier
+                            }
                         )
+                        .background(barColor)
+                ) {
+                    NavigationBar(
+                        color = barColor
+                    ) {
+                        navigationItems.forEachIndexed { index, item ->
+                            NavigationBarItem(
+                                selected = pagerState.currentPage == index,
+                                onClick = {
+                                    coroutineScope.launch {
+                                        pagerState.animateScrollToPage(index)
+                                    }
+                                },
+                                icon = item.icon,
+                                label = item.label
+                            )
+                        }
                     }
                 }
             }
@@ -204,14 +230,14 @@ fun SettingsCompactLayout(
         }
     ) { paddingValues ->
         SettingsPagerContent(
-            hazeState = hazeState,
             pagerState = pagerState,
             navigationItems = navigationItems,
             snackbarHostState = snackbarHostState,
             modifier = Modifier.fillMaxSize(),
             outerPadding = paddingValues,
             useFloatingBottomBar = useFloatingBottomBar,
-            backdrop = backdrop
+            floatingBackdrop = floatingBackdrop,
+            miuixBackdrop = miuixBackdrop
         )
     }
 }
@@ -226,9 +252,8 @@ fun SettingsWideScreenLayout(
     snackbarHostState: SnackbarHostState,
     useFloatingBottomBar: Boolean,
     useFloatingBottomBarBlur: Boolean,
-    hazeState: HazeState?,
-    hazeStyle: HazeStyle,
-    backdrop: LayerBackdrop
+    floatingBackdrop: KyantLayerBackdrop?, // 接收 Kyant 类型
+    miuixBackdrop: MiuixLayerBackdrop?     // 接收 Miuix 类型
 ) {
     val coroutineScope = rememberCoroutineScope()
 
@@ -239,11 +264,10 @@ fun SettingsWideScreenLayout(
             snackbarHostState = snackbarHostState,
             useFloatingBottomBar = true,
             useFloatingBottomBarBlur = useFloatingBottomBarBlur,
-            backdrop = backdrop,
-            hazeState = hazeState
+            floatingBackdrop = floatingBackdrop,
+            miuixBackdrop = miuixBackdrop
         )
     } else {
-        // Calculate the insets consumed by the NavigationRail on the start side
         val startInsets = WindowInsets.systemBars.union(WindowInsets.displayCutout)
             .only(WindowInsetsSides.Start)
 
@@ -252,33 +276,52 @@ fun SettingsWideScreenLayout(
                 .fillMaxSize()
                 .background(MiuixTheme.colorScheme.surface)
         ) {
-            // Left Panel: Navigation Rail
-            NavigationRail(
+            // 侧边栏始终使用 Miuix 原生的模糊和 Backdrop
+            val blurActive = miuixBackdrop != null
+            val barColor = if (blurActive) Color.Transparent else MiuixTheme.colorScheme.surface
+            Box(
                 modifier = Modifier
                     .fillMaxHeight()
-                    .installerHazeEffect(hazeState, hazeStyle),
-                color = hazeState.getMiuixAppBarColor()
-            ) {
-                navigationItems.forEachIndexed { index, item ->
-                    NavigationRailItem(
-                        selected = pagerState.currentPage == index,
-                        onClick = {
-                            coroutineScope.launch {
-                                pagerState.animateScrollToPage(index)
-                            }
-                        },
-                        icon = item.icon,
-                        label = item.label
+                    .then(
+                        if (blurActive) {
+                            Modifier.textureBlur(
+                                backdrop = miuixBackdrop,
+                                shape = RectangleShape,
+                                blurRadius = 25f,
+                                colors = BlurColors(
+                                    blendColors = listOf(
+                                        BlendColorEntry(color = MiuixTheme.colorScheme.surface.copy(0.8f)),
+                                    ),
+                                ),
+                            )
+                        } else {
+                            Modifier
+                        }
                     )
+                    .background(barColor)
+            ) {
+                NavigationRail(
+                    modifier = Modifier.fillMaxHeight(),
+                    color = barColor
+                ) {
+                    navigationItems.forEachIndexed { index, item ->
+                        NavigationRailItem(
+                            selected = pagerState.currentPage == index,
+                            onClick = {
+                                coroutineScope.launch {
+                                    pagerState.animateScrollToPage(index)
+                                }
+                            },
+                            icon = item.icon,
+                            label = item.label
+                        )
+                    }
                 }
             }
 
-            // Right Panel: Content + FAB + Snackbar
             Box(
                 modifier = Modifier
                     .weight(1f)
-                    // Only consume start insets so the side bar area isn't duplicated.
-                    // Top and bottom insets are left for the inner pages to handle.
                     .consumeWindowInsets(startInsets)
             ) {
                 SettingsWideContent(
@@ -287,8 +330,8 @@ fun SettingsWideScreenLayout(
                     snackbarHostState = snackbarHostState,
                     useFloatingBottomBar = false,
                     useFloatingBottomBarBlur = false,
-                    backdrop = null,
-                    hazeState = hazeState
+                    floatingBackdrop = floatingBackdrop,
+                    miuixBackdrop = miuixBackdrop
                 )
             }
         }
@@ -302,19 +345,19 @@ private fun SettingsWideContent(
     snackbarHostState: SnackbarHostState,
     useFloatingBottomBar: Boolean,
     useFloatingBottomBarBlur: Boolean,
-    backdrop: LayerBackdrop?,
-    hazeState: HazeState?
+    floatingBackdrop: KyantLayerBackdrop?,
+    miuixBackdrop: MiuixLayerBackdrop?
 ) {
     val navigator = LocalNavigator.current
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
-            if (useFloatingBottomBar && backdrop != null) {
+            if (useFloatingBottomBar && floatingBackdrop != null) {
                 SettingsFloatingBottomBar(
                     pagerState = pagerState,
                     navigationItems = navigationItems,
                     useFloatingBottomBarBlur = useFloatingBottomBarBlur,
-                    backdrop = backdrop
+                    floatingBackdrop = floatingBackdrop
                 )
             }
         },
@@ -342,28 +385,28 @@ private fun SettingsWideContent(
         }
     ) { paddingValues ->
         SettingsPagerContent(
-            hazeState = hazeState,
             pagerState = pagerState,
             navigationItems = navigationItems,
             snackbarHostState = snackbarHostState,
             modifier = Modifier.fillMaxSize(),
             outerPadding = paddingValues,
             useFloatingBottomBar = useFloatingBottomBar,
-            backdrop = backdrop
+            floatingBackdrop = floatingBackdrop,
+            miuixBackdrop = miuixBackdrop
         )
     }
 }
 
 @Composable
 private fun SettingsPagerContent(
-    hazeState: HazeState?,
+    modifier: Modifier = Modifier,
     pagerState: PagerState,
     navigationItems: List<NavigationItem>,
     snackbarHostState: SnackbarHostState,
-    modifier: Modifier = Modifier,
     outerPadding: PaddingValues,
     useFloatingBottomBar: Boolean,
-    backdrop: LayerBackdrop?
+    floatingBackdrop: KyantLayerBackdrop?,
+    miuixBackdrop: MiuixLayerBackdrop?
 ) {
     HorizontalPager(
         state = pagerState,
@@ -371,18 +414,18 @@ private fun SettingsPagerContent(
         overscrollEffect = null,
         beyondViewportPageCount = 1,
         modifier = modifier
-            .then(if (backdrop != null && useFloatingBottomBar) Modifier.layerBackdrop(backdrop) else Modifier)
+            .then(if (useFloatingBottomBar && floatingBackdrop != null) Modifier.kyantLayerBackdrop(floatingBackdrop) else Modifier)
+            .then(if (!useFloatingBottomBar && miuixBackdrop != null) Modifier.miuixLayerBackdrop(miuixBackdrop) else Modifier)
     ) { page ->
         when (page) {
             0 -> MiuixAllPage(
-                hazeState = hazeState,
                 title = navigationItems[page].label,
                 outerPadding = outerPadding,
                 snackbarHostState = snackbarHostState
             )
 
             1 -> MiuixPreferredPage(
-                hazeState = hazeState,
+                enableBlur = floatingBackdrop != null && miuixBackdrop != null,
                 title = navigationItems[page].label,
                 outerPadding = outerPadding,
                 snackbarHostState = snackbarHostState

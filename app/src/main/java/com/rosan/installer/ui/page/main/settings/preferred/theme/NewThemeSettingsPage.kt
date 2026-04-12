@@ -80,15 +80,14 @@ import com.rosan.installer.ui.page.main.widget.setting.AppBackButton
 import com.rosan.installer.ui.page.main.widget.setting.BaseWidget
 import com.rosan.installer.ui.page.main.widget.setting.SplicedColumnGroup
 import com.rosan.installer.ui.page.main.widget.setting.SwitchWidget
-import com.rosan.installer.ui.theme.getM3TopBarColor
-import com.rosan.installer.ui.theme.installerHazeEffect
+import com.rosan.installer.ui.theme.getMaterial3AppBarColor
+import com.rosan.installer.ui.theme.installerMaterial3BlurEffect
 import com.rosan.installer.ui.theme.material.PaletteStyle
 import com.rosan.installer.ui.theme.material.ThemeMode
 import com.rosan.installer.ui.theme.none
-import com.rosan.installer.ui.theme.rememberMaterial3HazeStyle
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.hazeSource
+import com.rosan.installer.ui.theme.rememberMaterial3BlurBackdrop
 import org.koin.androidx.compose.koinViewModel
+import top.yukonga.miuix.kmp.blur.layerBackdrop
 
 @SuppressLint("RestrictedApi")
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
@@ -99,8 +98,6 @@ fun NewThemeSettingsPage(
     val navigator = LocalNavigator.current
     val uiState by viewModel.state.collectAsStateWithLifecycle()
     val topAppBarState = rememberTopAppBarState(-154f, -154f) // from debugger
-    val hazeState = if (uiState.useBlur) remember { HazeState() } else null
-    val hazeStyle = rememberMaterial3HazeStyle()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(topAppBarState)
 
     var showHideLauncherIconDialog by remember { mutableStateOf(false) }
@@ -186,6 +183,8 @@ fun NewThemeSettingsPage(
     val layoutDirection = LocalLayoutDirection.current
     val horizontalSafeInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal).asPaddingValues()
 
+    val backdrop = rememberMaterial3BlurBackdrop(uiState.useBlur)
+
     Scaffold(
         modifier = Modifier
             .nestedScroll(scrollBehavior.nestedScrollConnection)
@@ -194,7 +193,7 @@ fun NewThemeSettingsPage(
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
         topBar = {
             LargeFlexibleTopAppBar(
-                modifier = Modifier.installerHazeEffect(hazeState, hazeStyle),
+                modifier = Modifier.installerMaterial3BlurEffect(backdrop),
                 windowInsets = TopAppBarDefaults.windowInsets.add(WindowInsets(left = 12.dp)),
                 title = {
                     Text(stringResource(R.string.theme_settings))
@@ -212,9 +211,9 @@ fun NewThemeSettingsPage(
                 },
                 scrollBehavior = scrollBehavior,
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = hazeState.getM3TopBarColor(),
+                    containerColor = backdrop.getMaterial3AppBarColor(),
                     titleContentColor = MaterialTheme.colorScheme.onBackground,
-                    scrolledContainerColor = hazeState.getM3TopBarColor()
+                    scrolledContainerColor = backdrop.getMaterial3AppBarColor()
                 )
             )
         },
@@ -222,7 +221,7 @@ fun NewThemeSettingsPage(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .then(hazeState?.let { Modifier.hazeSource(it) } ?: Modifier),
+                .then(backdrop?.let { Modifier.layerBackdrop(it) } ?: Modifier),
             contentPadding = PaddingValues(
                 start = horizontalSafeInsets.calculateStartPadding(layoutDirection),
                 top = paddingValues.calculateTopPadding(),
@@ -416,7 +415,22 @@ fun NewThemeSettingsPage(
                 }
             }
 
-            // --- Group 4: Package Icons ---
+            // --- Group 4: Predictive Back ---
+            item {
+                SplicedColumnGroup(
+                    title = stringResource(R.string.theme_settings_predictive_back)
+                ) {
+                    item { PredictiveBackAnimationWidget(uiState) { showPredictiveBackAnimationDialog = true } }
+                    item(
+                        visible = uiState.predictiveBackAnimation == PredictiveBackAnimation.Scale ||
+                                uiState.predictiveBackAnimation == PredictiveBackAnimation.AOSP
+                    ) {
+                        PredictiveBackAnimationDirectionWidget(uiState) { showPredictiveBackExitDirectionDialog = true }
+                    }
+                }
+            }
+
+            // --- Group 5: Package Icons ---
             item {
                 SplicedColumnGroup(
                     title = stringResource(R.string.theme_settings_package_icons)
@@ -433,7 +447,7 @@ fun NewThemeSettingsPage(
                 }
             }
 
-            // --- Group 5: Launcher Icons ---
+            // --- Group 6: Launcher Icons ---
             item {
                 SplicedColumnGroup(
                     title = stringResource(R.string.theme_settings_launcher_icons)
@@ -452,21 +466,6 @@ fun NewThemeSettingsPage(
                                 }
                             }
                         )
-                    }
-                }
-            }
-
-            // --- Group 6: Predictive Back ---
-            item {
-                SplicedColumnGroup(
-                    title = stringResource(R.string.theme_settings_predictive_back)
-                ) {
-                    item { PredictiveBackAnimationWidget(uiState) { showPredictiveBackAnimationDialog = true } }
-                    item(
-                        visible = uiState.predictiveBackAnimation == PredictiveBackAnimation.Scale ||
-                                uiState.predictiveBackAnimation == PredictiveBackAnimation.AOSP
-                    ) {
-                        PredictiveBackAnimationDirectionWidget(uiState) { showPredictiveBackExitDirectionDialog = true }
                     }
                 }
             }
@@ -528,9 +527,9 @@ fun PredictiveBackAnimationDialog(
                     val animationText = when (animation) {
                         PredictiveBackAnimation.None -> stringResource(R.string.theme_settings_predictive_back_animation_none)
                         PredictiveBackAnimation.AOSP -> stringResource(R.string.theme_settings_predictive_back_animation_aosp)
+                        PredictiveBackAnimation.MIUIX -> stringResource(R.string.theme_settings_predictive_back_animation_miuix)
                         PredictiveBackAnimation.Scale -> stringResource(R.string.theme_settings_predictive_back_animation_scale)
                         PredictiveBackAnimation.KernelSUClassic -> stringResource(R.string.theme_settings_predictive_back_animation_ksu_classic)
-                        PredictiveBackAnimation.KernelSUOfficial -> stringResource(R.string.theme_settings_predictive_back_animation_ksu_official)
                     }
                     Row(
                         Modifier

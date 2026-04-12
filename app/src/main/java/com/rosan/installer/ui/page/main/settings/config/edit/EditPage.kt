@@ -25,14 +25,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SmallExtendedFloatingActionButton
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SwipeToDismissBox
-import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -50,6 +46,7 @@ import com.rosan.installer.ui.page.main.widget.card.InfoTipCard
 import com.rosan.installer.ui.page.main.widget.dialog.UnsavedChangesDialog
 import com.rosan.installer.ui.page.main.widget.setting.AppBackButton
 import com.rosan.installer.ui.page.main.widget.setting.LabelWidget
+import com.rosan.installer.ui.page.main.widget.snackbar.SwipeableSnackbarHost
 import com.rosan.installer.ui.page.main.widget.util.EditEventCollector
 import com.rosan.installer.ui.theme.none
 import com.rosan.installer.ui.util.isNoneActive
@@ -129,20 +126,10 @@ fun EditPage(
             )
         },
         snackbarHost = {
-            val state = rememberSwipeToDismissBoxState()
-            LaunchedEffect(snackBarHostState.currentSnackbarData) {
-                state.snapTo(SwipeToDismissBoxValue.Settled)
-            }
-
-            SwipeToDismissBox(
-                state = state,
-                backgroundContent = {},
-                onDismiss = {
-                    snackBarHostState.currentSnackbarData?.dismiss()
-                }
-            ) {
-                SnackbarHost(hostState = snackBarHostState)
-            }
+            SwipeableSnackbarHost(
+                hostState = snackBarHostState,
+                snackbar = { SnackbarHost(hostState = snackBarHostState) }
+            )
         },
     ) { paddingValues ->
         LazyColumn(

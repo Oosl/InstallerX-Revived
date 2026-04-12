@@ -36,7 +36,6 @@ class UninstallerSettingsViewModel(
 
     val state: StateFlow<UninstallerSettingsState> = appSettingsRepo.preferencesFlow.map { prefs ->
         UninstallerSettingsState(
-            useBlur = prefs.useBlur,
             authorizer = prefs.authorizer,
             uninstallFlags = prefs.uninstallFlags,
             uninstallerRequireBiometricAuth = prefs.uninstallerRequireBiometricAuth

@@ -333,6 +333,18 @@ fun LegacyThemeSettingsPage(
                     }
                 }
             }
+            item { LabelWidget(label = stringResource(R.string.theme_settings_predictive_back)) }
+            item { PredictiveBackAnimationWidget(uiState) { showPredictiveBackAnimationDialog = true } }
+            item {
+                AnimatedVisibility(
+                    visible = uiState.predictiveBackAnimation == PredictiveBackAnimation.Scale ||
+                            uiState.predictiveBackAnimation == PredictiveBackAnimation.AOSP,
+                    enter = fadeIn() + expandVertically(),
+                    exit = fadeOut() + shrinkVertically()
+                ) {
+                    PredictiveBackAnimationDirectionWidget(uiState) { showPredictiveBackExitDirectionDialog = true }
+                }
+            }
             item { LabelWidget(stringResource(R.string.theme_settings_package_icons)) }
             item {
                 SwitchWidget(
@@ -364,18 +376,6 @@ fun LegacyThemeSettingsPage(
                         }
                     }
                 )
-            }
-            item { LabelWidget(label = stringResource(R.string.theme_settings_predictive_back)) }
-            item { PredictiveBackAnimationWidget(uiState) { showPredictiveBackAnimationDialog = true } }
-            item {
-                AnimatedVisibility(
-                    visible = uiState.predictiveBackAnimation == PredictiveBackAnimation.Scale ||
-                            uiState.predictiveBackAnimation == PredictiveBackAnimation.AOSP,
-                    enter = fadeIn() + expandVertically(),
-                    exit = fadeOut() + shrinkVertically()
-                ) {
-                    PredictiveBackAnimationDirectionWidget(uiState) { showPredictiveBackExitDirectionDialog = true }
-                }
             }
             item { Spacer(Modifier.navigationBarsPadding()) }
         }

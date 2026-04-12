@@ -62,10 +62,8 @@ import com.rosan.installer.ui.page.miuix.settings.preferred.MiuixThemeModeWidget
 import com.rosan.installer.ui.page.miuix.widgets.MiuixBackButton
 import com.rosan.installer.ui.page.miuix.widgets.MiuixSwitchWidget
 import com.rosan.installer.ui.theme.getMiuixAppBarColor
-import com.rosan.installer.ui.theme.installerHazeEffect
-import com.rosan.installer.ui.theme.rememberMiuixHazeStyle
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.hazeSource
+import com.rosan.installer.ui.theme.installerMiuixBlurEffect
+import com.rosan.installer.ui.theme.rememberMiuixBlurBackdrop
 import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.Card
@@ -76,6 +74,7 @@ import top.yukonga.miuix.kmp.basic.SpinnerEntry
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.basic.TopAppBar
+import top.yukonga.miuix.kmp.blur.layerBackdrop
 import top.yukonga.miuix.kmp.preference.WindowSpinnerPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.overScrollVertical
@@ -90,8 +89,6 @@ fun MiuixThemeSettingsPage(
     val navigator = LocalNavigator.current
     val uiState by viewModel.state.collectAsStateWithLifecycle()
     val scrollBehavior = MiuixScrollBehavior()
-    val hazeState = if (uiState.useBlur) remember { HazeState() } else null
-    val hazeStyle = rememberMiuixHazeStyle()
     val transition = LocalNavAnimatedContentScope.current.transition
 
     val showHideLauncherIconDialog = remember { mutableStateOf(false) }
@@ -118,11 +115,13 @@ fun MiuixThemeSettingsPage(
     val layoutDirection = LocalLayoutDirection.current
     val horizontalSafeInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal).asPaddingValues()
 
+    val topBarBackdrop = rememberMiuixBlurBackdrop(uiState.useBlur)
+
     Scaffold(
         topBar = {
             TopAppBar(
-                modifier = Modifier.installerHazeEffect(hazeState, hazeStyle),
-                color = hazeState.getMiuixAppBarColor(),
+                modifier = Modifier.installerMiuixBlurEffect(topBarBackdrop),
+                color = topBarBackdrop.getMiuixAppBarColor(),
                 title = stringResource(R.string.theme_settings),
                 navigationIcon = {
                     MiuixBackButton(onClick = { navigator.pop() })
@@ -134,7 +133,7 @@ fun MiuixThemeSettingsPage(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .then(hazeState?.let { Modifier.hazeSource(it) } ?: Modifier)
+                .then(topBarBackdrop?.let { Modifier.layerBackdrop(it) } ?: Modifier)
                 .scrollEndHaptic()
                 .overScrollVertical()
                 .nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -371,6 +370,11 @@ fun MiuixThemeSettingsPage(
                         MiuixPredictiveBackExitDirectionWidget(
                             currentDirection = uiState.predictiveBackExitDirection,
                             onDirectionChange = {
+                                transition.setPlaytimeAfterInitialAndTargetStateEstablished(
+                                    transition.targetState,
+                                    transition.targetState,
+                                    transition.playTimeNanos
+                                )
                                 viewModel.dispatch(ThemeSettingsAction.SetPredictiveBackExitDirection(it))
                             }
                         )
@@ -439,9 +443,9 @@ private fun MiuixPredictiveBackAnimationWidget(
         val title = when (anim) {
             PredictiveBackAnimation.None -> stringResource(R.string.theme_settings_predictive_back_animation_none)
             PredictiveBackAnimation.AOSP -> stringResource(R.string.theme_settings_predictive_back_animation_aosp)
+            PredictiveBackAnimation.MIUIX -> stringResource(R.string.theme_settings_predictive_back_animation_miuix)
             PredictiveBackAnimation.Scale -> stringResource(R.string.theme_settings_predictive_back_animation_scale)
             PredictiveBackAnimation.KernelSUClassic -> stringResource(R.string.theme_settings_predictive_back_animation_ksu_classic)
-            PredictiveBackAnimation.KernelSUOfficial -> stringResource(R.string.theme_settings_predictive_back_animation_ksu_official)
         }
         SpinnerEntry(title = title)
     }

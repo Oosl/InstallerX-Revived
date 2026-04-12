@@ -622,6 +622,12 @@
     <string name="lab_http_profile_secure">僅允許安全連線（HTTPS）</string>
     <string name="lab_http_profile_local">允許本地明文連線（Localhost）</string>
     <string name="lab_http_profile_all">允許所有（不安全）</string>
+    <string name="lab_update_github_proxy">GitHub 更新通道</string>
+    <string name="lab_update_github_proxy_official">官方</string>
+    <string name="lab_update_github_proxy_7ed">7ED 代理</string>
+    <string name="lab_update_github_proxy_custom">自定義 GHProxy</string>
+    <string name="lab_update_github_proxy_url">自定義 URL</string>
+    <string name="lab_update_github_proxy_url_desc">代理連結</string>
     <string name="lab_unstable_features">不穩定功能</string>
     <string name="lab_set_install_requester">設定安裝請求方</string>
     <string name="lab_set_install_requester_desc">在安裝工作階段中填入 OriginatingUid 欄位，以記錄發起安裝的應用程式，並符合系統套件管理器的行為</string>

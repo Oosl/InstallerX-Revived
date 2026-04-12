@@ -18,7 +18,9 @@ enum class StringSetting {
     LabRootImplementation,
     LabHttpProfile,
     PredictiveBackAnimation,
-    PredictiveBackExitDirection
+    PredictiveBackExitDirection,
+    GithubUpdateChannel,
+    CustomGithubProxyUrl
 }
 
 enum class IntSetting {

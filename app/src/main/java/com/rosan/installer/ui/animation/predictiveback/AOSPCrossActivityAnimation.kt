@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
-// Copyright (C) 2026 wxxsfxyzm
+// Copyright (C) 2026 InstallerX Revived contributors
 package com.rosan.installer.ui.animation.predictiveback
 
+import android.R
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.EnterTransition
@@ -10,13 +11,11 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
@@ -32,7 +31,8 @@ import androidx.navigationevent.NavigationEventTransitionState
 import androidx.navigationevent.NavigationEventTransitionState.InProgress
 import com.rosan.installer.domain.settings.model.PredictiveBackExitDirection
 import com.rosan.installer.ui.util.rememberDeviceCornerRadius
-import timber.log.Timber
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 class AOSPCrossActivityAnimation(
     private val exitDirection: PredictiveBackExitDirection = PredictiveBackExitDirection.ALWAYS_RIGHT
@@ -44,17 +44,20 @@ class AOSPCrossActivityAnimation(
         transitionState: NavigationEventTransitionState?,
         currentPageKey: NavKey?,
     ) {
-        if (transitionState is InProgress) {
-            exitAnimatable.snapTo(0f)
+        exitingPageKey = currentPageKey.toString()
 
-            exitingPageKey = currentPageKey.toString()
-            Timber.d("[BackAnim] onBackPressed: exitingPageKey='$exitingPageKey'")
+        exitAnimatable.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(durationMillis = 150, easing = LinearEasing)
+        )
+    }
 
-            exitAnimatable.animateTo(
-                targetValue = 1f,
-                animationSpec = tween(durationMillis = 450, easing = LinearEasing)
-            )
-            Timber.d("[BackAnim] animateTo(1f) complete, value=${exitAnimatable.value}")
+    override fun onPagePop(contentPageKey: Any, animationScope: CoroutineScope) {
+        if (exitingPageKey == contentPageKey) {
+            exitingPageKey = null
+            animationScope.launch {
+                exitAnimatable.snapTo(0f)
+            }
         }
     }
 
@@ -63,25 +66,15 @@ class AOSPCrossActivityAnimation(
         transitionState: NavigationEventTransitionState?,
         contentPageKey: Any,
         currentPageKey: NavKey?,
-    ): Modifier = composed { // 【核心修复】使用 composed { } 包装，确保 DisposableEffect 安全挂载
+    ): Modifier = composed {
         val windowInfo = LocalWindowInfo.current
         val containerHeightPx = windowInfo.containerSize.height
         val pageKey = contentPageKey.toString()
         val deviceCornerRadius = rememberDeviceCornerRadius()
 
-        // 完美生命周期清理：当旧页面被 Navigation 真正从 UI 树拔除时，无缝清理状态
-        DisposableEffect(pageKey) {
-            onDispose {
-                if (exitingPageKey == pageKey) {
-                    exitingPageKey = null
-                }
-            }
-        }
-
         val enteringStartOffsetPx = with(LocalDensity.current) { 96.dp.toPx() }
 
-        val linearProgress = exitAnimatable.value.coerceAtMost(1f)
-        // 与 AOSP 保持一致的 Interpolators.EMPHASIZED
+        val linearProgress = exitAnimatable.value
         val emphasizedProgress = CubicBezierEasing(0.2f, 0f, 0f, 1f).transform(linearProgress)
 
         val progressInProgress = (transitionState as? InProgress)
@@ -98,8 +91,6 @@ class AOSPCrossActivityAnimation(
         val isExitingPage = exitingPageKey != null && exitingPageKey == pageKey
         val isCurrentNavTarget = exitingPageKey == null && pageKey == currentPageKey.toString()
 
-        // 【核心修复】无论当前是拖拽还是松手，统一用手势进度计算 dragScale！
-        // 这样松手瞬间，接力棒交接的 scale 值完全一致，彻底杜绝跳闪。
         val maxScale = 0.85f
         val dragScale = 1f - (1f - maxScale) * gestureProgress
 
@@ -110,12 +101,12 @@ class AOSPCrossActivityAnimation(
 
         this
             .graphicsLayer {
-                transformOrigin = TransformOrigin(currentPivotX, currentPivotY)
+                if (transitionState is InProgress)
+                    transformOrigin = TransformOrigin(currentPivotX, currentPivotY)
 
                 when {
                     isExitingPage -> {
-                        // --- 退出上层页 (Post-commit) ---
-                        // AOSP逻辑：继续从拖拽最后的大小缩小至 0.85，向右偏移，并在前 20% 迅速透明
+                        // top page when onBackPressed called (back committed)
                         val computedScaleX = dragScale + (maxScale - dragScale) * emphasizedProgress
                         val computedTranslationX = enteringStartOffsetPx * directionMultiplier * emphasizedProgress
                         val computedAlpha = if (linearProgress >= 0.2f) 0f else (1f - linearProgress * 5f).coerceAtLeast(0f)
@@ -127,8 +118,7 @@ class AOSPCrossActivityAnimation(
                     }
 
                     isCurrentNavTarget -> {
-                        // --- 拖拽中的上层页 (Pre-commit) ---
-                        // 抛弃 Navigation 自带的 animatedScale，直接使用精准的 dragScale
+                        // top page before onBackPressed called
                         scaleX = dragScale
                         scaleY = dragScale
                         translationX = 0f
@@ -136,17 +126,15 @@ class AOSPCrossActivityAnimation(
                     }
 
                     else -> {
-                        // --- 进入的下层页 (Pre/Post-commit) ---
+                        // bottom page
                         val initialTranslationX = -enteringStartOffsetPx * directionMultiplier
 
-                        if (exitingPageKey != null) {
-                            // 松手后：从 dragScale 放大回 1.0f，同时从 -96dp 滑动到 0
+                        if (exitingPageKey != null) { // after onBackPressed
                             scaleX = dragScale + (1f - dragScale) * emphasizedProgress
                             scaleY = dragScale + (1f - dragScale) * emphasizedProgress
                             translationX = initialTranslationX * (1f - emphasizedProgress)
                             alpha = 1f
-                        } else if (transitionState is InProgress) {
-                            // 拖拽中：跟随一起缩放，固定在 -96dp 偏移处
+                        } else if (transitionState is InProgress) { // before onBackPressed
                             scaleX = dragScale
                             scaleY = dragScale
                             translationX = initialTranslationX
@@ -171,7 +159,7 @@ class AOSPCrossActivityAnimation(
 
     override fun AnimatedContentTransitionScope<Scene<NavKey>>.onPopTransitionSpec(): ContentTransform =
         ContentTransform(
-            targetContentEnter = slideInHorizontally(initialOffsetX = { -it / 4 }) + fadeIn(),
+            targetContentEnter = slideInHorizontally(initialOffsetX = { -it / 4 }),
             initialContentExit = scaleOut(targetScale = 0.9f) + fadeOut(),
             sizeTransform = null
         )
@@ -179,7 +167,7 @@ class AOSPCrossActivityAnimation(
     override fun AnimatedContentTransitionScope<Scene<NavKey>>.onTransitionSpec(): ContentTransform =
         ContentTransform(
             targetContentEnter = slideInHorizontally(initialOffsetX = { it }),
-            initialContentExit = fadeOut(),
+            initialContentExit = ExitTransition.None,
             sizeTransform = null
         )
 }

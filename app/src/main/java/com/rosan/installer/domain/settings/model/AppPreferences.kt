@@ -40,6 +40,8 @@ data class AppPreferences(
     val managedSharedUserIdExemptedPackages: List<NamedPackage>,
     val uninstallFlags: Int,
     // Lab Settings
+    val githubUpdateChannel: GithubUpdateChannel,
+    val customGithubProxyUrl: String,
     val labRootEnableModuleFlash: Boolean,
     val labRootShowModuleArt: Boolean,
     val labRootMode: RootMode,

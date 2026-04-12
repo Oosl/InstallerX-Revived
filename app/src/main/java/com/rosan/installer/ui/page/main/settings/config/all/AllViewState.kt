@@ -8,6 +8,7 @@ import com.rosan.installer.domain.settings.util.OrderType
 
 data class AllViewState(
     val data: Data = Data(),
+    val useBlur: Boolean = true,
     val userReadScopeTips: Boolean = false,
 ) {
     data class Data(

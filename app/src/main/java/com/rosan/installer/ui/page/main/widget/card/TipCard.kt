@@ -123,7 +123,7 @@ fun ScopeTipCard(
 fun InfoTipCard(
     text: String,
     modifier: Modifier = Modifier,
-    icon: ImageVector = AppIcons.Tip,
+    icon: ImageVector? = AppIcons.Tip,
     noPadding: Boolean = false
 ) {
     TipCard(
@@ -134,11 +134,13 @@ fun InfoTipCard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onTertiary
-                )
+                icon?.let {
+                    Icon(
+                        imageVector = it,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onTertiary
+                    )
+                }
                 Text(
                     text = text,
                     style = MaterialTheme.typography.bodyMediumEmphasized,

@@ -40,7 +40,7 @@ class AllViewModel(
     init {
         // Fetch the initial "user read tips" state before starting the continuous data flow
         viewModelScope.launch {
-            val userReadScopeTips = appSettingsRepo.getBoolean(BooleanSetting.UserReadScopeTips, default = false).first()
+            val userReadScopeTips = appSettingsRepo.getBoolean(BooleanSetting.UserReadScopeTips, false).first()
             _uiState.update { it.copy(userReadScopeTips = userReadScopeTips) }
             loadData()
         }

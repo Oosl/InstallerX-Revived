@@ -11,7 +11,6 @@ import com.rosan.installer.domain.settings.provider.SystemEnvProvider
 import com.rosan.installer.domain.settings.repository.AppSettingsRepository
 import com.rosan.installer.domain.settings.repository.BooleanSetting
 import com.rosan.installer.domain.settings.usecase.settings.UpdateSettingUseCase
-import com.rosan.installer.domain.updater.model.UpdateInfo
 import com.rosan.installer.domain.updater.repository.UpdateRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.BufferOverflow
@@ -39,9 +38,6 @@ class PreferredViewModel(
     )
     val uiEvents = _uiEvents.asSharedFlow()
 
-    // --- External Environment State Flows ---
-    private val updateInfoFlow = MutableStateFlow<UpdateInfo?>(null)
-
     private val adbVerifyEnabledFlow = MutableStateFlow(true)
     private val isIgnoringBatteryOptFlow = MutableStateFlow(true)
 
@@ -49,12 +45,11 @@ class PreferredViewModel(
         appSettingsRepo.preferencesFlow,
         adbVerifyEnabledFlow,
         isIgnoringBatteryOptFlow,
-        updateInfoFlow
+        updateRepo.updateInfoFlow
     ) { prefs, adbVerify, batteryOpt, updateInfo ->
         val customizeAuthorizer = if (prefs.authorizer == Authorizer.Customize) prefs.customizeAuthorizer else ""
 
         PreferredViewState(
-            useBlur = prefs.useBlur,
             authorizer = prefs.authorizer,
             customizeAuthorizer = customizeAuthorizer,
             autoLockInstaller = prefs.autoLockInstaller,
@@ -121,8 +116,7 @@ class PreferredViewModel(
     }
 
     private fun checkUpdate() = viewModelScope.launch(Dispatchers.IO) {
-        val result = updateRepo.checkUpdate()
-        result?.let { updateInfo -> updateInfoFlow.value = updateInfo }
+        updateRepo.checkUpdate()
     }
 
     private fun setDefaultInstaller(lock: Boolean, action: PreferredViewAction) = viewModelScope.launch {

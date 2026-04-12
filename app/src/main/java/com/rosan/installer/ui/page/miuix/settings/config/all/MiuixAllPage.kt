@@ -49,11 +49,8 @@ import com.rosan.installer.ui.page.main.settings.config.all.AllViewState
 import com.rosan.installer.ui.page.miuix.widgets.MiuixBadge
 import com.rosan.installer.ui.page.miuix.widgets.MiuixScopeTipCard
 import com.rosan.installer.ui.theme.getMiuixAppBarColor
-import com.rosan.installer.ui.theme.installerHazeEffect
-import com.rosan.installer.ui.theme.rememberMiuixHazeStyle
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.hazeSource
-import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
+import com.rosan.installer.ui.theme.installerMiuixBlurEffect
+import com.rosan.installer.ui.theme.rememberMiuixBlurBackdrop
 import kotlinx.coroutines.flow.collectLatest
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -68,6 +65,7 @@ import top.yukonga.miuix.kmp.basic.SnackbarHostState
 import top.yukonga.miuix.kmp.basic.SnackbarResult
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TopAppBar
+import top.yukonga.miuix.kmp.blur.layerBackdrop
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Delete
 import top.yukonga.miuix.kmp.icon.extended.Edit
@@ -75,12 +73,10 @@ import top.yukonga.miuix.kmp.icon.extended.SelectAll
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.overScrollVertical
 
-@OptIn(ExperimentalHazeMaterialsApi::class)
 @Composable
 fun MiuixAllPage(
     navigator: Navigator = LocalNavigator.current,
     viewModel: AllViewModel = koinViewModel { parametersOf(navigator) },
-    hazeState: HazeState?,
     title: String,
     outerPadding: PaddingValues,
     snackbarHostState: SnackbarHostState
@@ -92,7 +88,6 @@ fun MiuixAllPage(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val listState = rememberLazyGridState()
     val scrollBehavior = MiuixScrollBehavior()
-    val hazeStyle = rememberMiuixHazeStyle()
 
     val deleteSuccessString = stringResource(id = R.string.delete_success)
     val restoreString = stringResource(id = R.string.restore)
@@ -119,12 +114,14 @@ fun MiuixAllPage(
     val layoutDirection = LocalLayoutDirection.current
     val horizontalSafeInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal).asPaddingValues()
 
+    val topBarBackdrop = rememberMiuixBlurBackdrop(uiState.useBlur)
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                modifier = Modifier.installerHazeEffect(hazeState, hazeStyle),
-                color = hazeState.getMiuixAppBarColor(),
+                modifier = Modifier.installerMiuixBlurEffect(topBarBackdrop),
+                color = topBarBackdrop.getMiuixAppBarColor(),
                 title = title,
                 scrollBehavior = scrollBehavior
             )
@@ -166,7 +163,7 @@ fun MiuixAllPage(
                 LazyVerticalGrid(
                     modifier = Modifier
                         .fillMaxSize()
-                        .then(hazeState?.let { Modifier.hazeSource(it) } ?: Modifier)
+                        .then(topBarBackdrop?.let { Modifier.layerBackdrop(it) } ?: Modifier)
                         .overScrollVertical()
                         .nestedScroll(scrollBehavior.nestedScrollConnection),
                     columns = GridCells.Adaptive(350.dp),

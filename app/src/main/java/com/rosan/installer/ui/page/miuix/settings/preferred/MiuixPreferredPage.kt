@@ -45,11 +45,8 @@ import com.rosan.installer.ui.page.main.widget.util.OnLifecycleEvent
 import com.rosan.installer.ui.page.miuix.widgets.ErrorDisplaySheet
 import com.rosan.installer.ui.page.miuix.widgets.MiuixSettingsTipCard
 import com.rosan.installer.ui.theme.getMiuixAppBarColor
-import com.rosan.installer.ui.theme.installerHazeEffect
-import com.rosan.installer.ui.theme.rememberMiuixHazeStyle
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.hazeSource
-import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
+import com.rosan.installer.ui.theme.installerMiuixBlurEffect
+import com.rosan.installer.ui.theme.rememberMiuixBlurBackdrop
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
 import top.yukonga.miuix.kmp.basic.BasicComponentColors
@@ -61,16 +58,16 @@ import top.yukonga.miuix.kmp.basic.SnackbarDuration
 import top.yukonga.miuix.kmp.basic.SnackbarHostState
 import top.yukonga.miuix.kmp.basic.SnackbarResult
 import top.yukonga.miuix.kmp.basic.TopAppBar
+import top.yukonga.miuix.kmp.blur.layerBackdrop
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.overScrollVertical
 import top.yukonga.miuix.kmp.utils.scrollEndHaptic
 
 @SuppressLint("LocalContextGetResourceValueCall")
-@OptIn(ExperimentalHazeMaterialsApi::class)
 @Composable
 fun MiuixPreferredPage(
+    enableBlur: Boolean,
     viewModel: PreferredViewModel = koinViewModel(),
-    hazeState: HazeState?,
     title: String,
     outerPadding: PaddingValues,
     snackbarHostState: SnackbarHostState
@@ -90,7 +87,6 @@ fun MiuixPreferredPage(
         Level.UNSTABLE -> stringResource(id = R.string.unstable)
     }
     val scrollBehavior = MiuixScrollBehavior()
-    val hazeStyle = rememberMiuixHazeStyle()
 
     var errorDialogInfo by remember { mutableStateOf<PreferredViewEvent.ShowDefaultInstallerErrorDetail?>(null) }
     val showErrorSheetState = remember { mutableStateOf(false) }
@@ -123,21 +119,24 @@ fun MiuixPreferredPage(
     val layoutDirection = LocalLayoutDirection.current
     val horizontalSafeInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal).asPaddingValues()
 
+    val topBarBackdrop = rememberMiuixBlurBackdrop(enableBlur)
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                modifier = Modifier.installerHazeEffect(hazeState, hazeStyle),
-                color = hazeState.getMiuixAppBarColor(),
+                modifier = Modifier.installerMiuixBlurEffect(topBarBackdrop),
+                color = topBarBackdrop.getMiuixAppBarColor(),
                 title = title,
                 scrollBehavior = scrollBehavior
             )
+
         }
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .then(hazeState?.let { Modifier.hazeSource(it) } ?: Modifier)
+                .then(topBarBackdrop?.let { Modifier.layerBackdrop(it) } ?: Modifier)
                 .scrollEndHaptic()
                 .overScrollVertical()
                 .nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -255,19 +254,20 @@ fun MiuixPreferredPage(
                 }
             }
         }
-        errorDialogInfo?.let { dialogInfo ->
-            ErrorDisplaySheet(
-                showState = showErrorSheetState,
-                exception = dialogInfo.exception,
-                onDismissRequest = { showErrorSheetState.value = false },
-                onRetry = errorDialogInfo?.retryAction?.let { retryAction ->
-                    {
-                        showErrorSheetState.value = false
-                        viewModel.dispatch(retryAction)
-                    }
-                },
-                title = stringResource(dialogInfo.titleResId)
-            )
-        }
     }
+    errorDialogInfo?.let { dialogInfo ->
+        ErrorDisplaySheet(
+            showState = showErrorSheetState,
+            exception = dialogInfo.exception,
+            onDismissRequest = { showErrorSheetState.value = false },
+            onRetry = errorDialogInfo?.retryAction?.let { retryAction ->
+                {
+                    showErrorSheetState.value = false
+                    viewModel.dispatch(retryAction)
+                }
+            },
+            title = stringResource(dialogInfo.titleResId)
+        )
+    }
+
 }

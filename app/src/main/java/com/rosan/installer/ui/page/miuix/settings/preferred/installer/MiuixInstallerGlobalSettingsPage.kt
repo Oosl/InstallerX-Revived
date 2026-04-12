@@ -30,7 +30,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
@@ -57,10 +56,8 @@ import com.rosan.installer.ui.page.miuix.widgets.MiuixBackButton
 import com.rosan.installer.ui.page.miuix.widgets.MiuixIntNumberPickerWidget
 import com.rosan.installer.ui.page.miuix.widgets.MiuixSwitchWidget
 import com.rosan.installer.ui.theme.getMiuixAppBarColor
-import com.rosan.installer.ui.theme.installerHazeEffect
-import com.rosan.installer.ui.theme.rememberMiuixHazeStyle
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.hazeSource
+import com.rosan.installer.ui.theme.installerMiuixBlurEffect
+import com.rosan.installer.ui.theme.rememberMiuixBlurBackdrop
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
 import top.yukonga.miuix.kmp.basic.Card
@@ -69,19 +66,19 @@ import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.TopAppBar
+import top.yukonga.miuix.kmp.blur.layerBackdrop
 import top.yukonga.miuix.kmp.utils.overScrollVertical
 import top.yukonga.miuix.kmp.utils.scrollEndHaptic
 
 @Composable
 fun MiuixInstallerGlobalSettingsPage(
+    useBlur: Boolean,
     viewModel: InstallerSettingsViewModel = koinViewModel(),
 ) {
     val navigator = LocalNavigator.current
     val uiState by viewModel.state.collectAsStateWithLifecycle()
     val capabilityProvider = koinInject<DeviceCapabilityProvider>()
     val scrollBehavior = MiuixScrollBehavior()
-    val hazeState = if (uiState.useBlur) remember { HazeState() } else null
-    val hazeStyle = rememberMiuixHazeStyle()
 
     val isDialogMode = uiState.installMode == InstallMode.Dialog ||
             uiState.installMode == InstallMode.AutoDialog
@@ -91,11 +88,13 @@ fun MiuixInstallerGlobalSettingsPage(
     val layoutDirection = LocalLayoutDirection.current
     val horizontalSafeInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal).asPaddingValues()
 
+    val topBarBackdrop = rememberMiuixBlurBackdrop(useBlur)
+
     Scaffold(
         topBar = {
             TopAppBar(
-                modifier = Modifier.installerHazeEffect(hazeState, hazeStyle),
-                color = hazeState.getMiuixAppBarColor(),
+                modifier = Modifier.installerMiuixBlurEffect(topBarBackdrop),
+                color = topBarBackdrop.getMiuixAppBarColor(),
                 title = stringResource(R.string.installer_settings),
                 navigationIcon = {
                     MiuixBackButton(onClick = { navigator.pop() })
@@ -107,7 +106,7 @@ fun MiuixInstallerGlobalSettingsPage(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .then(hazeState?.let { Modifier.hazeSource(it) } ?: Modifier)
+                .then(topBarBackdrop?.let { Modifier.layerBackdrop(it) } ?: Modifier)
                 .scrollEndHaptic()
                 .overScrollVertical()
                 .nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -167,32 +166,25 @@ fun MiuixInstallerGlobalSettingsPage(
                         changeInstallMode = { newMode ->
                             viewModel.dispatch(InstallerSettingsAction.ChangeGlobalInstallMode(newMode))
                         }
-                    ) {
-                        AnimatedVisibility(
-                            visible = isNotificationMode,
-                            enter = fadeIn() + expandVertically(),
-                            exit = fadeOut() + shrinkVertically()
-                        ) {
-                            MiuixNavigationItemWidget(
-                                title = stringResource(R.string.notification_settings),
-                                description = stringResource(R.string.notification_settings_desc),
-                                onClick = { navigator.push(Route.NotificationSettings) }
-                            )
-                        }
+                    )
+                    MiuixNavigationItemWidget(
+                        title = stringResource(R.string.notification_settings),
+                        description = stringResource(R.string.notification_settings_desc),
+                        onClick = { navigator.push(Route.NotificationSettings) }
+                    )
 
-                        if (BiometricManager
-                                .from(LocalContext.current)
-                                .canAuthenticate(BIOMETRIC_WEAK or BIOMETRIC_STRONG or DEVICE_CREDENTIAL) == BiometricManager.BIOMETRIC_SUCCESS
-                        ) {
-                            MiuixSwitchWidget(
-                                title = stringResource(R.string.installer_settings_require_biometric_auth),
-                                description = stringResource(R.string.installer_settings_require_biometric_auth_desc),
-                                checked = uiState.installerRequireBiometricAuth,
-                                onCheckedChange = {
-                                    viewModel.dispatch(InstallerSettingsAction.ChangeBiometricAuth(it))
-                                }
-                            )
-                        }
+                    if (BiometricManager
+                            .from(LocalContext.current)
+                            .canAuthenticate(BIOMETRIC_WEAK or BIOMETRIC_STRONG or DEVICE_CREDENTIAL) == BiometricManager.BIOMETRIC_SUCCESS
+                    ) {
+                        MiuixSwitchWidget(
+                            title = stringResource(R.string.installer_settings_require_biometric_auth),
+                            description = stringResource(R.string.installer_settings_require_biometric_auth_desc),
+                            checked = uiState.installerRequireBiometricAuth,
+                            onCheckedChange = {
+                                viewModel.dispatch(InstallerSettingsAction.ChangeBiometricAuth(it))
+                            }
+                        )
                     }
                 }
             }

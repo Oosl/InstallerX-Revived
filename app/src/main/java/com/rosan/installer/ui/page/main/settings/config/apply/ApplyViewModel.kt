@@ -132,18 +132,16 @@ class ApplyViewModel(
     // Intermediate state to avoid exceeding combine's argument limit
     private data class UiStateData(
         val applyPrefs: ApplyPrefs,
-        val useBlur: Boolean,
         val search: String,
         val icons: Map<String, ImageBitmap?>
     )
 
     private val uiStateFlow = combine(
         applyPrefsFlow,
-        appSettingsRepo.preferencesFlow,
         _search,
         _displayIcons
-    ) { prefs, globalPrefs, search, icons ->
-        UiStateData(prefs, globalPrefs.useBlur, search, icons)
+    ) { prefs, search, icons ->
+        UiStateData(prefs, search, icons)
     }
 
     // Combine all flows to generate the final UI state
@@ -166,7 +164,6 @@ class ApplyViewModel(
             selectedFirst = uiData.applyPrefs.selectedFirst,
             showSystemApp = uiData.applyPrefs.showSystemApp,
             showPackageName = uiData.applyPrefs.showPackageName,
-            useBlur = uiData.useBlur,
             search = uiData.search
         )
     }.stateIn(

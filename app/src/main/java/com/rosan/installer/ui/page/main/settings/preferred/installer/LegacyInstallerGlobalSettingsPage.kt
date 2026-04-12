@@ -148,20 +148,13 @@ fun LegacyInstallerGlobalSettingsPage(
                     }
                 )
             }
-            val isNotificationMode = uiState.installMode == InstallMode.Notification || uiState.installMode == InstallMode.AutoNotification
             item {
-                AnimatedVisibility(
-                    visible = isNotificationMode,
-                    enter = fadeIn() + expandVertically(),
-                    exit = fadeOut() + shrinkVertically()
-                ) {
-                    SettingsNavigationItemWidget(
-                        icon = AppIcons.Notification,
-                        title = stringResource(R.string.notification_settings),
-                        description = stringResource(R.string.notification_settings_desc),
-                        onClick = { navigator.push(Route.NotificationSettings) }
-                    )
-                }
+                SettingsNavigationItemWidget(
+                    icon = AppIcons.Notification,
+                    title = stringResource(R.string.notification_settings),
+                    description = stringResource(R.string.notification_settings_desc),
+                    onClick = { navigator.push(Route.NotificationSettings) }
+                )
             }
             if (BiometricManager
                     .from(context)

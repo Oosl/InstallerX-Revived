@@ -21,14 +21,15 @@ class LabSettingsViewModel(
 
     val state: StateFlow<LabSettingsState> = appSettingsRepo.preferencesFlow.map { prefs ->
         LabSettingsState(
-            useBlur = prefs.useBlur,
             labRootEnableModuleFlash = prefs.labRootEnableModuleFlash,
             labRootShowModuleArt = prefs.labRootShowModuleArt,
             labRootMode = prefs.labRootMode,
             labSetInstallRequester = prefs.labSetInstallRequester,
             labHttpProfile = prefs.labHttpProfile,
             labHttpSaveFile = prefs.labHttpSaveFile,
-            labTapIconToShare = prefs.labTapIconToShare
+            labTapIconToShare = prefs.labTapIconToShare,
+            githubUpdateChannel = prefs.githubUpdateChannel,
+            customGithubProxyUrl = prefs.customGithubProxyUrl
         )
     }.stateIn(
         scope = viewModelScope,
@@ -84,6 +85,20 @@ class LabSettingsViewModel(
                 updateSetting(
                     BooleanSetting.LabTapIconToShare,
                     action.enable
+                )
+            }
+
+            is LabSettingsAction.LabChangeGithubUpdateChannel -> viewModelScope.launch {
+                updateSetting(
+                    StringSetting.GithubUpdateChannel,
+                    action.channel.name
+                )
+            }
+
+            is LabSettingsAction.LabChangeCustomGithubProxyUrl -> viewModelScope.launch {
+                updateSetting(
+                    StringSetting.CustomGithubProxyUrl,
+                    action.url
                 )
             }
         }

@@ -30,7 +30,6 @@ class InstallerSettingsViewModel(
 
     val state: StateFlow<InstallerSettingsState> = appSettingsRepo.preferencesFlow.map { prefs ->
         InstallerSettingsState(
-            useBlur = prefs.useBlur,
             authorizer = prefs.authorizer,
             alwaysUseRootInSystem = prefs.alwaysUseRootInSystem,
             dhizukuAutoCloseCountDown = prefs.dhizukuAutoCloseCountDown,

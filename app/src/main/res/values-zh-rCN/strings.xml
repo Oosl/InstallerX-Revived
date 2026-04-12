@@ -110,11 +110,10 @@
     <string name="theme_settings_predictive_back_animation">预测性返回动画</string>
     <string name="theme_settings_predictive_back_animation_desc">选择预测性返回的动画效果</string>
     <string name="theme_settings_predictive_back_exit_direction">退出方向</string>
-    <string name="theme_settings_predictive_back_exit_direction_desc">选择预测性返回的退出方向（仅限缩放动画）</string>
+    <string name="theme_settings_predictive_back_exit_direction_desc">选择预测性返回的退出方向</string>
     <string name="theme_settings_predictive_back_animation_none">无</string>
     <string name="theme_settings_predictive_back_animation_scale">缩放</string>
     <string name="theme_settings_predictive_back_animation_ksu_classic">KernelSU 经典</string>
-    <string name="theme_settings_predictive_back_animation_ksu_official">KernelSU 官方</string>
     <string name="theme_settings_predictive_back_exit_direction_follow_gesture">跟随手势</string>
     <string name="theme_settings_predictive_back_exit_direction_always_right">始终向右</string>
     <string name="theme_settings_predictive_back_exit_direction_always_left">始终向左</string>
@@ -733,6 +732,12 @@
     <string name="lab_http_profile_secure">仅允许安全连接 (HTTPS)</string>
     <string name="lab_http_profile_local">允许本地明文 (Localhost)</string>
     <string name="lab_http_profile_all">允许所有 (不安全)</string>
+    <string name="lab_update_github_proxy">GitHub 更新通道</string>
+    <string name="lab_update_github_proxy_official">官方</string>
+    <string name="lab_update_github_proxy_7ed">7ED 代理</string>
+    <string name="lab_update_github_proxy_custom">自定义 GHProxy</string>
+    <string name="lab_update_github_proxy_url">自定义 URL</string>
+    <string name="lab_update_github_proxy_url_desc">代理链接</string>
     <string name="lab_unstable_features">不稳定功能</string>
     <string name="lab_set_install_requester">设置安装请求方</string>
     <string name="lab_set_install_requester_desc">向安装会话填写 OriginatingUid 字段来记录发起安装的应用，匹配系统包管理器行为</string>

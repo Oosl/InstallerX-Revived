@@ -59,16 +59,16 @@ import com.rosan.installer.ui.page.main.widget.setting.SplicedColumnGroup
 import com.rosan.installer.ui.page.main.widget.setting.SwitchWidget
 import com.rosan.installer.ui.page.main.widget.setting.UpdateLoadingIndicator
 import com.rosan.installer.ui.page.main.widget.util.LogEventCollector
-import com.rosan.installer.ui.theme.getM3TopBarColor
-import com.rosan.installer.ui.theme.installerHazeEffect
-import com.rosan.installer.ui.theme.rememberMaterial3HazeStyle
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.hazeSource
+import com.rosan.installer.ui.theme.getMaterial3AppBarColor
+import com.rosan.installer.ui.theme.installerMaterial3BlurEffect
+import com.rosan.installer.ui.theme.rememberMaterial3BlurBackdrop
 import org.koin.androidx.compose.koinViewModel
+import top.yukonga.miuix.kmp.blur.layerBackdrop
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun NewAboutPage(
+    useBlur: Boolean,
     viewModel: AboutViewModel = koinViewModel()
 ) {
     val navigator = LocalNavigator.current
@@ -76,9 +76,6 @@ fun NewAboutPage(
     val uiState by viewModel.state.collectAsStateWithLifecycle()
     val topAppBarState = rememberTopAppBarState()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(topAppBarState)
-    val topBarHazeState = if (uiState.useBlur) remember { HazeState() } else null
-    val indicatorHazeState = if (uiState.useBlur) remember { HazeState() } else null
-    val hazeStyle = rememberMaterial3HazeStyle()
     val uriHandler = LocalUriHandler.current
     var showBottomSheet by remember { mutableStateOf(false) }
 
@@ -87,15 +84,18 @@ fun NewAboutPage(
     val layoutDirection = LocalLayoutDirection.current
     val horizontalSafeInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal).asPaddingValues()
 
+    val topBarBackdrop = rememberMaterial3BlurBackdrop(useBlur)
+    val upgradeIndicatorBackdrop = rememberMaterial3BlurBackdrop(useBlur)
+
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
             .nestedScroll(scrollBehavior.nestedScrollConnection)
-            .then(indicatorHazeState?.let { Modifier.hazeSource(it) } ?: Modifier),
+            .then(upgradeIndicatorBackdrop?.let { Modifier.layerBackdrop(it) } ?: Modifier),
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
         topBar = {
             LargeFlexibleTopAppBar(
-                modifier = Modifier.installerHazeEffect(topBarHazeState, hazeStyle),
+                modifier = Modifier.installerMaterial3BlurEffect(topBarBackdrop),
                 windowInsets = TopAppBarDefaults.windowInsets.add(WindowInsets(left = 12.dp)),
                 title = { Text(text = stringResource(id = R.string.about)) },
                 scrollBehavior = scrollBehavior,
@@ -111,9 +111,9 @@ fun NewAboutPage(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = topBarHazeState.getM3TopBarColor(),
+                    containerColor = topBarBackdrop.getMaterial3AppBarColor(),
                     titleContentColor = MaterialTheme.colorScheme.onBackground,
-                    scrolledContainerColor = topBarHazeState.getM3TopBarColor()
+                    scrolledContainerColor = topBarBackdrop.getMaterial3AppBarColor()
                 )
             )
         },
@@ -121,7 +121,7 @@ fun NewAboutPage(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .then(topBarHazeState?.let { Modifier.hazeSource(it) } ?: Modifier),
+                .then(topBarBackdrop?.let { Modifier.layerBackdrop(it) } ?: Modifier),
             contentPadding = PaddingValues(
                 start = horizontalSafeInsets.calculateStartPadding(layoutDirection),
                 top = paddingValues.calculateTopPadding(),
@@ -212,5 +212,5 @@ fun NewAboutPage(
             )
         }
     }
-    UpdateLoadingIndicator(hazeState = indicatorHazeState, viewModel = viewModel)
+    UpdateLoadingIndicator(backdrop = upgradeIndicatorBackdrop, viewModel = viewModel)
 }

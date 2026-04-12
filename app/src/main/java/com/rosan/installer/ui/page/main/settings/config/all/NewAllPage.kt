@@ -30,11 +30,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SmallExtendedFloatingActionButton
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SwipeToDismissBox
-import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -55,12 +52,12 @@ import com.rosan.installer.ui.navigation.LocalNavigator
 import com.rosan.installer.ui.navigation.Navigator
 import com.rosan.installer.ui.navigation.Route
 import com.rosan.installer.ui.page.main.widget.card.ShowDataWidget
+import com.rosan.installer.ui.page.main.widget.snackbar.SwipeableSnackbarHost
 import com.rosan.installer.ui.page.main.widget.util.DeleteEventCollector
-import com.rosan.installer.ui.theme.getM3TopBarColor
-import com.rosan.installer.ui.theme.installerHazeEffect
+import com.rosan.installer.ui.theme.getMaterial3AppBarColor
+import com.rosan.installer.ui.theme.installerMaterial3BlurEffect
 import com.rosan.installer.ui.theme.none
-import com.rosan.installer.ui.theme.rememberMaterial3HazeStyle
-import dev.chrisbanes.haze.HazeState
+import com.rosan.installer.ui.theme.rememberMaterial3BlurBackdrop
 import kotlinx.coroutines.flow.collectLatest
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -69,9 +66,9 @@ import org.koin.core.parameter.parametersOf
 @Composable
 fun NewAllPage(
     navigator: Navigator = LocalNavigator.current,
+    useBlur: Boolean,
     viewModel: AllViewModel = koinViewModel { parametersOf(navigator) },
-    outerPadding: PaddingValues = PaddingValues(0.dp),
-    hazeState: HazeState? = null
+    outerPadding: PaddingValues = PaddingValues(0.dp)
 ) {
     LaunchedEffect(Unit) {
         viewModel.navigator = navigator
@@ -79,7 +76,6 @@ fun NewAllPage(
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val listState = rememberLazyGridState()
-    val hazeStyle = rememberMaterial3HazeStyle()
     val snackBarHostState = remember { SnackbarHostState() }
     val topAppBarState = rememberTopAppBarState()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(topAppBarState)
@@ -113,6 +109,8 @@ fun NewAllPage(
     val layoutDirection = LocalLayoutDirection.current
     val horizontalSafeInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal).asPaddingValues()
 
+    val backdrop = rememberMaterial3BlurBackdrop(useBlur)
+
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
@@ -121,14 +119,14 @@ fun NewAllPage(
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
         topBar = {
             LargeFlexibleTopAppBar(
-                modifier = Modifier.installerHazeEffect(hazeState, hazeStyle),
+                modifier = Modifier.installerMaterial3BlurEffect(backdrop),
                 windowInsets = TopAppBarDefaults.windowInsets.add(WindowInsets(left = 12.dp)),
                 title = { Text(text = stringResource(id = R.string.config)) },
                 scrollBehavior = scrollBehavior,
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = hazeState.getM3TopBarColor(),
+                    containerColor = backdrop.getMaterial3AppBarColor(),
                     titleContentColor = MaterialTheme.colorScheme.onBackground,
-                    scrolledContainerColor = hazeState.getM3TopBarColor()
+                    scrolledContainerColor = backdrop.getMaterial3AppBarColor()
                 )
             )
         },
@@ -159,20 +157,10 @@ fun NewAllPage(
             }
         },
         snackbarHost = {
-            val state = rememberSwipeToDismissBoxState()
-            LaunchedEffect(snackBarHostState.currentSnackbarData) {
-                state.snapTo(SwipeToDismissBoxValue.Settled)
-            }
-
-            SwipeToDismissBox(
-                state = state,
-                backgroundContent = {},
-                onDismiss = {
-                    snackBarHostState.currentSnackbarData?.dismiss()
-                }
-            ) {
-                SnackbarHost(hostState = snackBarHostState)
-            }
+            SwipeableSnackbarHost(
+                hostState = snackBarHostState,
+                snackbar = { SnackbarHost(hostState = snackBarHostState) }
+            )
         },
     ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize()) {
@@ -212,7 +200,7 @@ fun NewAllPage(
                     ShowDataWidget(
                         viewModel = viewModel,
                         listState = listState,
-                        hazeState = hazeState,
+                        backdrop = backdrop,
                         contentPadding = PaddingValues(
                             top = innerPadding.calculateTopPadding() + 16.dp,
                             bottom = outerPadding.calculateBottomPadding() + 16.dp,

@@ -3,6 +3,7 @@
 package com.rosan.installer.data.engine.parser.strategy
 
 import android.graphics.drawable.Drawable
+import com.rosan.installer.data.engine.parser.ApkParser
 import com.rosan.installer.data.engine.parser.FlexibleXapkVersionCodeSerializer
 import com.rosan.installer.data.engine.parser.parseSplitMetadata
 import com.rosan.installer.domain.engine.model.AnalyseExtraEntity
@@ -20,7 +21,9 @@ import java.io.File
 import java.util.zip.ZipFile
 
 class XApkStrategy(
-    private val json: Json
+    private val json: Json,
+    // Inject ApkParser to handle fallback analysis for Base APK
+    private val apkParser: ApkParser
 ) : AnalysisStrategy {
 
     @OptIn(ExperimentalSerializationApi::class)
@@ -73,14 +76,35 @@ class XApkStrategy(
                             configValue = metadata.configValue
                         )
                     } else {
+                        // Handle Base APK
+                        var resolvedLabel = manifest.label
+                        var resolvedIcon = icon
+
+                        // Fallback: If label is missing from JSON, parse the Base APK fully to extract it
+                        if (resolvedLabel.isNullOrBlank()) {
+                            val baseEntry = zipFile.getEntry(entryName)
+                            if (baseEntry != null) {
+                                val parsedEntities = apkParser.parseZipEntryFull(zipFile, baseEntry, data, extra)
+                                val parsedBase = parsedEntities.firstOrNull { it is AppEntity.BaseEntity } as? AppEntity.BaseEntity
+
+                                if (parsedBase != null) {
+                                    resolvedLabel = parsedBase.label
+                                    // Optionally fallback the icon as well if missing from zip root
+                                    if (resolvedIcon == null) {
+                                        resolvedIcon = parsedBase.icon
+                                    }
+                                }
+                            }
+                        }
+
                         AppEntity.BaseEntity(
                             packageName = manifest.packageName,
                             sharedUserId = null,
                             data = entryData,
                             versionCode = manifest.versionCode,
                             versionName = manifest.versionName,
-                            label = manifest.label,
-                            icon = icon,
+                            label = resolvedLabel,
+                            icon = resolvedIcon,
                             targetSdk = manifest.targetSdk,
                             minSdk = manifest.minSdk,
                             sourceType = extra.dataType
@@ -114,8 +138,10 @@ class XApkStrategy(
     private data class Manifest(
         @SerialName("package_name") val packageName: String,
         @SerialName("version_code") @Serializable(with = FlexibleXapkVersionCodeSerializer::class) val versionCodeStr: String,
-        @SerialName("version_name") val versionNameStr: String?,
-        @SerialName("name") val label: String?,
+        // Assign default value null to prevent MissingFieldException when the key is missing in JSON
+        @SerialName("version_name") val versionNameStr: String? = null,
+        // Assign default value null to fix the crash
+        @SerialName("name") val label: String? = null,
         @SerialName("split_apks") val splits: List<Split>,
         @SerialName("min_sdk_version") val minSdk: String? = null,
         @SerialName("target_sdk_version") val targetSdk: String? = null,

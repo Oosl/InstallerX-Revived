@@ -8,7 +8,7 @@ package com.rosan.installer.domain.settings.model
 enum class PredictiveBackAnimation(val value: String) {
     None("none"),
     AOSP("aosp"),
+    MIUIX("miuix"),
     Scale("scale"),
-    KernelSUClassic("ksu_classic"),
-    KernelSUOfficial("ksu_official");
+    KernelSUClassic("ksu_classic");
 }

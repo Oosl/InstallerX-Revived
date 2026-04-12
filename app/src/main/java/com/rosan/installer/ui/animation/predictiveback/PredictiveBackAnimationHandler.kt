@@ -10,6 +10,7 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.scene.Scene
 import androidx.navigationevent.NavigationEvent
 import androidx.navigationevent.NavigationEventTransitionState
+import kotlinx.coroutines.CoroutineScope
 
 interface PredictiveBackAnimationHandler {
     /**
@@ -29,6 +30,21 @@ interface PredictiveBackAnimationHandler {
         transitionState: NavigationEventTransitionState?,
         currentPageKey: NavKey?,
     )
+
+    /**
+     * Callback when page actually pop
+     *
+     * **NOTE:** the page will pop from view tree IMMEDIATELY
+     * after this callback completed
+     *
+     * @param contentPageKey The [NavKey] of the page being pop.
+     * @param animationScope An [CoroutineScope] for reset animation status ONLY
+     */
+    fun onPagePop(
+        contentPageKey: Any,
+        animationScope: CoroutineScope
+    ) {
+    }
 
     /**
      * A UI decorator applied to every page during the rendering process.

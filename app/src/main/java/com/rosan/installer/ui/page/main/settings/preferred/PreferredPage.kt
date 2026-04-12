@@ -21,15 +21,11 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
-import androidx.compose.material3.SwipeToDismissBox
-import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -55,6 +51,7 @@ import com.rosan.installer.ui.navigation.Route
 import com.rosan.installer.ui.page.main.widget.card.InfoTipCard
 import com.rosan.installer.ui.page.main.widget.dialog.ErrorDisplayDialog
 import com.rosan.installer.ui.page.main.widget.setting.LabelWidget
+import com.rosan.installer.ui.page.main.widget.snackbar.SwipeableSnackbarHost
 import com.rosan.installer.ui.page.main.widget.util.OnLifecycleEvent
 import com.rosan.installer.ui.theme.none
 import org.koin.androidx.compose.koinViewModel
@@ -136,23 +133,10 @@ fun PreferredPage(
             )
         },
         snackbarHost = {
-            val state = rememberSwipeToDismissBoxState()
-            LaunchedEffect(snackBarHostState.currentSnackbarData) {
-                state.snapTo(SwipeToDismissBoxValue.Settled)
-            }
-
-            SwipeToDismissBox(
-                state = state,
-                backgroundContent = {},
-                onDismiss = {
-                    snackBarHostState.currentSnackbarData?.dismiss()
-                }
-            ) {
-                SnackbarHost(
-                    modifier = Modifier.padding(bottom = outerPadding.calculateBottomPadding()),
-                    hostState = snackBarHostState
-                )
-            }
+            SwipeableSnackbarHost(
+                modifier = Modifier.padding(bottom = outerPadding.calculateBottomPadding()),
+                hostState = snackBarHostState
+            )
         },
     ) { paddingValues ->
         LazyColumn(

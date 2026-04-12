@@ -23,10 +23,7 @@ data class ApplyViewState(
     val selectedFirst: Boolean = true,
     val showSystemApp: Boolean = false,
     val showPackageName: Boolean = true,
-    val search: String = "",
-
-    // UI State
-    val useBlur: Boolean = true,
+    val search: String = ""
 ) {
     enum class OrderType {
         Label, PackageName, FirstInstallTime

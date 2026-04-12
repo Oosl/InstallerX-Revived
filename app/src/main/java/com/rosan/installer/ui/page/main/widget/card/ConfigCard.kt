@@ -36,15 +36,15 @@ import com.rosan.installer.ui.icons.AppIcons
 import com.rosan.installer.ui.page.main.settings.config.all.AllViewAction
 import com.rosan.installer.ui.page.main.settings.config.all.AllViewModel
 import com.rosan.installer.ui.page.main.widget.chip.CapsuleTag
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.hazeSource
+import top.yukonga.miuix.kmp.blur.LayerBackdrop
+import top.yukonga.miuix.kmp.blur.layerBackdrop
 
 @Composable
 fun ShowDataWidget(
     viewModel: AllViewModel,
     listState: LazyGridState = rememberLazyGridState(),
     contentPadding: PaddingValues = PaddingValues(16.dp),
-    hazeState: HazeState? = null,
+    backdrop: LayerBackdrop? = null,
     adaptiveMinSize: Dp = 320.dp
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -54,7 +54,7 @@ fun ShowDataWidget(
     LazyVerticalGrid(
         modifier = Modifier
             .fillMaxSize()
-            .then(hazeState?.let { Modifier.hazeSource(it) } ?: Modifier),
+            .then(backdrop?.let { Modifier.layerBackdrop(it) } ?: Modifier),
         columns = GridCells.Adaptive(adaptiveMinSize),
         contentPadding = contentPadding,
         verticalArrangement = Arrangement.spacedBy(16.dp),

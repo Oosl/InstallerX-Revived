@@ -64,11 +64,10 @@ import com.rosan.installer.ui.icons.AppIcons
 import com.rosan.installer.ui.navigation.LocalNavigator
 import com.rosan.installer.ui.page.main.widget.card.InfoTipCard
 import com.rosan.installer.ui.page.main.widget.setting.AppBackButton
-import com.rosan.installer.ui.theme.getM3TopBarColor
-import com.rosan.installer.ui.theme.installerHazeEffect
-import com.rosan.installer.ui.theme.rememberMaterial3HazeStyle
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.hazeSource
+import com.rosan.installer.ui.theme.getMaterial3AppBarColor
+import com.rosan.installer.ui.theme.installerMaterial3BlurEffect
+import com.rosan.installer.ui.theme.rememberMaterial3BlurBackdrop
+import top.yukonga.miuix.kmp.blur.layerBackdrop
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -78,8 +77,6 @@ fun OpenSourceLicensePage(
 ) {
     val navigator = LocalNavigator.current
     val topAppBarState = rememberTopAppBarState()
-    val hazeState = if (useBlur) remember { HazeState() } else null
-    val hazeStyle = rememberMaterial3HazeStyle()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(topAppBarState)
 
     // from https://github.com/mikepenz/AboutLibraries#setup
@@ -92,6 +89,8 @@ fun OpenSourceLicensePage(
     val layoutDirection = LocalLayoutDirection.current
     val horizontalSafeInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal).asPaddingValues()
 
+    val backdrop = rememberMaterial3BlurBackdrop(useBlur)
+
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
@@ -100,7 +99,7 @@ fun OpenSourceLicensePage(
         topBar = {
             if (isM3E) {
                 LargeFlexibleTopAppBar(
-                    modifier = Modifier.installerHazeEffect(hazeState, hazeStyle),
+                    modifier = Modifier.installerMaterial3BlurEffect(backdrop),
                     windowInsets = TopAppBarDefaults.windowInsets.add(WindowInsets(left = 12.dp)),
                     title = { Text(text = stringResource(id = R.string.open_source_license)) },
                     scrollBehavior = scrollBehavior,
@@ -118,9 +117,9 @@ fun OpenSourceLicensePage(
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = hazeState.getM3TopBarColor(),
+                        containerColor = backdrop.getMaterial3AppBarColor(),
                         titleContentColor = MaterialTheme.colorScheme.onBackground,
-                        scrolledContainerColor = hazeState.getM3TopBarColor()
+                        scrolledContainerColor = backdrop.getMaterial3AppBarColor()
                     )
                 )
             } else {
@@ -142,7 +141,7 @@ fun OpenSourceLicensePage(
                 .clip(RoundedCornerShape(cornerRadius)),
             modifier = Modifier
                 .fillMaxSize()
-                .then(hazeState?.let { Modifier.hazeSource(it) } ?: Modifier),
+                .then(backdrop?.let { Modifier.layerBackdrop(it) } ?: Modifier),
             contentPadding = PaddingValues(
                 start = horizontalSafeInsets.calculateStartPadding(layoutDirection) + 16.dp,
                 top = paddingValues.calculateTopPadding(),

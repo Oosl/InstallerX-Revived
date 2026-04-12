@@ -32,22 +32,19 @@ import androidx.compose.ui.unit.dp
 import com.rosan.installer.R
 import com.rosan.installer.ui.page.main.settings.preferred.about.AboutEvent
 import com.rosan.installer.ui.page.main.settings.preferred.about.AboutViewModel
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.HazeStyle
-import dev.chrisbanes.haze.HazeTint
-import dev.chrisbanes.haze.hazeEffect
+import com.rosan.installer.ui.theme.installerMaterial3BlurEffect
+import top.yukonga.miuix.kmp.blur.LayerBackdrop
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun UpdateLoadingIndicator(
-    hazeState: HazeState?,
+    backdrop: LayerBackdrop?,
     viewModel: AboutViewModel
 ) {
     var showUpdateLoading by remember { mutableStateOf(false) }
 
     BackHandler(enabled = showUpdateLoading) {
-        // 这里留空，代表拦截返回事件但不执行任何操作
-        // 如果想给用户提示，可以在这里 emit 一个 Toast 事件
+        // Block back during upgrade
     }
 
     LaunchedEffect(Unit) {
@@ -69,19 +66,10 @@ fun UpdateLoadingIndicator(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .then(hazeState?.let {
-                    Modifier.hazeEffect(
-                        state = hazeState,
-                        style = HazeStyle(
-                            backgroundColor = MaterialTheme.colorScheme.surface,
-                            tint = HazeTint(MaterialTheme.colorScheme.surface.copy(alpha = 0.7f)),
-                            blurRadius = 25.dp,
-                            noiseFactor = 0f
-                        )
-                    ) {
-                        blurEnabled = true
-                    }
-                } ?: Modifier)
+                .installerMaterial3BlurEffect(
+                    backdrop = backdrop,
+                    blurRadius = 25f
+                )
                 .background(Color.Black.copy(alpha = 0.3f))
                 .clickable(
                     indication = null,

@@ -21,9 +21,9 @@ fun PredictiveBackAnimationWidget(
         description = when (uiState.predictiveBackAnimation) {
             PredictiveBackAnimation.None -> stringResource(R.string.theme_settings_predictive_back_animation_none)
             PredictiveBackAnimation.AOSP -> stringResource(R.string.theme_settings_predictive_back_animation_aosp)
+            PredictiveBackAnimation.MIUIX -> stringResource(R.string.theme_settings_predictive_back_animation_miuix)
             PredictiveBackAnimation.Scale -> stringResource(R.string.theme_settings_predictive_back_animation_scale)
             PredictiveBackAnimation.KernelSUClassic -> stringResource(R.string.theme_settings_predictive_back_animation_ksu_classic)
-            PredictiveBackAnimation.KernelSUOfficial -> stringResource(R.string.theme_settings_predictive_back_animation_ksu_official)
         },
         onClick = onClick
     ) {}

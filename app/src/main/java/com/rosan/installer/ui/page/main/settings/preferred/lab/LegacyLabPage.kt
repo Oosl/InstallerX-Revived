@@ -36,13 +36,17 @@ import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rosan.installer.R
 import com.rosan.installer.core.env.AppConfig
+import com.rosan.installer.domain.settings.model.GithubUpdateChannel
 import com.rosan.installer.ui.icons.AppIcons
 import com.rosan.installer.ui.navigation.LocalNavigator
 import com.rosan.installer.ui.page.main.settings.preferred.LabHttpProfileWidget
 import com.rosan.installer.ui.page.main.settings.preferred.LabRootImplementationWidget
 import com.rosan.installer.ui.page.main.widget.card.InfoTipCard
+import com.rosan.installer.ui.page.main.widget.dialog.CustomGithubProxyUrlDialog
+import com.rosan.installer.ui.page.main.widget.dialog.GithubUpdateChannelSelectionDialog
 import com.rosan.installer.ui.page.main.widget.dialog.RootImplementationSelectionDialog
 import com.rosan.installer.ui.page.main.widget.setting.AppBackButton
+import com.rosan.installer.ui.page.main.widget.setting.BaseWidget
 import com.rosan.installer.ui.page.main.widget.setting.LabelWidget
 import com.rosan.installer.ui.page.main.widget.setting.SwitchWidget
 import org.koin.androidx.compose.koinViewModel
@@ -56,6 +60,36 @@ fun LegacyLabPage(
     val uiState by viewModel.state.collectAsStateWithLifecycle()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val showRootImplementationDialog = remember { mutableStateOf(false) }
+    val showChannelDialog = remember { mutableStateOf(false) }
+    val showCustomProxyDialog = remember { mutableStateOf(false) }
+
+    if (showChannelDialog.value)
+        GithubUpdateChannelSelectionDialog(
+            currentSelection = uiState.githubUpdateChannel,
+            onDismiss = { showChannelDialog.value = false },
+            onConfirm = { channel ->
+                showChannelDialog.value = false
+                viewModel.dispatch(LabSettingsAction.LabChangeGithubUpdateChannel(channel))
+                if (channel == GithubUpdateChannel.CUSTOM)
+                    showCustomProxyDialog.value = true
+            }
+        )
+
+    if (showCustomProxyDialog.value)
+        CustomGithubProxyUrlDialog(
+            initialUrl = uiState.customGithubProxyUrl,
+            onDismiss = {
+                showCustomProxyDialog.value = false
+                if (uiState.customGithubProxyUrl.isEmpty())
+                    viewModel.dispatch(LabSettingsAction.LabChangeGithubUpdateChannel(GithubUpdateChannel.OFFICIAL))
+            },
+            onConfirm = { url ->
+                showCustomProxyDialog.value = false
+                viewModel.dispatch(LabSettingsAction.LabChangeCustomGithubProxyUrl(url))
+                if (url.isEmpty())
+                    viewModel.dispatch(LabSettingsAction.LabChangeGithubUpdateChannel(GithubUpdateChannel.OFFICIAL))
+            }
+        )
 
     if (showRootImplementationDialog.value) {
         RootImplementationSelectionDialog(
@@ -176,6 +210,23 @@ fun LegacyLabPage(
 
                 // HTTP Profile DropDown
                 item { LabHttpProfileWidget(viewModel) }
+
+                item {
+                    val currentChannel = uiState.githubUpdateChannel
+                    val channelSummary = when (currentChannel) {
+                        GithubUpdateChannel.OFFICIAL -> stringResource(R.string.lab_update_github_proxy_official)
+                        GithubUpdateChannel.PROXY_7ED -> stringResource(R.string.lab_update_github_proxy_7ed)
+                        GithubUpdateChannel.CUSTOM -> uiState.customGithubProxyUrl.ifBlank {
+                            stringResource(R.string.lab_update_github_proxy_custom)
+                        }
+                    }
+
+                    BaseWidget(
+                        title = stringResource(R.string.lab_update_github_proxy),
+                        description = channelSummary,
+                        onClick = { showChannelDialog.value = true }
+                    ) {}
+                }
             }
             item { Spacer(Modifier.navigationBarsPadding()) }
         }

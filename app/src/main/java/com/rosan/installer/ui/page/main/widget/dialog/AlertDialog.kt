@@ -37,6 +37,7 @@ import com.rosan.installer.R
 import com.rosan.installer.core.env.AppConfig
 import com.rosan.installer.core.env.DeviceConfig
 import com.rosan.installer.domain.device.model.Manufacturer
+import com.rosan.installer.domain.settings.model.GithubUpdateChannel
 import com.rosan.installer.domain.settings.model.RootMode
 import com.rosan.installer.ui.icons.AppIcons
 import com.rosan.installer.util.help
@@ -327,6 +328,102 @@ fun UninstallPackageDialog(
             TextButton(
                 onClick = { onConfirm(packageName) },
                 enabled = isConfirmEnabled
+            ) {
+                Text(stringResource(R.string.confirm))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel))
+            }
+        }
+    )
+}
+
+@Composable
+fun GithubUpdateChannelSelectionDialog(
+    currentSelection: GithubUpdateChannel,
+    onDismiss: () -> Unit,
+    onConfirm: (GithubUpdateChannel) -> Unit
+) {
+    val (selectedOption, onOptionSelected) = remember { mutableStateOf(currentSelection) }
+
+    val options = mapOf(
+        GithubUpdateChannel.OFFICIAL to stringResource(R.string.lab_update_github_proxy_official),
+        GithubUpdateChannel.PROXY_7ED to stringResource(R.string.lab_update_github_proxy_7ed),
+        GithubUpdateChannel.CUSTOM to stringResource(R.string.lab_update_github_proxy_custom)
+    )
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.lab_update_github_proxy)) },
+        text = {
+            Column(Modifier.selectableGroup()) {
+                options.forEach { (channel, label) ->
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .height(56.dp)
+                            .selectable(
+                                selected = (channel == selectedOption),
+                                onClick = { onOptionSelected(channel) },
+                                role = Role.RadioButton
+                            )
+                            .padding(horizontal = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = (channel == selectedOption),
+                            onClick = null
+                        )
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.padding(start = 16.dp)
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onConfirm(selectedOption) }
+            ) {
+                Text(stringResource(R.string.confirm))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel))
+            }
+        }
+    )
+}
+
+@Composable
+fun CustomGithubProxyUrlDialog(
+    initialUrl: String,
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit
+) {
+    var url by remember { mutableStateOf(initialUrl) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.lab_update_github_proxy_custom)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = url,
+                    onValueChange = { url = it },
+                    label = { Text(stringResource(R.string.lab_update_github_proxy_url)) },
+                    singleLine = true
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onConfirm(url) }
             ) {
                 Text(stringResource(R.string.confirm))
             }

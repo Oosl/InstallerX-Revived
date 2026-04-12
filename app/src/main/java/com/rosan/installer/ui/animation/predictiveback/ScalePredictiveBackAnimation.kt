@@ -34,6 +34,7 @@ import androidx.navigationevent.NavigationEventTransitionState
 import androidx.navigationevent.NavigationEventTransitionState.InProgress
 import com.rosan.installer.domain.settings.model.PredictiveBackExitDirection
 import com.rosan.installer.ui.util.rememberDeviceCornerRadius
+import kotlinx.coroutines.CoroutineScope
 
 class ScalePredictiveBackAnimation(
     private val exitDirection: PredictiveBackExitDirection = PredictiveBackExitDirection.ALWAYS_RIGHT
@@ -55,6 +56,12 @@ class ScalePredictiveBackAnimation(
                 )
             )
             exitAnimatable.snapTo(0f)
+        }
+    }
+
+    override fun onPagePop(contentPageKey: Any, animationScope: CoroutineScope) {
+        if (exitingPageKey == contentPageKey) {
+            exitingPageKey = null
         }
     }
 

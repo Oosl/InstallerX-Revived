@@ -32,9 +32,9 @@ class SelectOptimalSplitsUseCase {
         // Extract bases early to determine the effective choice logic
         val bases = entities.filterIsInstance<AppEntity.BaseEntity>()
 
-        // Only rely on apkChooseAll if there are actually multiple bases.
-        // If there is 1 or 0 bases, we implicitly treat it as true to ensure the primary app is selected.
-        val effectiveApkChooseAll = if (bases.size > 1) apkChooseAll else true
+        // Use isBatchMode to determine if we should respect apkChooseAll.
+        // If it's a single app session, we implicitly treat it as true to ensure the primary app is selected.
+        val effectiveApkChooseAll = if (isBatchMode) apkChooseAll else true
 
         // 1. Mixed Modules
         if (sessionType == DataType.MIXED_MODULE_APK || sessionType == DataType.MIXED_MODULE_ZIP) {

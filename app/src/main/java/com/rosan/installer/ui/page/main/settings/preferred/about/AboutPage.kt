@@ -57,9 +57,9 @@ import com.rosan.installer.ui.page.main.widget.setting.LabelWidget
 import com.rosan.installer.ui.page.main.widget.setting.SwitchWidget
 import com.rosan.installer.ui.page.main.widget.setting.UpdateLoadingIndicator
 import com.rosan.installer.ui.page.main.widget.util.LogEventCollector
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.hazeSource
+import com.rosan.installer.ui.theme.rememberMaterial3BlurBackdrop
 import org.koin.androidx.compose.koinViewModel
+import top.yukonga.miuix.kmp.blur.layerBackdrop
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -69,7 +69,6 @@ fun AboutPage(
     val navigator = LocalNavigator.current
     val context = LocalContext.current
     val uiState by viewModel.state.collectAsStateWithLifecycle()
-    val hazeState = remember { HazeState() }
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val uriHandler = LocalUriHandler.current
     var showBottomSheet by remember { mutableStateOf(false) }
@@ -79,11 +78,13 @@ fun AboutPage(
     val layoutDirection = LocalLayoutDirection.current
     val horizontalSafeInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal).asPaddingValues()
 
+    val upgradeIndicatorBackdrop = rememberMaterial3BlurBackdrop(true)
+
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
             .nestedScroll(scrollBehavior.nestedScrollConnection)
-            .hazeSource(state = hazeState),
+            .then(upgradeIndicatorBackdrop?.let { Modifier.layerBackdrop(it) } ?: Modifier),
         topBar = {
             TopAppBar(
                 title = {
@@ -183,5 +184,5 @@ fun AboutPage(
             )
         }
     }
-    UpdateLoadingIndicator(hazeState = hazeState, viewModel = viewModel)
+    UpdateLoadingIndicator(backdrop = upgradeIndicatorBackdrop, viewModel = viewModel)
 }

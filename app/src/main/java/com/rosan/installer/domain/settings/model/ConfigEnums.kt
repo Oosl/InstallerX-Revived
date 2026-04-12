@@ -105,3 +105,12 @@ enum class PackageSource(val value: Int) {
         fun fromInt(value: Int) = entries.find { it.value == value } ?: OTHER
     }
 }
+
+/**
+ * Define GitHub Update Channels used by InstallerX
+ */
+enum class GithubUpdateChannel {
+    OFFICIAL,
+    PROXY_7ED,
+    CUSTOM
+}

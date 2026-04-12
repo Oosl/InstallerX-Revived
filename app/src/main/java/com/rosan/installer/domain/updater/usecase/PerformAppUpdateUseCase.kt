@@ -31,11 +31,13 @@ class PerformAppUpdateUseCase(
         val (stream, length) = downloadData
 
         // 2. Trigger the installation using the provider (which shields us from Installer details)
-        inAppInstallProvider.executeInstall(
-            fileName = "base.apk",
-            inputStream = stream,
-            contentLength = length,
-            config = config
-        )
+        stream.use { safeStream ->
+            inAppInstallProvider.executeInstall(
+                fileName = "base.apk",
+                inputStream = safeStream,
+                contentLength = length,
+                config = config
+            )
+        }
     }
 }

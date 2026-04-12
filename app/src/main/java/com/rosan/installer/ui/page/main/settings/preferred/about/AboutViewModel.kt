@@ -14,10 +14,8 @@ import com.rosan.installer.domain.settings.provider.SystemEnvProvider
 import com.rosan.installer.domain.settings.repository.AppSettingsRepository
 import com.rosan.installer.domain.settings.repository.BooleanSetting
 import com.rosan.installer.domain.settings.usecase.settings.UpdateSettingUseCase
-import com.rosan.installer.domain.updater.model.UpdateInfo
 import com.rosan.installer.domain.updater.repository.UpdateRepository
 import com.rosan.installer.domain.updater.usecase.PerformAppUpdateUseCase
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,7 +32,7 @@ class AboutViewModel(
     private val updateRepo: UpdateRepository,
     private val systemEnvProvider: SystemEnvProvider,
     private val updateSetting: UpdateSettingUseCase,
-    private val performAppUpdateUseCase: PerformAppUpdateUseCase,
+    private val performAppUpdate: PerformAppUpdateUseCase,
     private val getAppIcon: GetAppIconUseCase
 ) : ViewModel() {
 
@@ -45,17 +43,14 @@ class AboutViewModel(
     )
     val uiEvents = _uiEvents.asSharedFlow()
 
-    private val updateInfoFlow = MutableStateFlow<UpdateInfo?>(null)
-
     private val _appIcon = MutableStateFlow<ImageBitmap?>(null)
 
     val state: StateFlow<AboutState> = combine(
         appSettingsRepo.preferencesFlow,
-        updateInfoFlow,
+        updateRepo.updateInfoFlow,
         _appIcon
     ) { prefs, updateInfo, appIcon ->
         AboutState(
-            useBlur = prefs.useBlur,
             authorizer = prefs.authorizer,
             hasUpdate = updateInfo?.hasUpdate ?: false,
             remoteVersion = updateInfo?.remoteVersion ?: "",
@@ -81,9 +76,8 @@ class AboutViewModel(
         }
     }
 
-    private fun checkUpdate() = viewModelScope.launch(Dispatchers.IO) {
-        val result = updateRepo.checkUpdate()
-        if (result != null) updateInfoFlow.value = result
+    private fun checkUpdate(force: Boolean = false) = viewModelScope.launch {
+        updateRepo.checkUpdate(force)
     }
 
     private fun loadAppIcon() = viewModelScope.launch {
@@ -100,7 +94,7 @@ class AboutViewModel(
         _uiEvents.emit(AboutEvent.ShowUpdateLoading)
         runCatching {
             val config = ConfigModel.default.copy(authorizer = state.value.authorizer)
-            performAppUpdateUseCase(updateInfoFlow.value, config)
+            performAppUpdate(updateRepo.updateInfoFlow.value, config)
         }.onFailure { e ->
             Timber.e(e, "In-app update failed")
             _uiEvents.emit(AboutEvent.ShowInAppUpdateErrorDetail("Update Failed", e))

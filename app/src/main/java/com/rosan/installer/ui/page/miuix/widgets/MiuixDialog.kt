@@ -28,6 +28,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import com.rosan.installer.R
+import com.rosan.installer.domain.settings.model.GithubUpdateChannel
 import com.rosan.installer.domain.settings.model.RootMode
 import top.yukonga.miuix.kmp.basic.BasicComponent
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
@@ -399,6 +400,7 @@ private fun SelectableRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
+        @Suppress("DEPRECATION")
         Text(
             text = text,
             color = contentColor
@@ -441,18 +443,147 @@ fun MiuixUninstallPackageDialog(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
                 ) {
+                    @Suppress("DEPRECATION")
                     TextButton(
                         modifier = Modifier.weight(1f),
                         text = stringResource(R.string.cancel),
                         onClick = onDismiss
                     )
                     Spacer(modifier = Modifier.width(8.dp))
+                    @Suppress("DEPRECATION")
                     TextButton(
                         modifier = Modifier.weight(1f),
                         text = stringResource(R.string.confirm),
                         onClick = {
                             onConfirm(packageName)
                             packageName = ""
+                        },
+                        enabled = isConfirmEnabled,
+                        colors = ButtonDefaults.textButtonColorsPrimary()
+                    )
+                }
+            }
+        }
+    )
+}
+
+@Composable
+fun MiuixGithubUpdateChannelSelectionDialog(
+    showState: MutableState<Boolean>,
+    currentSelection: GithubUpdateChannel,
+    onDismiss: () -> Unit,
+    onConfirm: (GithubUpdateChannel) -> Unit
+) {
+    val channels = remember {
+        listOf(
+            GithubUpdateChannel.OFFICIAL,
+            GithubUpdateChannel.PROXY_7ED,
+            GithubUpdateChannel.CUSTOM
+        )
+    }
+
+    val channelNames = remember {
+        mapOf(
+            GithubUpdateChannel.OFFICIAL to R.string.lab_update_github_proxy_official,
+            GithubUpdateChannel.PROXY_7ED to R.string.lab_update_github_proxy_7ed,
+            GithubUpdateChannel.CUSTOM to R.string.lab_update_github_proxy_custom
+        )
+    }
+
+    var selectedChannel by remember { mutableStateOf(currentSelection) }
+
+    WindowDialog(
+        show = showState.value,
+        onDismissRequest = onDismiss,
+        title = stringResource(R.string.lab_update_github_proxy),
+        insideMargin = DpSize(0.dp, 24.dp),
+        content = {
+            Column {
+                Column(Modifier.verticalScroll(rememberScrollState())) {
+                    channels.forEach { channel ->
+                        val isSelected = selectedChannel == channel
+
+                        SelectableRow(
+                            text = stringResource(channelNames[channel]!!),
+                            isSelected = isSelected,
+                            onClick = { selectedChannel = channel }
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    @Suppress("DEPRECATION")
+                    TextButton(
+                        modifier = Modifier.weight(1f),
+                        onClick = onDismiss,
+                        text = stringResource(R.string.cancel)
+                    )
+                    @Suppress("DEPRECATION")
+                    TextButton(
+                        modifier = Modifier.weight(1f),
+                        onClick = {
+                            onConfirm(selectedChannel)
+                            onDismiss()
+                        },
+                        text = stringResource(R.string.confirm),
+                        colors = ButtonDefaults.textButtonColorsPrimary()
+                    )
+                }
+            }
+        }
+    )
+}
+
+@Composable
+fun MiuixCustomGithubProxyUrlDialog(
+    showState: MutableState<Boolean>,
+    initialUrl: String,
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit
+) {
+    var url by remember { mutableStateOf(initialUrl) }
+    val isConfirmEnabled = url.isNotBlank()
+
+    WindowDialog(
+        show = showState.value,
+        onDismissRequest = onDismiss,
+        title = stringResource(R.string.lab_update_github_proxy_custom),
+        content = {
+            Column {
+                Spacer(modifier = Modifier.height(8.dp))
+                TextField(
+                    value = url,
+                    onValueChange = { url = it },
+                    label = "GHProxy URL",
+                    useLabelAsPlaceholder = true,
+                    singleLine = true
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
+                ) {
+                    @Suppress("DEPRECATION")
+                    TextButton(
+                        modifier = Modifier.weight(1f),
+                        text = stringResource(R.string.cancel),
+                        onClick = onDismiss
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    @Suppress("DEPRECATION")
+                    TextButton(
+                        modifier = Modifier.weight(1f),
+                        text = stringResource(R.string.confirm),
+                        onClick = {
+                            onConfirm(url)
+                            onDismiss()
                         },
                         enabled = isConfirmEnabled,
                         colors = ButtonDefaults.textButtonColorsPrimary()

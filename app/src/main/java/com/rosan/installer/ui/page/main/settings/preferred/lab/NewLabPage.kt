@@ -39,35 +39,67 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rosan.installer.R
 import com.rosan.installer.core.env.AppConfig
+import com.rosan.installer.domain.settings.model.GithubUpdateChannel
 import com.rosan.installer.ui.icons.AppIcons
 import com.rosan.installer.ui.navigation.LocalNavigator
 import com.rosan.installer.ui.page.main.settings.preferred.LabHttpProfileWidget
 import com.rosan.installer.ui.page.main.settings.preferred.LabRootImplementationWidget
 import com.rosan.installer.ui.page.main.widget.card.InfoTipCard
+import com.rosan.installer.ui.page.main.widget.dialog.CustomGithubProxyUrlDialog
+import com.rosan.installer.ui.page.main.widget.dialog.GithubUpdateChannelSelectionDialog
 import com.rosan.installer.ui.page.main.widget.dialog.RootImplementationSelectionDialog
 import com.rosan.installer.ui.page.main.widget.setting.AppBackButton
+import com.rosan.installer.ui.page.main.widget.setting.BaseWidget
 import com.rosan.installer.ui.page.main.widget.setting.SplicedColumnGroup
 import com.rosan.installer.ui.page.main.widget.setting.SwitchWidget
-import com.rosan.installer.ui.theme.getM3TopBarColor
-import com.rosan.installer.ui.theme.installerHazeEffect
+import com.rosan.installer.ui.theme.getMaterial3AppBarColor
+import com.rosan.installer.ui.theme.installerMaterial3BlurEffect
 import com.rosan.installer.ui.theme.none
-import com.rosan.installer.ui.theme.rememberMaterial3HazeStyle
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.hazeSource
+import com.rosan.installer.ui.theme.rememberMaterial3BlurBackdrop
 import org.koin.androidx.compose.koinViewModel
+import top.yukonga.miuix.kmp.blur.layerBackdrop
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun NewLabPage(
+    useBlur: Boolean,
     viewModel: LabSettingsViewModel = koinViewModel()
 ) {
     val navigator = LocalNavigator.current
     val uiState by viewModel.state.collectAsStateWithLifecycle()
     val topAppBarState = rememberTopAppBarState()
-    val hazeState = if (uiState.useBlur) remember { HazeState() } else null
-    val hazeStyle = rememberMaterial3HazeStyle()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(topAppBarState)
     val showRootImplementationDialog = remember { mutableStateOf(false) }
+    val showChannelDialog = remember { mutableStateOf(false) }
+    val showCustomProxyDialog = remember { mutableStateOf(false) }
+
+    if (showChannelDialog.value)
+        GithubUpdateChannelSelectionDialog(
+            currentSelection = uiState.githubUpdateChannel,
+            onDismiss = { showChannelDialog.value = false },
+            onConfirm = { channel ->
+                showChannelDialog.value = false
+                viewModel.dispatch(LabSettingsAction.LabChangeGithubUpdateChannel(channel))
+                if (channel == GithubUpdateChannel.CUSTOM)
+                    showCustomProxyDialog.value = true
+            }
+        )
+
+    if (showCustomProxyDialog.value)
+        CustomGithubProxyUrlDialog(
+            initialUrl = uiState.customGithubProxyUrl,
+            onDismiss = {
+                showCustomProxyDialog.value = false
+                if (uiState.customGithubProxyUrl.isEmpty())
+                    viewModel.dispatch(LabSettingsAction.LabChangeGithubUpdateChannel(GithubUpdateChannel.OFFICIAL))
+            },
+            onConfirm = { url ->
+                showCustomProxyDialog.value = false
+                viewModel.dispatch(LabSettingsAction.LabChangeCustomGithubProxyUrl(url))
+                if (url.isEmpty())
+                    viewModel.dispatch(LabSettingsAction.LabChangeGithubUpdateChannel(GithubUpdateChannel.OFFICIAL))
+            }
+        )
 
     if (showRootImplementationDialog.value) {
         RootImplementationSelectionDialog(
@@ -76,7 +108,11 @@ fun NewLabPage(
             onConfirm = { selectedImplementation ->
                 showRootImplementationDialog.value = false
                 // 1. Save the selected implementation
-                viewModel.dispatch(LabSettingsAction.LabChangeRootImplementation(selectedImplementation))
+                viewModel.dispatch(
+                    LabSettingsAction.LabChangeRootImplementation(
+                        selectedImplementation
+                    )
+                )
                 // 2. Enable the flash module feature
                 viewModel.dispatch(LabSettingsAction.LabChangeRootModuleFlash(true))
             }
@@ -86,6 +122,8 @@ fun NewLabPage(
     val layoutDirection = LocalLayoutDirection.current
     val horizontalSafeInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal).asPaddingValues()
 
+    val backdrop = rememberMaterial3BlurBackdrop(useBlur)
+
     Scaffold(
         modifier = Modifier
             .nestedScroll(scrollBehavior.nestedScrollConnection)
@@ -94,7 +132,7 @@ fun NewLabPage(
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
         topBar = {
             LargeFlexibleTopAppBar(
-                modifier = Modifier.installerHazeEffect(hazeState, hazeStyle),
+                modifier = Modifier.installerMaterial3BlurEffect(backdrop),
                 windowInsets = TopAppBarDefaults.windowInsets.add(WindowInsets(left = 12.dp)),
                 title = {
                     Text(stringResource(R.string.lab))
@@ -112,9 +150,9 @@ fun NewLabPage(
                 },
                 scrollBehavior = scrollBehavior,
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = hazeState.getM3TopBarColor(),
+                    containerColor = backdrop.getMaterial3AppBarColor(),
                     titleContentColor = MaterialTheme.colorScheme.onBackground,
-                    scrolledContainerColor = hazeState.getM3TopBarColor()
+                    scrolledContainerColor = backdrop.getMaterial3AppBarColor()
                 )
             )
         }
@@ -122,7 +160,7 @@ fun NewLabPage(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .then(hazeState?.let { Modifier.hazeSource(it) } ?: Modifier),
+                .then(backdrop?.let { Modifier.layerBackdrop(it) } ?: Modifier),
             contentPadding = PaddingValues(
                 start = horizontalSafeInsets.calculateStartPadding(layoutDirection),
                 top = paddingValues.calculateTopPadding(),
@@ -145,7 +183,11 @@ fun NewLabPage(
                                 if (isChecking) {
                                     showRootImplementationDialog.value = true
                                 } else {
-                                    viewModel.dispatch(LabSettingsAction.LabChangeRootModuleFlash(false))
+                                    viewModel.dispatch(
+                                        LabSettingsAction.LabChangeRootModuleFlash(
+                                            false
+                                        )
+                                    )
                                 }
                             }
                         )
@@ -176,7 +218,13 @@ fun NewLabPage(
                             title = stringResource(R.string.lab_tap_icon_to_share),
                             description = stringResource(R.string.lab_tap_icon_to_share_desc),
                             checked = uiState.labTapIconToShare,
-                            onCheckedChange = { viewModel.dispatch(LabSettingsAction.LabChangeTapIconToShare(it)) }
+                            onCheckedChange = {
+                                viewModel.dispatch(
+                                    LabSettingsAction.LabChangeTapIconToShare(
+                                        it
+                                    )
+                                )
+                            }
                         )
                     }
                     item {
@@ -185,7 +233,13 @@ fun NewLabPage(
                             title = stringResource(R.string.lab_set_install_requester),
                             description = stringResource(R.string.lab_set_install_requester_desc),
                             checked = uiState.labSetInstallRequester,
-                            onCheckedChange = { viewModel.dispatch(LabSettingsAction.LabChangeSetInstallRequester(it)) }
+                            onCheckedChange = {
+                                viewModel.dispatch(
+                                    LabSettingsAction.LabChangeSetInstallRequester(
+                                        it
+                                    )
+                                )
+                            }
                         )
                     }
                 }
@@ -207,6 +261,22 @@ fun NewLabPage(
                             )
                         }*/
                         item { LabHttpProfileWidget(viewModel) }
+
+                        val currentChannel = uiState.githubUpdateChannel
+                        item {
+                            val channelSummary = when (currentChannel) {
+                                GithubUpdateChannel.OFFICIAL -> stringResource(R.string.lab_update_github_proxy_official)
+                                GithubUpdateChannel.PROXY_7ED -> stringResource(R.string.lab_update_github_proxy_7ed)
+                                GithubUpdateChannel.CUSTOM -> uiState.customGithubProxyUrl.ifBlank {
+                                    stringResource(R.string.lab_update_github_proxy_custom)
+                                }
+                            }
+                            BaseWidget(
+                                title = stringResource(R.string.lab_update_github_proxy),
+                                description = channelSummary,
+                                onClick = { showChannelDialog.value = true }
+                            ) {}
+                        }
                     }
                 }
             item { Spacer(Modifier.navigationBarsPadding()) }

@@ -114,12 +114,12 @@
     <string name="theme_settings_predictive_back_animation">Predictive Back Animation</string>
     <string name="theme_settings_predictive_back_animation_desc">Select the animation effect for predictive back</string>
     <string name="theme_settings_predictive_back_exit_direction">Exit Direction</string>
-    <string name="theme_settings_predictive_back_exit_direction_desc">Select the exit direction for predictive back (Scale animation only)</string>
+    <string name="theme_settings_predictive_back_exit_direction_desc">Select the exit direction for predictive back</string>
     <string name="theme_settings_predictive_back_animation_none">None</string>
     <string name="theme_settings_predictive_back_animation_aosp">AOSP</string>
     <string name="theme_settings_predictive_back_animation_scale">Scale</string>
     <string name="theme_settings_predictive_back_animation_ksu_classic">KernelSU Classic</string>
-    <string name="theme_settings_predictive_back_animation_ksu_official">KernelSU Official</string>
+    <string name="theme_settings_predictive_back_animation_miuix" translatable="false">Miuix</string>
     <string name="theme_settings_predictive_back_exit_direction_follow_gesture">Follow Gesture</string>
     <string name="theme_settings_predictive_back_exit_direction_always_right">Always Right</string>
     <string name="theme_settings_predictive_back_exit_direction_always_left">Always Left</string>
@@ -751,6 +751,12 @@
     <string name="lab_http_profile_secure">Secure connections only (HTTPS)</string>
     <string name="lab_http_profile_local">Allow local cleartext (Localhost)</string>
     <string name="lab_http_profile_all">Allow all (Insecure)</string>
+    <string name="lab_update_github_proxy">GitHub Update Channel</string>
+    <string name="lab_update_github_proxy_official">Official</string>
+    <string name="lab_update_github_proxy_7ed">7ED Proxy</string>
+    <string name="lab_update_github_proxy_custom">Custom GHProxy</string>
+    <string name="lab_update_github_proxy_url">Custom URL</string>
+    <string name="lab_update_github_proxy_url_desc">Proxy URL</string>
     <string name="lab_unstable_features">Unstable features</string>
     <string name="lab_set_install_requester">Set Install Requester</string>
     <string name="lab_set_install_requester_desc">Fill OriginatingUid field with caller package to match system behavior</string>

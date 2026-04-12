@@ -7,9 +7,17 @@ import com.rosan.installer.core.env.AppConfig
 import com.rosan.installer.core.env.AppConfig.OFFICIAL_PACKAGE_NAME
 import com.rosan.installer.data.updater.model.GithubRelease
 import com.rosan.installer.domain.device.model.Level
+import com.rosan.installer.domain.settings.model.GithubUpdateChannel
+import com.rosan.installer.domain.settings.repository.AppSettingsRepository
 import com.rosan.installer.domain.updater.model.UpdateInfo
 import com.rosan.installer.domain.updater.repository.UpdateRepository
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
@@ -20,51 +28,118 @@ import java.io.InputStream
 class OnlineUpdateRepositoryImpl(
     private val context: Context,
     private val client: OkHttpClient,
-    private val json: Json
+    private val json: Json,
+    private val appSettingsRepository: AppSettingsRepository
 ) : UpdateRepository {
     companion object {
         private const val REPO_OWNER = "wxxsfxyzm"
         private const val REPO_NAME = "InstallerX-Revived"
+
+        private const val URL_NONE = ""
+        private const val PROXY_7ED = "https://gh.sevencdn.com/"
     }
 
-    override suspend fun checkUpdate(): UpdateInfo? = withContext(Dispatchers.IO) {
-        if (AppConfig.isDebug || AppConfig.LEVEL == Level.UNSTABLE || context.packageName != OFFICIAL_PACKAGE_NAME) {
-            Timber.d("Update check skipped based on environment rules.")
-            return@withContext null
+    private val _updateInfoFlow = MutableStateFlow<UpdateInfo?>(null)
+    override val updateInfoFlow: StateFlow<UpdateInfo?> = _updateInfoFlow.asStateFlow()
+
+    private var hasChecked = false
+    private val updateMutex = Mutex()
+
+    override suspend fun checkUpdate(force: Boolean): UpdateInfo? = withContext(Dispatchers.IO) {
+        // If force check not required, and has checked, return cached value
+        if (!force && hasChecked) {
+            Timber.d("checkUpdate: Returning cached UpdateInfo")
+            return@withContext _updateInfoFlow.value
         }
 
-        try {
-            val remoteRelease = fetchRemoteRelease() ?: return@withContext null
-
-            val apkAsset = remoteRelease.assets.find {
-                it.name.contains("online", ignoreCase = true) &&
-                        it.name.endsWith(".apk", ignoreCase = true)
+        // Use mutex lock to prevent concurrent execution
+        updateMutex.withLock {
+            // Check again after acquiring lock
+            if (!force && hasChecked) {
+                return@withContext _updateInfoFlow.value
             }
 
-            val downloadUrl = apkAsset?.browserDownloadUrl ?: ""
-            val fileName = apkAsset?.name ?: ""
+            if (AppConfig.isDebug || AppConfig.LEVEL == Level.UNSTABLE || context.packageName != OFFICIAL_PACKAGE_NAME) {
+                // Log the exact values to see which condition caused the skip
+                Timber.d("checkUpdate: Skipped. isDebug=${AppConfig.isDebug}, LEVEL=${AppConfig.LEVEL}, package=${context.packageName}")
+                return@withContext null
+            }
 
-            // Updated regex: APK names no longer have 'v', they look like '...-online-26.03.1a2b3c4.apk'
-            val versionRegex = Regex("-(\\d.+?)\\.apk", RegexOption.IGNORE_CASE)
-            val matchResult = versionRegex.find(fileName)
+            try {
+                val remoteRelease = fetchRemoteRelease()
+                if (remoteRelease == null) {
+                    // Log if network request or parsing failed
+                    Timber.e("checkUpdate: fetchRemoteRelease() returned null")
+                    return@withContext null
+                }
+                // Log successful fetch
+                Timber.d("checkUpdate: Successfully fetched release. TagName=${remoteRelease.tagName}")
 
-            val remoteVersion = matchResult?.groupValues?.get(1)
-                ?: remoteRelease.tagName.removePrefix("v")
+                val apkAsset = remoteRelease.assets.find {
+                    it.name.contains("online", ignoreCase = true) &&
+                            it.name.endsWith(".apk", ignoreCase = true)
+                }
 
-            val currentVersion = AppConfig.VERSION_NAME
-            val hasUpdate = compareVersions(remoteVersion, currentVersion) > 0
+                if (apkAsset == null) {
+                    // Log if no matching asset was found
+                    Timber.e("checkUpdate: No matching online APK asset found in release")
+                } else {
+                    // Log the found asset name
+                    Timber.d("checkUpdate: Found APK asset: ${apkAsset.name}")
+                }
 
-            Timber.i("Update check: Local=$currentVersion, Remote=$remoteVersion, HasUpdate=$hasUpdate")
+                val prefs = appSettingsRepository.preferencesFlow.first()
+                val proxyUrl = when (prefs.githubUpdateChannel) {
+                    GithubUpdateChannel.OFFICIAL -> URL_NONE
+                    GithubUpdateChannel.PROXY_7ED -> PROXY_7ED
+                    GithubUpdateChannel.CUSTOM -> prefs.customGithubProxyUrl
+                }
+                val browserDownloadUrl = apkAsset?.browserDownloadUrl ?: URL_NONE
+                val downloadUrl = if (browserDownloadUrl.isNotEmpty() && proxyUrl.isNotEmpty()) {
+                    if (proxyUrl.endsWith("/")) {
+                        proxyUrl + browserDownloadUrl
+                    } else {
+                        "$proxyUrl/$browserDownloadUrl"
+                    }
+                } else {
+                    browserDownloadUrl
+                }
 
-            UpdateInfo(
-                hasUpdate = hasUpdate,
-                remoteVersion = remoteVersion,
-                releaseUrl = remoteRelease.htmlUrl ?: "",
-                downloadUrl = downloadUrl
-            )
-        } catch (e: Exception) {
-            Timber.e(e, "Failed to check for updates")
-            null
+                val fileName = apkAsset?.name ?: ""
+
+                // Updated regex: APK names no longer have 'v', they look like '...-online-26.03.1a2b3c4.apk'
+                val versionRegex = Regex("-(\\d.+?)\\.apk", RegexOption.IGNORE_CASE)
+                val matchResult = versionRegex.find(fileName)
+
+                val remoteVersion = matchResult?.groupValues?.get(1)
+                    ?: remoteRelease.tagName.removePrefix("v")
+
+                val currentVersion = AppConfig.VERSION_NAME
+
+                // Log versions before comparison to catch potential parsing issues
+                Timber.d("checkUpdate: Preparing to compare. Local=$currentVersion, Remote=$remoteVersion")
+
+                val hasUpdate = compareVersions(remoteVersion, currentVersion) > 0
+
+                Timber.i("Update check: Local=$currentVersion, Remote=$remoteVersion, HasUpdate=$hasUpdate")
+
+                val updateInfo = UpdateInfo(
+                    hasUpdate = hasUpdate,
+                    remoteVersion = remoteVersion,
+                    releaseUrl = remoteRelease.htmlUrl ?: "",
+                    downloadUrl = downloadUrl
+                )
+
+                // Cache result and mark as checked
+                _updateInfoFlow.value = updateInfo
+                hasChecked = true
+
+                return@withContext updateInfo
+            } catch (e: Exception) {
+                // Log the stacktrace to identify crashes like NullPointerException or Regex errors
+                Timber.e(e, "checkUpdate: Exception caught during execution")
+                null
+            }
         }
     }
 

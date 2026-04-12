@@ -4,11 +4,17 @@ package com.rosan.installer.data.updater.repository
 
 import com.rosan.installer.domain.updater.model.UpdateInfo
 import com.rosan.installer.domain.updater.repository.UpdateRepository
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import timber.log.Timber
 import java.io.InputStream
 
 class OfflineUpdateRepositoryImpl : UpdateRepository {
-    override suspend fun checkUpdate(): UpdateInfo? {
+    private val _updateInfoFlow = MutableStateFlow<UpdateInfo?>(null)
+    override val updateInfoFlow: StateFlow<UpdateInfo?> = _updateInfoFlow.asStateFlow()
+
+    override suspend fun checkUpdate(force: Boolean): UpdateInfo? {
         Timber.d("Update check disabled: Offline build")
         return null
     }
