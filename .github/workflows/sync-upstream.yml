@@ -2,7 +2,7 @@ name: Sync Upstream
 
 on:
   schedule:
-    - cron: '18 * * * *'
+    - cron: '18 */7 * * *'
   workflow_dispatch:
 
 jobs:
@@ -18,7 +18,7 @@ jobs:
         with:
           ref: main
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.INSTALLER_X_TOKEN }}
 
       - name: Add upstream remote and fetch
         run: |
@@ -58,7 +58,7 @@ jobs:
       - name: Create PR on conflict
         if: steps.check.outputs.diff_count != '0' && steps.merge.outputs.merge_ok == 'false'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.INSTALLER_X_TOKEN }}
         run: |
           EXISTING_PR=$(gh pr list --label "upstream-sync" --state open --json number --jq '.[0].number')
           if [ -n "$EXISTING_PR" ]; then
