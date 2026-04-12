@@ -55,6 +55,8 @@ jobs:
 
       - name: Push merged changes
         if: steps.check.outputs.diff_count != '0' && steps.merge.outputs.merge_ok == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.INSTALLERXSYNCUPSTREAM_TOKEN }}
         run: git push origin main
 
       - name: Create PR on conflict
