@@ -15,6 +15,7 @@ import com.rosan.installer.data.engine.executor.PackageManagerUtil
 import com.rosan.installer.domain.engine.model.AppEntity
 import com.rosan.installer.domain.engine.model.DataType
 import com.rosan.installer.domain.engine.model.PackageAnalysisResult
+import com.rosan.installer.domain.engine.model.SessionMode
 import com.rosan.installer.domain.engine.model.sourcePath
 import com.rosan.installer.domain.engine.usecase.GetAppIconColorUseCase
 import com.rosan.installer.domain.engine.usecase.GetAppIconUseCase
@@ -202,15 +203,10 @@ class InstallerViewModel(
         ProgressEntity.InstallAnalysedFailed -> InstallerStage.AnalyseFailed
 
         ProgressEntity.InstallAnalysedSuccess -> {
-            val containerType = currentAnalysisResults.firstOrNull()?.appEntities?.firstOrNull()?.app?.sourceType
+            val isBatchMode = currentAnalysisResults.size > 1 ||
+                    currentAnalysisResults.any { it.sessionMode == SessionMode.Batch }
 
-            val isMultiAppMode = currentAnalysisResults.size > 1 ||
-                    containerType == DataType.MULTI_APK ||
-                    containerType == DataType.MULTI_APK_ZIP ||
-                    containerType == DataType.MIXED_MODULE_APK ||
-                    containerType == DataType.MIXED_MODULE_ZIP
-
-            if (isMultiAppMode) InstallerStage.InstallChoice else InstallerStage.InstallPrepare
+            if (isBatchMode) InstallerStage.InstallChoice else InstallerStage.InstallPrepare
         }
 
         is ProgressEntity.Installing -> {

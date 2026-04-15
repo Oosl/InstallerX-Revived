@@ -8,7 +8,7 @@
 # https://mvnrepository.com/
 
 [versions]
-agp = "9.1.0"
+agp = "9.1.1"
 biometric = "1.4.0-alpha06"
 kyant-capsule = "2.1.3"
 kyant-shapes = "1.2.0"
@@ -19,7 +19,7 @@ composeBom = "2026.03.01"
 compose = "1.10.6"
 splashScreen = "1.2.0"
 material3 = "1.5.0-alpha17"
-room = "2.8.4"
+room = "3.0.0-alpha03"
 ktx-serialization = "1.11.0"
 rikka-shizuku = "13.1.5"
 koin-bom = "4.2.1"
@@ -41,7 +41,7 @@ agp-lib = { id = "com.android.library", version.ref = "agp" }
 agp-app = { id = "com.android.application", version.ref = "agp" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
-room = { id = "androidx.room", version.ref = "room" }
+room = { id = "androidx.room3", version.ref = "room" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 aboutLibraries = { id = "com.mikepenz.aboutlibraries.plugin", version.ref = "aboutLibraries" }
 
@@ -70,9 +70,8 @@ androidx-navigationevent = { module = "androidx.navigationevent:navigationevent"
 
 compose-materialIcons = { group = "androidx.compose.material", name = "material-icons-extended", version = "1.7.8" }
 
-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
+room-runtime = { group = "androidx.room3", name = "room3-runtime", version.ref = "room" }
+room-compiler = { group = "androidx.room3", name = "room3-compiler", version.ref = "room" }
 
 # Kotlin Serialization
 # https://github.com/Kotlin/kotlinx.serialization/blob/master/README.md#setup

@@ -74,6 +74,7 @@ import androidx.compose.material.icons.twotone.Science
 import androidx.compose.material.icons.twotone.Search
 import androidx.compose.material.icons.twotone.Security
 import androidx.compose.material.icons.twotone.SecurityUpdateWarning
+import androidx.compose.material.icons.twotone.Settings
 import androidx.compose.material.icons.twotone.SettingsSuggest
 import androidx.compose.material.icons.twotone.Share
 import androidx.compose.material.icons.twotone.Source
@@ -163,6 +164,7 @@ object AppIcons {
     val BiometricAuth = Icons.TwoTone.Badge
     val IconPack = Icons.TwoTone.Widgets
     val Silent = Icons.TwoTone.DoNotDisturbOnTotalSilence
+    val Settings = Icons.TwoTone.Settings
     val OEMSpecial = Icons.TwoTone.FindInPage
     val ShowSize = Icons.AutoMirrored.Filled.CompareArrows
     val Bypass = Icons.TwoTone.NoEncryption

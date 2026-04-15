@@ -162,19 +162,7 @@ fun DataCustomizeAuthorizerWidget(state: EditViewState, dispatch: (EditViewActio
 @Composable
 fun DataInstallModeWidget(state: EditViewState, dispatch: (EditViewAction) -> Unit) {
     val stateInstallMode = state.data.installMode
-    val globalInstallMode = state.globalInstallMode
     val data = mapOf(
-        InstallMode.Global to stringResource(
-            R.string.config_install_mode_global_desc,
-            when (globalInstallMode) {
-                InstallMode.Dialog -> stringResource(R.string.config_install_mode_dialog)
-                InstallMode.AutoDialog -> stringResource(R.string.config_install_mode_auto_dialog)
-                InstallMode.Notification -> stringResource(R.string.config_install_mode_notification)
-                InstallMode.AutoNotification -> stringResource(R.string.config_install_mode_auto_notification)
-                InstallMode.Ignore -> stringResource(R.string.config_install_mode_ignore)
-                else -> stringResource(R.string.config_install_mode_global)
-            }
-        ),
         InstallMode.Dialog to stringResource(R.string.config_install_mode_dialog),
         InstallMode.AutoDialog to stringResource(R.string.config_install_mode_auto_dialog),
         InstallMode.Notification to stringResource(R.string.config_install_mode_notification),
@@ -744,5 +732,17 @@ fun DataApkChooseAllWidget(state: EditViewState, dispatch: (EditViewAction) -> U
         checked = state.data.apkChooseAll,
         isM3E = isM3E,
         onCheckedChange = { dispatch(EditViewAction.ChangeApkChooseAll(it)) }
+    )
+}
+
+@Composable
+fun DataRequireBiometricAuthWidget(state: EditViewState, dispatch: (EditViewAction) -> Unit, isM3E: Boolean = true) {
+    SwitchWidget(
+        icon = AppIcons.BiometricAuth,
+        title = stringResource(id = R.string.installer_settings_require_biometric_auth),
+        description = stringResource(id = R.string.installer_settings_require_biometric_auth_desc),
+        checked = state.data.requireBiometricAuth,
+        isM3E = isM3E,
+        onCheckedChange = { dispatch(EditViewAction.ChangeRequireBiometricAuth(it)) }
     )
 }

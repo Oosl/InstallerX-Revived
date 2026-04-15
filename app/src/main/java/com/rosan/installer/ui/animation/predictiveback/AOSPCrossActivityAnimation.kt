@@ -2,7 +2,6 @@
 // Copyright (C) 2026 InstallerX Revived contributors
 package com.rosan.installer.ui.animation.predictiveback
 
-import android.R
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.EnterTransition

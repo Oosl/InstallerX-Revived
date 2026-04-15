@@ -40,8 +40,8 @@ sealed class EditViewAction {
     data class ChangeDataAllowAllRequestedPermissions(val allowAllRequestedPermissions: Boolean) : EditViewAction()
     data class ChangeDataRequestUpdateOwnership(val requestUpdateOwnership: Boolean) : EditViewAction()
     data class ChangeSplitChooseAll(val splitChooseAll: Boolean) : EditViewAction()
-
     data class ChangeApkChooseAll(val apkChooseAll: Boolean) : EditViewAction()
+    data class ChangeRequireBiometricAuth(val require: Boolean) : EditViewAction()
 
     data object LoadData : EditViewAction()
     data object SaveData : EditViewAction()

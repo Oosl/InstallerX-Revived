@@ -80,7 +80,8 @@ class AnalyserRepositoryImpl(
                 splitChooseAll = config.splitChooseAll,
                 apkChooseAll = config.apkChooseAll,
                 entities = group.entities,
-                sessionType = sessionDataType.sessionType
+                sessionType = sessionDataType.sessionType,
+                sessionMode = detectedMode
             )
 
             Timber.d("AnalyserRepo: Step 4 Strategy for ${group.packageName} -> Input: ${group.entities.size}, Selected: ${selectableEntities.size}")

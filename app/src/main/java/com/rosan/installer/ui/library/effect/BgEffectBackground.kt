@@ -3,93 +3,107 @@
 
 package com.rosan.installer.ui.library.effect
 
+import android.os.Build
+import androidx.annotation.RequiresApi
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.ShaderBrush
-import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.IntSize
-import androidx.compose.ui.unit.dp
 import com.rosan.installer.ui.theme.InstallerTheme
-import top.yukonga.miuix.kmp.blur.asComposeShader
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import top.yukonga.miuix.kmp.blur.isRuntimeShaderSupported
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
-@Suppress("SuspiciousIndentation")
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @Composable
-inline fun BgEffectBackground(
+fun BgEffectBackground(
     dynamicBackground: Boolean,
     modifier: Modifier = Modifier,
     bgModifier: Modifier = Modifier,
+    isFullSize: Boolean = false,
     effectBackground: Boolean = true,
-    alpha: Float = 1f,
+    isOs3Effect: Boolean = true,
+    alpha: () -> Float = { 1f },
     content: @Composable (BoxScope.() -> Unit),
 ) {
-    val shaderSupported = isRuntimeShaderSupported()
-    val painter = remember { if (shaderSupported) BgEffectPainter() else null }
-
-    var currentBrush by remember { mutableStateOf<ShaderBrush?>(null) }
-    val isDark = InstallerTheme.isDark
-
-    var targetSize by remember { mutableStateOf(IntSize.Zero) }
-    val logoHeight = with(LocalDensity.current) { 600.dp.toPx() }
-
-    LaunchedEffect(targetSize, isDark, effectBackground, dynamicBackground) {
-        if (painter == null) return@LaunchedEffect
-        if (!effectBackground) return@LaunchedEffect
-        if (targetSize.width <= 0 || targetSize.height <= 0) return@LaunchedEffect
-        painter.showRuntimeShader(
-            logoHeight,
-            targetSize.height.toFloat(),
-            targetSize.width.toFloat(),
-            isDark,
-        )
-
-        var startTime: Long? = null
-        while (dynamicBackground) {
-            withFrameNanos { frameTime ->
-                if (startTime == null) {
-                    startTime = frameTime
-                }
-                val animTime = ((frameTime - startTime) / 1_000_000_000f) % 62.831852f
-                painter.setAnimTime(animTime)
-                painter.setResolution(
-                    floatArrayOf(
-                        targetSize.width.toFloat(),
-                        targetSize.height.toFloat(),
-                    ),
-                )
-                painter.updateMaterials()
-                currentBrush = ShaderBrush(painter.runtimeShader.asComposeShader())
-            }
-        }
+    val shaderSupported = remember { isRuntimeShaderSupported() }
+    if (!shaderSupported) {
+        Box(modifier = modifier, content = content)
+        return
     }
 
-    Box(
-        modifier = modifier.onSizeChanged {
-            targetSize = it
-        },
-    ) {
+    Box(modifier = modifier) {
         val surface = MiuixTheme.colorScheme.surface
-        currentBrush?.let { brush ->
-            if (!effectBackground) return@let
+        val painter = remember(isOs3Effect) { BgEffectPainter(isOs3Effect) }
+        val animTimeProvider = rememberFrameTimeSeconds(dynamicBackground)
+
+        val isDark = InstallerTheme.isDark
+        val deviceType = DeviceType.PHONE
+
+        val preset = remember(isDark, deviceType, isOs3Effect) {
+            BgEffectConfig.get(deviceType, isDark, isOs3Effect)
+        }
+
+        val colorStage = remember { Animatable(0f) }
+
+        LaunchedEffect(dynamicBackground, preset) {
+            if (!dynamicBackground) return@LaunchedEffect
+            var targetStage = 1f
+            while (isActive) {
+                delay((preset.colorInterpPeriod * 500).toLong())
+                colorStage.animateTo(
+                    targetValue = targetStage,
+                    animationSpec = spring(dampingRatio = 0.9f, stiffness = 35f)
+                )
+                targetStage += 1f
+            }
+        }
+
+        key(isOs3Effect) {
             Canvas(
                 modifier = Modifier
                     .fillMaxSize()
                     .then(bgModifier),
             ) {
                 drawRect(surface)
-                drawRect(brush, alpha = alpha)
+                if (effectBackground) {
+                    val drawHeight = if (isFullSize) size.height else size.height * 0.78f
+
+                    val stage = colorStage.value
+                    val base = stage.toInt()
+                    val fraction = stage - base
+
+                    val getColors = { index: Int ->
+                        when (index % 4) {
+                            0 -> preset.colors2
+                            1 -> preset.colors1
+                            2 -> preset.colors2
+                            3 -> preset.colors3
+                            else -> preset.colors2
+                        }
+                    }
+
+                    val start = getColors(base)
+                    val end = getColors(base + 1)
+                    val currentColors = FloatArray(16) { i ->
+                        start[i] + (end[i] - start[i]) * fraction
+                    }
+
+                    painter.updateResolution(size.width, size.height)
+                    painter.updatePresetIfNeeded(drawHeight, size.height, size.width, isDark)
+                    painter.updateColors(currentColors)
+                    painter.updateAnimTime(animTimeProvider())
+
+                    drawRect(painter.brush, alpha = alpha())
+                }
             }
         }
         content()

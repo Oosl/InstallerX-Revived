@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStoreFile
 import com.rosan.installer.data.settings.local.datastore.AppDataStore
+import com.rosan.installer.data.settings.local.room.DatabaseInitializer
 import com.rosan.installer.data.settings.local.room.InstallerRoom
 import com.rosan.installer.data.settings.provider.PrivilegedProviderImpl
 import com.rosan.installer.data.settings.provider.SystemAppProviderImpl
@@ -48,6 +49,13 @@ val settingsModule = module {
 
     singleOf(::AppRepositoryImpl) { bind<AppRepository>() }
     singleOf(::ConfigRepositoryImpl) { bind<ConfigRepository>() }
+
+    single(createdAtStart = true) {
+        DatabaseInitializer(
+            configRepository = get(),
+            appScope = get(named("AppScope"))
+        )
+    }
 
     // DataStore
     single<DataStore<Preferences>> {

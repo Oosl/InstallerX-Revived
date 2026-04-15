@@ -18,7 +18,6 @@ enum class Authorizer(val value: String) {
  * Define Install Modes used by InstallerX
  */
 enum class InstallMode(val value: String) {
-    Global("global"),
     Dialog("dialog"),
     AutoDialog("auto_dialog"),
     Notification("notification"),
@@ -113,4 +112,17 @@ enum class GithubUpdateChannel {
     OFFICIAL,
     PROXY_7ED,
     CUSTOM
+}
+
+/**
+ * Define Biometric Auth Modes used by InstallerX
+ */
+enum class BiometricAuthMode(val value: String) {
+    Disable("disable"),
+    Enable("enable"),
+    FollowConfig("follow_config");
+
+    companion object {
+        fun fromValue(value: String) = entries.find { it.value == value } ?: FollowConfig
+    }
 }

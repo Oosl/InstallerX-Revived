@@ -32,10 +32,12 @@ import com.rosan.installer.domain.session.model.UninstallInfo
 import com.rosan.installer.domain.session.repository.InstallerSessionRepository
 import com.rosan.installer.domain.session.repository.NetworkResolver
 import com.rosan.installer.domain.settings.model.Authorizer
+import com.rosan.installer.domain.settings.model.BiometricAuthMode
 import com.rosan.installer.domain.settings.model.ConfigModel.Companion.default
 import com.rosan.installer.domain.settings.model.InstallMode
 import com.rosan.installer.domain.settings.repository.AppSettingsRepository
 import com.rosan.installer.domain.settings.repository.BooleanSetting
+import com.rosan.installer.domain.settings.repository.StringSetting
 import com.rosan.installer.ui.common.auth.safeBiometricAuthOrThrow
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -292,9 +294,20 @@ class ActionHandler(scope: CoroutineScope, session: InstallerSessionRepository) 
     private suspend fun requestUserBiometricAuthentication(
         isInstall: Boolean
     ) {
-        val requireBiometricAuth =
-            if (isInstall) appSettingsRepo.getBoolean(BooleanSetting.InstallerRequireBiometricAuth, false).first()
-            else appSettingsRepo.getBoolean(BooleanSetting.UninstallerRequireBiometricAuth, false).first()
+        val requireBiometricAuth = if (isInstall) {
+            val globalMode = appSettingsRepo.getString(
+                StringSetting.InstallerBiometricAuthMode,
+                BiometricAuthMode.FollowConfig.value
+            ).first().let { BiometricAuthMode.fromValue(it) }
+
+            when (globalMode) {
+                BiometricAuthMode.Disable -> false
+                BiometricAuthMode.Enable -> true
+                BiometricAuthMode.FollowConfig -> session.config.requireBiometricAuth
+            }
+        } else {
+            appSettingsRepo.getBoolean(BooleanSetting.UninstallerRequireBiometricAuth, false).first()
+        }
 
         if (!requireBiometricAuth) return
 

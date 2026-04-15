@@ -2,13 +2,13 @@
 // Copyright (C) 2023-2026 iamr0s InstallerX Revived contributors
 package com.rosan.installer.data.settings.local.room.dao
 
-import androidx.room.Dao
-import androidx.room.Delete
-import androidx.room.Insert
-import androidx.room.Query
-import androidx.room.RawQuery
-import androidx.room.Update
-import androidx.sqlite.db.SupportSQLiteQuery
+import androidx.room3.Dao
+import androidx.room3.Delete
+import androidx.room3.Insert
+import androidx.room3.Query
+import androidx.room3.RawQuery
+import androidx.room3.RoomRawQuery
+import androidx.room3.Update
 import com.rosan.installer.data.settings.local.room.entity.AppEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -16,11 +16,11 @@ import kotlinx.coroutines.flow.Flow
 interface AppDao {
     // Allows dynamic sorting execution in SQLite
     @RawQuery
-    suspend fun getAllDynamically(query: SupportSQLiteQuery): List<AppEntity>
+    suspend fun getAllDynamically(query: RoomRawQuery): List<AppEntity>
 
     // Must specify observedEntities for Flow to react to database changes
     @RawQuery(observedEntities = [AppEntity::class])
-    fun flowAllDynamically(query: SupportSQLiteQuery): Flow<List<AppEntity>>
+    fun flowAllDynamically(query: RoomRawQuery): Flow<List<AppEntity>>
 
     @Query("select * from app")
     fun all(): List<AppEntity>

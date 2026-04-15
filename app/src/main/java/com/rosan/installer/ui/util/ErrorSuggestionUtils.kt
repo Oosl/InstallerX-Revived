@@ -21,6 +21,7 @@ import com.rosan.installer.domain.device.provider.DeviceCapabilityProvider
 import com.rosan.installer.domain.engine.model.InstallErrorType
 import com.rosan.installer.domain.engine.model.InstallOption
 import com.rosan.installer.domain.settings.model.Authorizer
+import com.rosan.installer.domain.settings.model.InstallerMode
 import com.rosan.installer.ui.icons.AppIcons
 import com.rosan.installer.ui.page.main.installer.InstallerViewAction
 import com.rosan.installer.ui.page.main.installer.InstallerViewModel
@@ -166,6 +167,7 @@ fun rememberErrorSuggestions(
                                 // Update immutable config through ViewModel
                                 viewModel.updateConfig {
                                     it.copy(
+                                        installerMode = InstallerMode.Custom,
                                         installer = SYSTEM_INSTALLER_PACKAGE_NAME,
                                         callingFromUid = null
                                     )
@@ -184,6 +186,7 @@ fun rememberErrorSuggestions(
                                 // Update immutable config through ViewModel
                                 viewModel.updateConfig {
                                     it.copy(
+                                        installerMode = InstallerMode.Custom,
                                         installer = SYSTEM_INSTALLER_PACKAGE_NAME,
                                         authorizer = Authorizer.Shizuku
                                     )

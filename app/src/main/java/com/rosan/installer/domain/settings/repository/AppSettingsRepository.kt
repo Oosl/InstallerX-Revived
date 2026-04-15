@@ -13,14 +13,14 @@ enum class StringSetting {
     ThemeColorSpec,
     Authorizer,
     CustomizeAuthorizer,
-    InstallMode,
     ApplyOrderType,
     LabRootImplementation,
     LabHttpProfile,
     PredictiveBackAnimation,
     PredictiveBackExitDirection,
     GithubUpdateChannel,
-    CustomGithubProxyUrl
+    CustomGithubProxyUrl,
+    InstallerBiometricAuthMode
 }
 
 enum class IntSetting {
@@ -45,7 +45,6 @@ enum class BooleanSetting {
     ShowMiIslandBypassRestriction,
     ShowMiIslandOuterGlow,
     AlwaysUseRootInSystem,
-    InstallerRequireBiometricAuth,
     UninstallerRequireBiometricAuth,
     ShowLauncherIcon,
     PreferSystemIconForInstall,

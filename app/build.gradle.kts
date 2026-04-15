@@ -63,7 +63,7 @@ android {
         //   (e.g., "25.07.abc1234"), configured in productFlavors.
         // - Stable builds use the base versionName as-is (e.g., "25.07").
         // - versionCode must be incremented manually before each Stable release.
-        versionCode = 48
+        versionCode = 49
         versionName = baseVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -187,7 +187,7 @@ aboutLibraries {
     }
 }
 
-room {
+room3 {
     // Specify the schema directory
     schemaDirectory("$projectDir/schemas")
 }
@@ -220,8 +220,6 @@ dependencies {
 
     implementation(libs.room.runtime)
     ksp(libs.room.compiler)
-    implementation(libs.room.ktx)
-    // implementation(libs.work.runtime.ktx)
 
     implementation(libs.ktx.serializationJson)
 

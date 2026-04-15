@@ -1,9 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2025-2026 InstallerX Revived contributors
+@file:OptIn(ExperimentalScrollBarApi::class) // Opt-in for ExperimentalScrollBarApi
+
 package com.rosan.installer.ui.page.miuix.settings.preferred.about
 
 import android.content.Context
+import android.os.Build
 import androidx.activity.compose.BackHandler
+import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -23,12 +27,15 @@ import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.displayCutout
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -39,6 +46,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -50,6 +58,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -57,6 +66,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.UriHandler
@@ -92,8 +102,13 @@ import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.basic.BasicComponent
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CardDefaults
+import top.yukonga.miuix.kmp.basic.DropdownArrowEndAction
+import top.yukonga.miuix.kmp.basic.DropdownDefaults
+import top.yukonga.miuix.kmp.basic.DropdownImpl
 import top.yukonga.miuix.kmp.basic.InfiniteProgressIndicator
+import top.yukonga.miuix.kmp.basic.ListPopupColumn
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
+import top.yukonga.miuix.kmp.basic.PopupPositionProvider
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.ScrollBehavior
 import top.yukonga.miuix.kmp.basic.Slider
@@ -102,6 +117,8 @@ import top.yukonga.miuix.kmp.basic.SmallTopAppBar
 import top.yukonga.miuix.kmp.basic.Switch
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
+import top.yukonga.miuix.kmp.basic.VerticalScrollBar
+import top.yukonga.miuix.kmp.basic.rememberScrollBarAdapter
 import top.yukonga.miuix.kmp.blur.BlendColorEntry
 import top.yukonga.miuix.kmp.blur.BlurBlendMode
 import top.yukonga.miuix.kmp.blur.BlurColors
@@ -111,12 +128,19 @@ import top.yukonga.miuix.kmp.blur.isRuntimeShaderSupported
 import top.yukonga.miuix.kmp.blur.layerBackdrop
 import top.yukonga.miuix.kmp.blur.rememberLayerBackdrop
 import top.yukonga.miuix.kmp.blur.textureBlur
+import top.yukonga.miuix.kmp.interfaces.ExperimentalScrollBarApi
 import top.yukonga.miuix.kmp.overlay.OverlayBottomSheet
+import top.yukonga.miuix.kmp.overlay.OverlayListPopup
+import top.yukonga.miuix.kmp.shapes.SmoothRoundedCornerShape
+import top.yukonga.miuix.kmp.theme.LocalDismissState
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.yukonga.miuix.kmp.theme.MiuixTheme.colorScheme
 import top.yukonga.miuix.kmp.utils.overScrollVertical
 import top.yukonga.miuix.kmp.utils.scrollEndHaptic
 import top.yukonga.miuix.kmp.window.WindowDialog
+import androidx.compose.ui.graphics.BlendMode as ComposeBlendMode
 
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @Composable
 fun MiuixBlendAboutPage(
     viewModel: AboutViewModel = koinViewModel()
@@ -196,6 +220,7 @@ fun MiuixBlendAboutPage(
                 scrollBehavior = topAppBarScrollBehavior,
                 color = MiuixTheme.colorScheme.surface.copy(alpha = if (scrollProgress == 1f) 1f else 0f),
                 titleColor = MiuixTheme.colorScheme.onSurface.copy(alpha = scrollProgress),
+                defaultWindowInsetsPadding = false, // Synced from upstream to handle insets correctly
                 navigationIcon = { MiuixBackButton(onClick = { navigator.pop() }) }
             )
         },
@@ -244,6 +269,7 @@ fun MiuixBlendAboutPage(
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @Composable
 private fun AboutContentBody(
     padding: PaddingValues,
@@ -269,6 +295,7 @@ private fun AboutContentBody(
     var blurEnable by remember { mutableStateOf(isRenderEffectSupported()) }
     val dynamicBackground = remember { mutableStateOf(isRuntimeShaderSupported()) }
     val effectBackground = remember { mutableStateOf(isRuntimeShaderSupported()) }
+    var isOs3Effect by remember { mutableStateOf(true) }
 
     var blurRadius by remember { mutableFloatStateOf(60f) }
     var noiseCoefficient by remember { mutableFloatStateOf(BlurDefaults.NoiseCoefficient) }
@@ -365,26 +392,30 @@ private fun AboutContentBody(
             .collect { }
     }
 
+    // Calculate insets to handle display cutouts properly, syncing with upstream behavior
+    val displayCutoutInsets = WindowInsets.displayCutout.asPaddingValues()
     val horizontalSafeInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal).asPaddingValues()
 
     val listContentPadding = PaddingValues(
-        start = horizontalSafeInsets.calculateStartPadding(layoutDirection),
+        start = horizontalSafeInsets.calculateStartPadding(layoutDirection) + displayCutoutInsets.calculateLeftPadding(layoutDirection),
         top = padding.calculateTopPadding(),
-        end = horizontalSafeInsets.calculateEndPadding(layoutDirection)
+        end = horizontalSafeInsets.calculateEndPadding(layoutDirection) + displayCutoutInsets.calculateRightPadding(layoutDirection),
+        bottom = padding.calculateBottomPadding()
     )
 
     val logoPadding = PaddingValues(
         top = padding.calculateTopPadding() + 40.dp,
-        start = horizontalSafeInsets.calculateStartPadding(layoutDirection),
-        end = horizontalSafeInsets.calculateEndPadding(layoutDirection)
+        start = horizontalSafeInsets.calculateStartPadding(layoutDirection) + displayCutoutInsets.calculateLeftPadding(layoutDirection),
+        end = horizontalSafeInsets.calculateEndPadding(layoutDirection) + displayCutoutInsets.calculateRightPadding(layoutDirection)
     )
 
     BgEffectBackground(
         dynamicBackground = dynamicBackground.value,
+        isOs3Effect = isOs3Effect,
         modifier = Modifier.fillMaxSize(),
         bgModifier = Modifier.layerBackdrop(backdrop),
         effectBackground = effectBackground.value,
-        alpha = 1f - scrollProgress,
+        alpha = { 1f - scrollProgress }, // Synced: Using lambda to defer state read and improve performance
     ) {
         // Sticky animated header section
         Column(
@@ -400,10 +431,11 @@ private fun AboutContentBody(
                 },
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            // Synced: App logo container background, clip, and shape update
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
-                    .size(80.dp)
+                    .size(88.dp) // Synced: Updated size
                     .graphicsLayer {
                         alpha = 1 - iconProgress
                         scaleX = 1 - (iconProgress * 0.05f)
@@ -419,11 +451,7 @@ private fun AboutContentBody(
                 Image(
                     painter = painterResource(id = R.drawable.ic_launcher_monochrome),
                     modifier = Modifier
-                        .fillMaxSize()
-                        .graphicsLayer {
-                            scaleX = 2.0f
-                            scaleY = 2.0f
-                        }
+                        .requiredSize(160.dp)
                         .textureBlur(
                             backdrop = backdrop,
                             shape = RoundedRectangle(16.dp),
@@ -453,11 +481,11 @@ private fun AboutContentBody(
                     }
                     .textureBlur(
                         backdrop = backdrop,
-                        shape = RoundedRectangle(16.dp),
-                        blurRadius = 200f,
-                        noiseCoefficient = BlurDefaults.NoiseCoefficient,
+                        shape = SmoothRoundedCornerShape(16.dp), // Synced: Use smooth squircle shape
+                        blurRadius = 150f, // Synced: Updated blur radius
+                        noiseCoefficient = noiseCoefficient,
                         colors = BlurColors(blendColors = logoBlend),
-                        contentBlendMode = BlendMode.DstIn,
+                        contentBlendMode = ComposeBlendMode.DstIn,
                         enabled = blurEnable,
                     ),
                 text = stringResource(id = R.string.app_name),
@@ -549,7 +577,7 @@ private fun AboutContentBody(
                             .padding(bottom = 12.dp)
                             .textureBlur(
                                 backdrop = backdrop,
-                                shape = RoundedRectangle(16.dp),
+                                shape = SmoothRoundedCornerShape(16.dp), // Synced: Use smooth squircle shape
                                 blurRadius = blurRadius,
                                 noiseCoefficient = noiseCoefficient,
                                 colors = BlurColors(
@@ -597,7 +625,7 @@ private fun AboutContentBody(
                                 .padding(bottom = 12.dp)
                                 .textureBlur(
                                     backdrop = backdrop,
-                                    shape = RoundedRectangle(16.dp),
+                                    shape = SmoothRoundedCornerShape(16.dp), // Synced: Use smooth squircle shape
                                     blurRadius = blurRadius,
                                     noiseCoefficient = noiseCoefficient,
                                     colors = BlurColors(
@@ -636,6 +664,15 @@ private fun AboutContentBody(
                 }
             }
         }
+
+        // Synced: Added vertical scroll bar
+        VerticalScrollBar(
+            adapter = rememberScrollBarAdapter(lazyListState),
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .fillMaxHeight(),
+            trackPadding = listContentPadding,
+        )
     }
 
     // Dev mode texture settings bottom sheet
@@ -649,142 +686,212 @@ private fun AboutContentBody(
     ) {
         LazyColumn {
             item {
-                Card {
-                    BasicComponent(
-                        title = "Effect Background Enabled",
-                        endActions = {
-                            Switch(
-                                effectBackground.value,
-                                {
-                                    effectBackground.value = it
-                                },
-                            )
-                        },
-                        insideMargin = PaddingValues(16.dp, 16.dp, 16.dp, 0.dp),
-                    )
-                    BasicComponent(
-                        title = "Dynamic Background Enabled",
-                        endActions = {
-                            Switch(
-                                dynamicBackground.value,
-                                {
-                                    dynamicBackground.value = it
-                                },
-                            )
-                        },
-                        insideMargin = PaddingValues(16.dp, 16.dp, 16.dp, 0.dp),
-                    )
-                    BasicComponent(
-                        title = "Blur Enable",
-                        endActions = {
-                            Switch(
-                                blurEnable,
-                                {
-                                    blurEnable = it
-                                },
-                            )
-                        },
-                        insideMargin = PaddingValues(16.dp, 16.dp, 16.dp, 0.dp),
-                    )
+                val effectVariantOptions = listOf("OS2", "OS3")
+                val selectedIndex = if (isOs3Effect) 1 else 0
+                var isDropdownExpanded by remember { mutableStateOf(false) }
+                var isHoldDown by remember { mutableStateOf(false) }
+                val hapticFeedback = LocalHapticFeedback.current
 
-                    // Blur radius setting
-                    BasicComponent(
-                        title = "Blur Radius",
-                        endActions = { ValueText("${blurRadius.toInt()}") },
-                        bottomAction = {
-                            Slider(
-                                value = blurRadius / 200f,
-                                onValueChange = { blurRadius = it * 200f },
-                            )
-                        },
-                        insideMargin = PaddingValues(16.dp, 16.dp, 16.dp, 0.dp),
-                    )
+                BasicComponent(
+                    title = "Effect Variant",
+                    insideMargin = PaddingValues(16.dp, 0.dp, 16.dp, 0.dp),
+                    onClick = {
+                        isDropdownExpanded = !isDropdownExpanded
+                        if (isDropdownExpanded) {
+                            isHoldDown = true
+                            hapticFeedback.performHapticFeedback(HapticFeedbackType.ContextClick)
+                        }
+                    },
+                    holdDownState = isHoldDown,
+                    endActions = {
+                        Text(
+                            text = effectVariantOptions[selectedIndex],
+                            modifier = Modifier
+                                .padding(end = 8.dp)
+                                .align(Alignment.CenterVertically),
+                            fontSize = MiuixTheme.textStyles.body2.fontSize,
+                            color = colorScheme.onSurfaceVariantActions,
+                            textAlign = TextAlign.End,
+                        )
 
-                    // Noise setting
-                    BasicComponent(
-                        title = "Noise",
-                        endActions = { ValueText("${(noiseCoefficient * 10000).toInt() / 10000f}") },
-                        bottomAction = {
-                            Slider(
-                                value = noiseCoefficient / 0.1f,
-                                onValueChange = { noiseCoefficient = it * 0.1f },
-                            )
-                        },
-                        insideMargin = PaddingValues(16.dp, 16.dp, 16.dp, 0.dp),
-                    )
+                        DropdownArrowEndAction(
+                            actionColor = colorScheme.onSurfaceVariantActions,
+                        )
 
-                    // Brightness setting
-                    BasicComponent(
-                        title = "Brightness",
-                        endActions = { ValueText("${(brightness * 100).toInt() / 100f}") },
-                        bottomAction = {
-                            Slider(
-                                value = (brightness + 1f) / 2f,
-                                onValueChange = { brightness = it * 2f - 1f },
-                            )
-                        },
-                        insideMargin = PaddingValues(16.dp, 16.dp, 16.dp, 0.dp),
-                    )
-
-                    // Contrast setting
-                    BasicComponent(
-                        title = "Contrast",
-                        endActions = { ValueText("${(contrast * 100).toInt() / 100f}") },
-                        bottomAction = {
-                            Slider(
-                                value = contrast / 3f,
-                                onValueChange = { contrast = it * 3f },
-                            )
-                        },
-                        insideMargin = PaddingValues(16.dp, 16.dp, 16.dp, 0.dp),
-                    )
-
-                    // Saturation setting
-                    BasicComponent(
-                        title = "Saturation",
-                        endActions = { ValueText("${(saturation * 100).toInt() / 100f}") },
-                        bottomAction = {
-                            Slider(
-                                value = saturation / 3f,
-                                onValueChange = { saturation = it * 3f },
-                            )
-                        },
-                        insideMargin = PaddingValues(16.dp, 16.dp, 16.dp, 0.dp),
-                    )
-
-                    // Blend mode setting
-                    val currentConfigName = configEntries.getOrNull(blendModeIndex)?.key ?: "Default"
-                    val modeId = blendConfigs[currentConfigName]
-                    BasicComponent(
-                        title = "Blend Mode",
-                        endActions = {
-                            ValueText(currentConfigName + if (modeId != null) " ($modeId)" else "")
-                        },
-                        bottomAction = {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                            ) {
-                                TextButton(
-                                    text = "Prev",
-                                    onClick = {
-                                        blendModeIndex = (blendModeIndex - 1 + blendConfigs.size) % blendConfigs.size
-                                    },
-                                    modifier = Modifier.weight(1f),
-                                )
-                                TextButton(
-                                    text = "Next",
-                                    onClick = {
-                                        blendModeIndex = (blendModeIndex + 1) % blendConfigs.size
-                                    },
-                                    modifier = Modifier.weight(1f),
-                                )
+                        OverlayListPopup(
+                            show = isDropdownExpanded,
+                            alignment = PopupPositionProvider.Align.End,
+                            onDismissRequest = { isDropdownExpanded = false },
+                            onDismissFinished = { isHoldDown = false },
+                        ) {
+                            val dismiss = LocalDismissState.current
+                            ListPopupColumn {
+                                effectVariantOptions.forEachIndexed { index, text ->
+                                    key(index) {
+                                        DropdownImpl(
+                                            text = text,
+                                            optionSize = effectVariantOptions.size,
+                                            isSelected = selectedIndex == index,
+                                            dropdownColors = DropdownDefaults.dropdownColors(),
+                                            index = index,
+                                            onSelectedIndexChange = { selectedIdx ->
+                                                hapticFeedback.performHapticFeedback(HapticFeedbackType.Confirm)
+                                                isOs3Effect = (selectedIdx == 1)
+                                                dismiss?.invoke()
+                                            },
+                                        )
+                                    }
+                                }
                             }
-                        },
-                    )
-                    Spacer(modifier = Modifier.height(WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()))
-                }
+                        }
+                    },
+                )
             }
+            item {
+                BasicComponent(
+                    title = "Effect Background Enabled",
+                    endActions = {
+                        Switch(
+                            effectBackground.value,
+                            {
+                                effectBackground.value = it
+                            },
+                        )
+                    },
+                    insideMargin = PaddingValues(16.dp, 16.dp, 16.dp, 0.dp),
+                )
+            }
+            item {
+                BasicComponent(
+                    title = "Dynamic Background Enabled",
+                    endActions = {
+                        Switch(
+                            dynamicBackground.value,
+                            {
+                                dynamicBackground.value = it
+                            },
+                        )
+                    },
+                    insideMargin = PaddingValues(16.dp, 16.dp, 16.dp, 0.dp),
+                )
+            }
+            item {
+                BasicComponent(
+                    title = "Blur Enable",
+                    endActions = {
+                        Switch(
+                            blurEnable,
+                            {
+                                blurEnable = it
+                            },
+                        )
+                    },
+                    insideMargin = PaddingValues(16.dp, 16.dp, 16.dp, 0.dp),
+                )
+            }
+            item {
+                // Blur radius setting
+                BasicComponent(
+                    title = "Blur Radius",
+                    endActions = { ValueText("${blurRadius.toInt()}") },
+                    bottomAction = {
+                        Slider(
+                            value = blurRadius / 200f,
+                            onValueChange = { blurRadius = it * 200f },
+                        )
+                    },
+                    insideMargin = PaddingValues(16.dp, 16.dp, 16.dp, 0.dp),
+                )
+            }
+            item {
+                // Noise setting
+                BasicComponent(
+                    title = "Noise",
+                    endActions = { ValueText("${(noiseCoefficient * 10000).toInt() / 10000f}") },
+                    bottomAction = {
+                        Slider(
+                            value = noiseCoefficient / 0.1f,
+                            onValueChange = { noiseCoefficient = it * 0.1f },
+                        )
+                    },
+                    insideMargin = PaddingValues(16.dp, 16.dp, 16.dp, 0.dp),
+                )
+            }
+            item {
+                // Brightness setting
+                BasicComponent(
+                    title = "Brightness",
+                    endActions = { ValueText("${(brightness * 100).toInt() / 100f}") },
+                    bottomAction = {
+                        Slider(
+                            value = (brightness + 1f) / 2f,
+                            onValueChange = { brightness = it * 2f - 1f },
+                        )
+                    },
+                    insideMargin = PaddingValues(16.dp, 16.dp, 16.dp, 0.dp),
+                )
+            }
+            item {
+                // Contrast setting
+                BasicComponent(
+                    title = "Contrast",
+                    endActions = { ValueText("${(contrast * 100).toInt() / 100f}") },
+                    bottomAction = {
+                        Slider(
+                            value = contrast / 3f,
+                            onValueChange = { contrast = it * 3f },
+                        )
+                    },
+                    insideMargin = PaddingValues(16.dp, 16.dp, 16.dp, 0.dp),
+                )
+            }
+            item {
+                // Saturation setting
+                BasicComponent(
+                    title = "Saturation",
+                    endActions = { ValueText("${(saturation * 100).toInt() / 100f}") },
+                    bottomAction = {
+                        Slider(
+                            value = saturation / 3f,
+                            onValueChange = { saturation = it * 3f },
+                        )
+                    },
+                    insideMargin = PaddingValues(16.dp, 16.dp, 16.dp, 0.dp),
+                )
+            }
+            item {
+                // Blend mode setting
+                val currentConfigName = configEntries.getOrNull(blendModeIndex)?.key ?: "Default"
+                val modeId = blendConfigs[currentConfigName]
+                BasicComponent(
+                    title = "Blend Mode",
+                    endActions = {
+                        ValueText(currentConfigName + if (modeId != null) " ($modeId)" else "")
+                    },
+                    bottomAction = {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        ) {
+                            TextButton(
+                                text = "Prev",
+                                onClick = {
+                                    blendModeIndex = (blendModeIndex - 1 + blendConfigs.size) % blendConfigs.size
+                                },
+                                modifier = Modifier.weight(1f),
+                            )
+                            TextButton(
+                                text = "Next",
+                                onClick = {
+                                    blendModeIndex = (blendModeIndex + 1) % blendConfigs.size
+                                },
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                    },
+                )
+            }
+            item { Spacer(modifier = Modifier.height(WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding())) }
         }
     }
 }

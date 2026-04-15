@@ -2,7 +2,7 @@
 // Copyright (C) 2023-2026 iamr0s InstallerX Revived contributors
 package com.rosan.installer.data.settings.repository
 
-import androidx.sqlite.db.SimpleSQLiteQuery
+import androidx.room3.RoomRawQuery
 import com.rosan.installer.data.settings.local.room.dao.ConfigDao
 import com.rosan.installer.data.settings.mapper.toDomainModel
 import com.rosan.installer.data.settings.mapper.toEntity
@@ -17,7 +17,7 @@ class ConfigRepositoryImpl(
     private val dao: ConfigDao
 ) : ConfigRepository {
 
-    private fun buildOrderQuery(order: ConfigOrder): SimpleSQLiteQuery {
+    private fun buildOrderQuery(order: ConfigOrder): RoomRawQuery {
         val column = when (order) {
             is ConfigOrder.Id -> "id"
             is ConfigOrder.Name -> "name"
@@ -34,7 +34,7 @@ class ConfigRepositoryImpl(
             ORDER BY config.$column $direction
         """.trimIndent()
 
-        return SimpleSQLiteQuery(queryString)
+        return RoomRawQuery(queryString)
     }
 
     override suspend fun all(order: ConfigOrder): List<ConfigModel> {

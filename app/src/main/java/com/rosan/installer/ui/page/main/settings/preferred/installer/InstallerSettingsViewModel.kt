@@ -4,6 +4,7 @@ package com.rosan.installer.ui.page.main.settings.preferred.installer
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.rosan.installer.domain.settings.model.BiometricAuthMode
 import com.rosan.installer.domain.settings.provider.SystemEnvProvider
 import com.rosan.installer.domain.settings.repository.AppSettingsRepository
 import com.rosan.installer.domain.settings.repository.BooleanSetting
@@ -33,17 +34,7 @@ class InstallerSettingsViewModel(
             authorizer = prefs.authorizer,
             alwaysUseRootInSystem = prefs.alwaysUseRootInSystem,
             dhizukuAutoCloseCountDown = prefs.dhizukuAutoCloseCountDown,
-            installMode = prefs.installMode,
-            showLiveActivity = prefs.showLiveActivity,
             installerRequireBiometricAuth = prefs.installerRequireBiometricAuth,
-            notificationSuccessAutoClearSeconds = prefs.notificationSuccessAutoClearSeconds,
-            versionCompareInSingleLine = prefs.versionCompareInSingleLine,
-            sdkCompareInMultiLine = prefs.sdkCompareInMultiLine,
-            showDialogInstallExtendedMenu = prefs.showDialogInstallExtendedMenu,
-            showSmartSuggestion = prefs.showSmartSuggestion,
-            showDialogWhenPressingNotification = prefs.showDialogWhenPressingNotification,
-            autoSilentInstall = prefs.autoSilentInstall,
-            disableNotificationForDialogInstall = prefs.disableNotificationForDialogInstall,
             showOPPOSpecial = prefs.showOPPOSpecial,
             managedInstallerPackages = prefs.managedInstallerPackages,
             managedBlacklistPackages = prefs.managedBlacklistPackages,
@@ -76,76 +67,7 @@ class InstallerSettingsViewModel(
                 if (action.countDown in 1..10) viewModelScope.launch { updateSetting(IntSetting.DialogAutoCloseCountdown, action.countDown) }
             }
 
-            is InstallerSettingsAction.ChangeGlobalInstallMode -> viewModelScope.launch {
-                updateSetting(
-                    StringSetting.InstallMode,
-                    action.installMode.value
-                )
-            }
-
-            is InstallerSettingsAction.ChangeShowLiveActivity -> viewModelScope.launch {
-                updateSetting(
-                    BooleanSetting.ShowLiveActivity,
-                    action.showLiveActivity
-                )
-            }
-
-            is InstallerSettingsAction.ChangeBiometricAuth -> changeBiometricAuth(action.require)
-            is InstallerSettingsAction.ChangeNotificationSuccessAutoClearSeconds -> viewModelScope.launch {
-                updateSetting(
-                    IntSetting.NotificationSuccessAutoClearSeconds,
-                    action.seconds
-                )
-            }
-
-            is InstallerSettingsAction.ChangeVersionCompareInSingleLine -> viewModelScope.launch {
-                updateSetting(
-                    BooleanSetting.DialogVersionCompareSingleLine,
-                    action.compareInSingleLine
-                )
-            }
-
-            is InstallerSettingsAction.ChangeSdkCompareInMultiLine -> viewModelScope.launch {
-                updateSetting(
-                    BooleanSetting.DialogSdkCompareMultiLine,
-                    action.compareInMultiLine
-                )
-            }
-
-            is InstallerSettingsAction.ChangeShowDialogInstallExtendedMenu -> viewModelScope.launch {
-                updateSetting(
-                    BooleanSetting.DialogShowExtendedMenu,
-                    action.showMenu
-                )
-            }
-
-            is InstallerSettingsAction.ChangeShowSuggestion -> viewModelScope.launch {
-                updateSetting(
-                    BooleanSetting.DialogShowIntelligentSuggestion,
-                    action.showSuggestion
-                )
-            }
-
-            is InstallerSettingsAction.ChangeShowDialogWhenPressingNotification -> viewModelScope.launch {
-                updateSetting(
-                    BooleanSetting.ShowDialogWhenPressingNotification,
-                    action.showDialog
-                )
-            }
-
-            is InstallerSettingsAction.ChangeAutoSilentInstall -> viewModelScope.launch {
-                updateSetting(
-                    BooleanSetting.DialogAutoSilentInstall,
-                    action.autoSilentInstall
-                )
-            }
-
-            is InstallerSettingsAction.ChangeShowDisableNotification -> viewModelScope.launch {
-                updateSetting(
-                    BooleanSetting.DialogDisableNotificationOnDismiss,
-                    action.disable
-                )
-            }
+            is InstallerSettingsAction.ChangeBiometricAuth -> changeBiometricAuth(action.mode)
 
             is InstallerSettingsAction.ChangeShowOPPOSpecial -> viewModelScope.launch {
                 updateSetting(
@@ -188,9 +110,9 @@ class InstallerSettingsViewModel(
         }
     }
 
-    private fun changeBiometricAuth(biometricAuth: Boolean) = viewModelScope.launch {
+    private fun changeBiometricAuth(mode: BiometricAuthMode) = viewModelScope.launch {
         if (systemEnvProvider.authenticateBiometric(isInstaller = true)) {
-            updateSetting(BooleanSetting.InstallerRequireBiometricAuth, biometricAuth)
+            updateSetting(StringSetting.InstallerBiometricAuthMode, mode.value)
         }
     }
 }

@@ -143,19 +143,7 @@ fun MiuixDataCustomizeAuthorizerWidget(state: EditViewState, dispatch: (EditView
 @Composable
 fun MiuixDataInstallModeWidget(state: EditViewState, dispatch: (EditViewAction) -> Unit) {
     val stateInstallMode = state.data.installMode
-    val globalInstallMode = state.globalInstallMode
     val data = mapOf(
-        InstallMode.Global to stringResource(
-            R.string.config_install_mode_global_desc,
-            when (globalInstallMode) {
-                InstallMode.Dialog -> stringResource(R.string.config_install_mode_dialog)
-                InstallMode.AutoDialog -> stringResource(R.string.config_install_mode_auto_dialog)
-                InstallMode.Notification -> stringResource(R.string.config_install_mode_notification)
-                InstallMode.AutoNotification -> stringResource(R.string.config_install_mode_auto_notification)
-                InstallMode.Ignore -> stringResource(R.string.config_install_mode_ignore)
-                else -> stringResource(R.string.config_install_mode_global)
-            }
-        ),
         InstallMode.Dialog to stringResource(R.string.config_install_mode_dialog),
         InstallMode.AutoDialog to stringResource(R.string.config_install_mode_auto_dialog),
         InstallMode.Notification to stringResource(R.string.config_install_mode_notification),
@@ -715,5 +703,15 @@ fun MiuixDataApkChooseAllWidget(state: EditViewState, dispatch: (EditViewAction)
         description = stringResource(id = R.string.config_apk_choose_all_desc),
         checked = state.data.apkChooseAll,
         onCheckedChange = { dispatch(EditViewAction.ChangeApkChooseAll(it)) }
+    )
+}
+
+@Composable
+fun MiuixDataRequireBiometricAuthWidget(state: EditViewState, dispatch: (EditViewAction) -> Unit) {
+    MiuixSwitchWidget(
+        title = stringResource(id = R.string.installer_settings_require_biometric_auth),
+        description = stringResource(id = R.string.installer_settings_require_biometric_auth_desc),
+        checked = state.data.requireBiometricAuth,
+        onCheckedChange = { dispatch(EditViewAction.ChangeRequireBiometricAuth(it)) }
     )
 }

@@ -521,9 +521,15 @@ private fun MiuixHideLauncherIconWarningDialog(
             // Custom content layout with body text and action buttons
             Column {
                 // Warning message
-                Text(stringResource(R.string.theme_settings_hide_launcher_icon_warning))
+                Text(
+                    text = stringResource(R.string.theme_settings_hide_launcher_icon_warning),
+                    color = MiuixTheme.colorScheme.onSurface
+                )
                 if (DeviceConfig.currentManufacturer == Manufacturer.XIAOMI)
-                    Text(stringResource(R.string.theme_settings_hide_launcher_icon_warning_xiaomi))
+                    Text(
+                        text = stringResource(R.string.theme_settings_hide_launcher_icon_warning_xiaomi),
+                        color = MiuixTheme.colorScheme.onSurface
+                    )
                 Spacer(modifier = Modifier.height(24.dp)) // Spacing before buttons
 
                 // Action buttons row
@@ -568,7 +574,10 @@ fun MiuixBlurWarningDialog(
         title = stringResource(R.string.warning),
         content = {
             Column {
-                Text(stringResource(R.string.theme_settings_use_blur_warning))
+                Text(
+                    text = stringResource(R.string.theme_settings_use_blur_warning),
+                    color = MiuixTheme.colorScheme.onSurface
+                )
 
                 Spacer(modifier = Modifier.height(24.dp))
 

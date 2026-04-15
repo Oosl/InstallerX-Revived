@@ -6,7 +6,6 @@ import android.content.Context
 import com.rosan.installer.domain.settings.model.AppModel
 import com.rosan.installer.domain.settings.model.Authorizer
 import com.rosan.installer.domain.settings.model.ConfigModel
-import com.rosan.installer.domain.settings.model.InstallMode
 import com.rosan.installer.domain.settings.model.InstallerMode
 import com.rosan.installer.domain.settings.repository.AppRepository
 import com.rosan.installer.domain.settings.repository.AppSettingsRepository
@@ -27,18 +26,12 @@ class GetResolvedConfigUseCase(
     suspend operator fun invoke(packageName: String? = null): ConfigModel = withContext(Dispatchers.IO) {
         var model = getByPackageNameInner(packageName)
 
-        // Handle Global overrides
         if (model.authorizer == Authorizer.Global) {
             val globalAuthorizer = getGlobalAuthorizer()
             model = model.copy(
                 authorizer = globalAuthorizer,
                 customizeAuthorizer = getGlobalCustomizeAuthorizer()
             )
-        }
-
-        if (model.installMode == InstallMode.Global) {
-            val globalInstallMode = getGlobalInstallMode()
-            model = model.copy(installMode = globalInstallMode)
         }
 
         if (model.installerMode == InstallerMode.Initiator) {
@@ -91,6 +84,4 @@ class GetResolvedConfigUseCase(
     private suspend fun getGlobalAuthorizer() = appSettingsRepo.preferencesFlow.first().authorizer
 
     private suspend fun getGlobalCustomizeAuthorizer() = appSettingsRepo.getString(StringSetting.CustomizeAuthorizer, "").first()
-
-    private suspend fun getGlobalInstallMode() = appSettingsRepo.preferencesFlow.first().installMode
 }

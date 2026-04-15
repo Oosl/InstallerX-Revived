@@ -42,6 +42,7 @@ fun ConfigEntity.toDomainModel(scopeCount: Int = 0): ConfigModel {
         requestUpdateOwnership = this.requestUpdateOwnership,
         splitChooseAll = this.splitChooseAll,
         apkChooseAll = this.apkChooseAll,
+        requireBiometricAuth = this.requireBiometricAuth,
         createdAt = this.createdAt,
         modifiedAt = this.modifiedAt,
         scopeCount = scopeCount,
@@ -94,6 +95,7 @@ fun ConfigModel.toEntity(): ConfigEntity {
         requestUpdateOwnership = this.requestUpdateOwnership,
         splitChooseAll = this.splitChooseAll,
         apkChooseAll = this.apkChooseAll,
+        requireBiometricAuth = this.requireBiometricAuth,
         createdAt = this.createdAt,
         modifiedAt = this.modifiedAt
     )

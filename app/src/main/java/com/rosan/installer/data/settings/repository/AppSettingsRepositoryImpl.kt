@@ -9,9 +9,9 @@ import com.rosan.installer.data.settings.local.datastore.AppDataStore
 import com.rosan.installer.domain.device.provider.DeviceCapabilityProvider
 import com.rosan.installer.domain.settings.model.AppPreferences
 import com.rosan.installer.domain.settings.model.Authorizer
+import com.rosan.installer.domain.settings.model.BiometricAuthMode
 import com.rosan.installer.domain.settings.model.GithubUpdateChannel
 import com.rosan.installer.domain.settings.model.HttpProfile
-import com.rosan.installer.domain.settings.model.InstallMode
 import com.rosan.installer.domain.settings.model.NamedPackage
 import com.rosan.installer.domain.settings.model.PredictiveBackAnimation
 import com.rosan.installer.domain.settings.model.PredictiveBackExitDirection
@@ -46,7 +46,6 @@ class AppSettingsRepositoryImpl(
             ),
             appDataStore.getBoolean(AppDataStore.ALWAYS_USE_ROOT_IN_SYSTEM, false),
             appDataStore.getString(AppDataStore.CUSTOMIZE_AUTHORIZER, ""),
-            appDataStore.getString(AppDataStore.INSTALL_MODE, InstallMode.Dialog.value),
             appDataStore.getBoolean(AppDataStore.DIALOG_SHOW_EXTENDED_MENU, false),
             appDataStore.getBoolean(AppDataStore.DIALOG_SHOW_INTELLIGENT_SUGGESTION, true),
             appDataStore.getBoolean(AppDataStore.DIALOG_DISABLE_NOTIFICATION_ON_DISMISS, false),
@@ -57,7 +56,7 @@ class AppSettingsRepositoryImpl(
             appDataStore.getBoolean(AppDataStore.DIALOG_SDK_COMPARE_MULTI_LINE, false),
             appDataStore.getBoolean(AppDataStore.DIALOG_SHOW_OPPO_SPECIAL, false),
             appDataStore.getBoolean(AppDataStore.UI_EXPRESSIVE_SWITCH, true),
-            appDataStore.getBoolean(AppDataStore.INSTALLER_REQUIRE_BIOMETRIC_AUTH, false),
+            appDataStore.getString(AppDataStore.INSTALLER_REQUIRE_BIOMETRIC_AUTH, BiometricAuthMode.Disable.value),
             appDataStore.getBoolean(AppDataStore.UNINSTALLER_REQUIRE_BIOMETRIC_AUTH, false),
             appDataStore.getBoolean(AppDataStore.SHOW_LIVE_ACTIVITY, false),
             appDataStore.getBoolean(AppDataStore.SHOW_MI_ISLAND, false),
@@ -112,15 +111,12 @@ class AppSettingsRepositoryImpl(
         val authorizer = Authorizer.entries.find { it.value == authorizerStr } ?: Authorizer.Global
         val alwaysUseRootInSystem = values[idx++] as Boolean
         val customizeAuthorizer = values[idx++] as String
-        val installModeStr = values[idx++] as String
-        val installMode = InstallMode.entries.find { it.value == installModeStr } ?: InstallMode.Global
 
         @Suppress("UNCHECKED_CAST")
         AppPreferences(
             authorizer = authorizer,
             alwaysUseRootInSystem = alwaysUseRootInSystem,
             customizeAuthorizer = customizeAuthorizer,
-            installMode = installMode,
             showDialogInstallExtendedMenu = values[idx++] as Boolean,
             showSmartSuggestion = values[idx++] as Boolean,
             disableNotificationForDialogInstall = values[idx++] as Boolean,
@@ -131,7 +127,10 @@ class AppSettingsRepositoryImpl(
             sdkCompareInMultiLine = values[idx++] as Boolean,
             showOPPOSpecial = values[idx++] as Boolean,
             showExpressiveUI = values[idx++] as Boolean,
-            installerRequireBiometricAuth = values[idx++] as Boolean,
+            installerRequireBiometricAuth = run {
+                val value = values[idx++] as String
+                BiometricAuthMode.entries.find { it.value == value } ?: BiometricAuthMode.FollowConfig
+            },
             uninstallerRequireBiometricAuth = values[idx++] as Boolean,
             showLiveActivity = values[idx++] as Boolean,
             useMiIsland = values[idx++] as Boolean,
@@ -237,7 +236,6 @@ class AppSettingsRepositoryImpl(
             StringSetting.ThemeColorSpec -> AppDataStore.THEME_COLOR_SPEC
             StringSetting.Authorizer -> AppDataStore.AUTHORIZER
             StringSetting.CustomizeAuthorizer -> AppDataStore.CUSTOMIZE_AUTHORIZER
-            StringSetting.InstallMode -> AppDataStore.INSTALL_MODE
             StringSetting.ApplyOrderType -> AppDataStore.APPLY_ORDER_TYPE
             StringSetting.LabRootImplementation -> AppDataStore.LAB_ROOT_IMPLEMENTATION
             StringSetting.LabHttpProfile -> AppDataStore.LAB_HTTP_PROFILE
@@ -245,6 +243,7 @@ class AppSettingsRepositoryImpl(
             StringSetting.PredictiveBackExitDirection -> AppDataStore.PREDICTIVE_BACK_EXIT_DIRECTION
             StringSetting.GithubUpdateChannel -> AppDataStore.GITHUB_UPDATE_CHANNEL
             StringSetting.CustomGithubProxyUrl -> AppDataStore.CUSTOM_GITHUB_PROXY_URL
+            StringSetting.InstallerBiometricAuthMode -> AppDataStore.INSTALLER_REQUIRE_BIOMETRIC_AUTH
         }
 
     private fun intKey(setting: IntSetting): Preferences.Key<Int> =
@@ -271,7 +270,6 @@ class AppSettingsRepositoryImpl(
             BooleanSetting.ShowMiIslandBypassRestriction -> AppDataStore.SHOW_MI_ISLAND_BYPASS_RESTRICTION
             BooleanSetting.ShowMiIslandOuterGlow -> AppDataStore.SHOW_MI_ISLAND_OUTER_GLOW
             BooleanSetting.AlwaysUseRootInSystem -> AppDataStore.ALWAYS_USE_ROOT_IN_SYSTEM
-            BooleanSetting.InstallerRequireBiometricAuth -> AppDataStore.INSTALLER_REQUIRE_BIOMETRIC_AUTH
             BooleanSetting.UninstallerRequireBiometricAuth -> AppDataStore.UNINSTALLER_REQUIRE_BIOMETRIC_AUTH
             BooleanSetting.ShowLauncherIcon -> AppDataStore.SHOW_LAUNCHER_ICON
             BooleanSetting.PreferSystemIconForInstall -> AppDataStore.PREFER_SYSTEM_ICON_FOR_INSTALL

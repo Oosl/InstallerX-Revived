@@ -68,6 +68,7 @@ import com.rosan.installer.R
 import com.rosan.installer.data.engine.executor.PackageManagerUtil
 import com.rosan.installer.domain.device.provider.DeviceCapabilityProvider
 import com.rosan.installer.domain.settings.model.Authorizer
+import com.rosan.installer.domain.settings.model.BiometricAuthMode
 import com.rosan.installer.domain.settings.model.HttpProfile
 import com.rosan.installer.domain.settings.model.InstallMode
 import com.rosan.installer.domain.settings.model.NamedPackage
@@ -1109,6 +1110,49 @@ fun UninstallSystemAppWidget(viewModel: UninstallerSettingsViewModel, isM3E: Boo
             )
         },
         isM3E = isM3E
+    )
+}
+
+@Composable
+fun DataInstallerBiometricAuthWidget(
+    currentMode: BiometricAuthMode,
+    onModeChange: (BiometricAuthMode) -> Unit
+) {
+    val modes = remember {
+        listOf(
+            BiometricAuthMode.Disable,
+            BiometricAuthMode.Enable,
+            BiometricAuthMode.FollowConfig
+        )
+    }
+
+    val options = modes.map { mode ->
+        when (mode) {
+            BiometricAuthMode.Disable -> stringResource(R.string.installer_biometric_auth_mode_disable)
+            BiometricAuthMode.Enable -> stringResource(R.string.installer_biometric_auth_mode_enable)
+            BiometricAuthMode.FollowConfig -> stringResource(R.string.installer_biometric_auth_mode_follow_config)
+        }
+    }
+
+    val selectedIndex = modes.indexOf(currentMode).coerceAtLeast(0)
+    val dynamicDescription = when (modes[selectedIndex]) {
+        BiometricAuthMode.Disable -> stringResource(R.string.installer_biometric_auth_mode_disable_desc)
+        BiometricAuthMode.Enable -> stringResource(R.string.installer_biometric_auth_mode_enable_desc)
+        BiometricAuthMode.FollowConfig -> stringResource(R.string.installer_biometric_auth_mode_follow_config_desc)
+    }
+
+    DropDownMenuWidget(
+        icon = AppIcons.BiometricAuth,
+        title = stringResource(R.string.installer_settings_require_biometric_auth),
+        description = dynamicDescription,
+        choice = selectedIndex,
+        data = options,
+        onChoiceChange = { index ->
+            val selectedMode = modes.getOrElse(index) { BiometricAuthMode.FollowConfig }
+            if (currentMode != selectedMode) {
+                onModeChange(selectedMode)
+            }
+        }
     )
 }
 

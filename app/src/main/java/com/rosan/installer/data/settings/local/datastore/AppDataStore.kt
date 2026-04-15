@@ -48,7 +48,7 @@ class AppDataStore(
         val SHOW_MI_ISLAND_BLOCKING_INTERVAL_MS = intPreferencesKey("show_mi_island_blocking_interval")
 
         // Use Biometric Auth Install
-        val INSTALLER_REQUIRE_BIOMETRIC_AUTH = booleanPreferencesKey("installer_use_biometric_auth")
+        val INSTALLER_REQUIRE_BIOMETRIC_AUTH = stringPreferencesKey("installer_require_biometric_auth_mode")
 
         // Use Biometric Auth Uninstall
         val UNINSTALLER_REQUIRE_BIOMETRIC_AUTH = booleanPreferencesKey("uninstaller_use_biometric_auth")
@@ -69,7 +69,6 @@ class AppDataStore(
         // ConfigUtil
         val AUTHORIZER = stringPreferencesKey("authorizer")
         val CUSTOMIZE_AUTHORIZER = stringPreferencesKey("customize_authorizer")
-        val INSTALL_MODE = stringPreferencesKey("install_mode")
         val UNINSTALL_FLAGS = intPreferencesKey("uninstall_flags")
 
         // ApplyViewModel

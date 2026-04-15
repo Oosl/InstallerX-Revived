@@ -81,12 +81,18 @@ fun MiuixUnsavedChangesDialog(
                     // If there are errors, display each one on a new line.
                     Column {
                         errorMessages.forEach { message ->
-                            Text(text = message)
+                            Text(
+                                text = message,
+                                color = MiuixTheme.colorScheme.onSurface
+                            )
                         }
                     }
                 } else {
                     // Otherwise, show the generic unsaved changes message.
-                    Text(text = stringResource(R.string.config_dialog_message_unsaved_changes))
+                    Text(
+                        text = stringResource(R.string.config_dialog_message_unsaved_changes),
+                        color = MiuixTheme.colorScheme.onSurface
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(24.dp)) // Add spacing before buttons

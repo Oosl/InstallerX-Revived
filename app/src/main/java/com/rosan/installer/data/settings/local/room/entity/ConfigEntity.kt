@@ -2,10 +2,10 @@
 // Copyright (C) 2023-2026 iamr0s, InstallerX Revived contributors
 package com.rosan.installer.data.settings.local.room.entity
 
-import androidx.room.ColumnInfo
-import androidx.room.Entity
-import androidx.room.Ignore
-import androidx.room.PrimaryKey
+import androidx.room3.ColumnInfo
+import androidx.room3.Entity
+import androidx.room3.Ignore
+import androidx.room3.PrimaryKey
 import com.rosan.installer.domain.settings.model.Authorizer
 import com.rosan.installer.domain.settings.model.DexoptMode
 import com.rosan.installer.domain.settings.model.InstallMode
@@ -61,6 +61,7 @@ data class ConfigEntity(
     @ColumnInfo(name = "request_update_ownership", defaultValue = "0") var requestUpdateOwnership: Boolean = false,
     @ColumnInfo(name = "split_choose_all", defaultValue = "0") var splitChooseAll: Boolean = false,
     @ColumnInfo(name = "apk_choose_all", defaultValue = "0") var apkChooseAll: Boolean = false,
+    @ColumnInfo(name = "require_biometric_auth", defaultValue = "0") var requireBiometricAuth: Boolean = false,
     @ColumnInfo(name = "created_at") var createdAt: Long = System.currentTimeMillis(),
     @ColumnInfo(name = "modified_at") var modifiedAt: Long = System.currentTimeMillis(),
 ) {

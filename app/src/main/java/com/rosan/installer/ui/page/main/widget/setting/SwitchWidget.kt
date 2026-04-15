@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2023-2026 iamr0s, InstallerX Revived contributors
 package com.rosan.installer.ui.page.main.widget.setting
 
 import androidx.compose.foundation.layout.size
@@ -12,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 
 @Composable
 fun SwitchWidget(
@@ -24,6 +27,8 @@ fun SwitchWidget(
     onCheckedChange: (Boolean) -> Unit,
     isError: Boolean = false
 ) {
+    val haptic = LocalHapticFeedback.current
+
     val toggleAction = {
         if (enabled) {
             onCheckedChange(!checked)
@@ -63,7 +68,10 @@ fun SwitchWidget(
             } else {
                 null
             },
-            onCheckedChange = null
+            onCheckedChange = { newValue ->
+                haptic.performHapticFeedback(HapticFeedbackType.ToggleOn)
+                onCheckedChange(newValue)
+            }
         )
     }
 }

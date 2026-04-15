@@ -34,6 +34,10 @@ sealed interface Route : NavKey, Parcelable {
 
     @Parcelize
     @Serializable
+    data object DialogSettings : Route
+
+    @Parcelize
+    @Serializable
     data object NotificationSettings : Route
 
     @Parcelize

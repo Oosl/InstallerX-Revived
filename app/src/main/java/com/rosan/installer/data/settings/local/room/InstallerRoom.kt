@@ -2,15 +2,16 @@
 // Copyright (C) 2023-2026 iamr0s, InstallerX Revived contributors
 package com.rosan.installer.data.settings.local.room
 
-import androidx.room.AutoMigration
-import androidx.room.Database
-import androidx.room.DeleteColumn
-import androidx.room.Room
-import androidx.room.RoomDatabase
-import androidx.room.TypeConverters
-import androidx.room.migration.AutoMigrationSpec
-import androidx.room.migration.Migration
-import androidx.sqlite.db.SupportSQLiteDatabase
+import androidx.room3.AutoMigration
+import androidx.room3.Database
+import androidx.room3.DeleteColumn
+import androidx.room3.Room
+import androidx.room3.RoomDatabase
+import androidx.room3.TypeConverters
+import androidx.room3.migration.AutoMigrationSpec
+import androidx.room3.migration.Migration
+import androidx.sqlite.SQLiteConnection
+import androidx.sqlite.execSQL
 import com.rosan.installer.data.settings.local.room.dao.AppDao
 import com.rosan.installer.data.settings.local.room.dao.ConfigDao
 import com.rosan.installer.data.settings.local.room.entity.AppEntity
@@ -21,17 +22,12 @@ import com.rosan.installer.data.settings.local.room.entity.converter.InstallMode
 import com.rosan.installer.data.settings.local.room.entity.converter.InstallReasonConverter
 import com.rosan.installer.data.settings.local.room.entity.converter.InstallerModeConverter
 import com.rosan.installer.data.settings.local.room.entity.converter.PackageSourceConverter
-import com.rosan.installer.data.settings.mapper.toEntity
-import com.rosan.installer.domain.settings.model.ConfigModel
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
 
 @Database(
     entities = [AppEntity::class, ConfigEntity::class],
-    version = 13,
+    version = 14,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 3, to = 4),
@@ -42,7 +38,8 @@ import org.koin.core.component.get
         AutoMigration(from = 8, to = 9),
         AutoMigration(from = 9, to = 10),
         AutoMigration(from = 10, to = 11),
-        AutoMigration(from = 11, to = 12)
+        AutoMigration(from = 11, to = 12),
+        AutoMigration(from = 13, to = 14),
     ]
 )
 @TypeConverters(
@@ -56,32 +53,24 @@ import org.koin.core.component.get
 abstract class InstallerRoom : RoomDatabase() {
     companion object : KoinComponent {
         val MIGRATION_12_13 = object : Migration(12, 13) {
-            override fun migrate(db: SupportSQLiteDatabase) {
+            override suspend fun migrate(connection: SQLiteConnection) {
                 // Add new column with default value 0 (Self)
-                db.execSQL("ALTER TABLE config ADD COLUMN installer_mode INTEGER NOT NULL DEFAULT 0")
+                // Use executeSQL instead of execSQL in Room 3.0
+                connection.execSQL("ALTER TABLE config ADD COLUMN installer_mode INTEGER NOT NULL DEFAULT 0")
                 // Update mode to 2 (Custom) for rows that already have a custom installer set
-                db.execSQL("UPDATE config SET installer_mode = 2 WHERE installer IS NOT NULL")
+                connection.execSQL("UPDATE config SET installer_mode = 2 WHERE installer IS NOT NULL")
             }
         }
 
-        fun createInstance(): InstallerRoom {
-            return Room.databaseBuilder(
+        fun createInstance(): InstallerRoom =
+            Room.databaseBuilder(
                 get(),
                 InstallerRoom::class.java,
                 "installer.db",
             )
                 .addMigrations(MIGRATION_12_13)
-                .addCallback(object : Callback() {
-                    override fun onCreate(db: SupportSQLiteDatabase) {
-                        val database = get<InstallerRoom>()
-                        val defaultConfig = ConfigModel.generateOptimalDefault().toEntity()
-                        CoroutineScope(Dispatchers.IO).launch {
-                            database.configDao.insert(defaultConfig)
-                        }
-                    }
-                })
                 .build()
-        }
+
     }
 
     abstract val appDao: AppDao

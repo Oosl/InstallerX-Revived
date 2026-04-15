@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.rosan.installer.R
 import com.rosan.installer.domain.privileged.usecase.GetAvailableUsersUseCase
 import com.rosan.installer.domain.settings.model.Authorizer
+import com.rosan.installer.domain.settings.model.ConfigModel
 import com.rosan.installer.domain.settings.model.DexoptMode
 import com.rosan.installer.domain.settings.model.InstallMode
 import com.rosan.installer.domain.settings.model.InstallReason
@@ -23,11 +24,12 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -41,8 +43,38 @@ class EditViewModel(
     private val getPackageUid: GetPackageUidUseCase
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(EditViewState())
-    val state: StateFlow<EditViewState> = _state.asStateFlow()
+    // Separate mutable states for editable data to combine later
+    private val _data = MutableStateFlow(EditViewState.Data.build(ConfigModel.default))
+    private val _originalData = MutableStateFlow<EditViewState.Data?>(null)
+    private val _availableUsers = MutableStateFlow<Map<Int, String>>(emptyMap())
+
+    // Combine local mutable states with reactive data store flows
+    val state: StateFlow<EditViewState> = combine(
+        _data,
+        _originalData,
+        _availableUsers,
+        combine(
+            appSettingsRepo.preferencesFlow,
+            appSettingsRepo.getNamedPackageList(NamedPackageListSetting.ManagedInstallerPackages),
+            appSettingsRepo.getBoolean(BooleanSetting.LabSetInstallRequester),
+            ::Triple
+        )
+    ) { data, originalData, availableUsers, settings ->
+        val (prefs, managedInstallerPackages, isCustomInstallRequesterEnabled) = settings
+        EditViewState(
+            data = data,
+            originalData = originalData,
+            availableUsers = availableUsers,
+            managedInstallerPackages = managedInstallerPackages,
+            isCustomInstallRequesterEnabled = isCustomInstallRequesterEnabled,
+            globalAuthorizer = prefs.authorizer,
+            globalInstallerBiometricAuthMode = prefs.installerRequireBiometricAuth
+        )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.Eagerly,
+        initialValue = EditViewState()
+    )
 
     private val _eventFlow = MutableSharedFlow<EditViewEvent>()
     val eventFlow = _eventFlow.asSharedFlow()
@@ -87,6 +119,7 @@ class EditViewModel(
                     is EditViewAction.ChangeDataRequestUpdateOwnership -> changeDataRequestUpdateOwnership(action.requestUpdateOwnership)
                     is EditViewAction.ChangeSplitChooseAll -> changeSplitChooseAll(action.splitChooseAll)
                     is EditViewAction.ChangeApkChooseAll -> changeApkChooseAll(action.apkChooseAll)
+                    is EditViewAction.ChangeRequireBiometricAuth -> changeRequireBiometricAuth(action.require)
                     is EditViewAction.LoadData -> loadData()
                     is EditViewAction.SaveData -> saveData()
                 }
@@ -101,19 +134,19 @@ class EditViewModel(
     private fun changeDataName(name: String) {
         if (name.length > 20) return
         if (name.lines().size > 1) return
-        _state.update { it.copy(data = it.data.copy(name = name)) }
+        _data.update { it.copy(name = name) }
     }
 
     private fun changeDataDescription(description: String) {
         if (description.length > 4096) return
         if (description.lines().size > 8) return
-        _state.update { it.copy(data = it.data.copy(description = description)) }
+        _data.update { it.copy(description = description) }
     }
 
     private fun changeDataAuthorizer(authorizer: Authorizer) {
-        _state.update { currentState ->
-            var updatedData = currentState.data.copy(authorizer = authorizer)
-            val effectiveAuthorizer = if (authorizer == Authorizer.Global) currentState.globalAuthorizer else authorizer
+        _data.update { currentData ->
+            var updatedData = currentData.copy(authorizer = authorizer)
+            val effectiveAuthorizer = if (authorizer == Authorizer.Global) state.value.globalAuthorizer else authorizer
 
             if (effectiveAuthorizer == Authorizer.Dhizuku) {
                 updatedData = updatedData.copy(
@@ -123,57 +156,57 @@ class EditViewModel(
                     enableManualDexopt = false
                 )
             }
-            currentState.copy(data = updatedData)
+            updatedData
         }
 
         // Handle side-effects after state is safely updated
-        val currentState = _state.value
-        if (currentState.data.enableCustomizeUser) {
+        if (_data.value.enableCustomizeUser) {
             loadAvailableUsers()
         } else {
-            _state.update { it.copy(availableUsers = emptyMap(), data = it.data.copy(targetUserId = 0)) }
+            _availableUsers.value = emptyMap()
+            _data.update { it.copy(targetUserId = 0) }
         }
     }
 
     private fun changeDataCustomizeAuthorizer(customizeAuthorizer: String) {
-        _state.update { it.copy(data = it.data.copy(customizeAuthorizer = customizeAuthorizer)) }
+        _data.update { it.copy(customizeAuthorizer = customizeAuthorizer) }
     }
 
     private fun changeDataInstallMode(installMode: InstallMode) {
-        _state.update { it.copy(data = it.data.copy(installMode = installMode)) }
+        _data.update { it.copy(installMode = installMode) }
     }
 
     private fun changeDataShowToast(showToast: Boolean) {
-        _state.update { it.copy(data = it.data.copy(showToast = showToast)) }
+        _data.update { it.copy(showToast = showToast) }
     }
 
     private fun changeDataEnableCustomInstallReason(enable: Boolean) {
-        _state.update { it.copy(data = it.data.copy(enableCustomizeInstallReason = enable)) }
+        _data.update { it.copy(enableCustomizeInstallReason = enable) }
     }
 
     private fun changeDataInstallReason(installReason: InstallReason) {
-        _state.update { it.copy(data = it.data.copy(installReason = installReason)) }
+        _data.update { it.copy(installReason = installReason) }
     }
 
     private fun changeDataEnableCustomPackageSource(enable: Boolean) {
-        _state.update { it.copy(data = it.data.copy(enableCustomizePackageSource = enable)) }
+        _data.update { it.copy(enableCustomizePackageSource = enable) }
     }
 
     private fun changeDataPackageSource(packageSource: PackageSource) {
-        _state.update { it.copy(data = it.data.copy(packageSource = packageSource)) }
+        _data.update { it.copy(packageSource = packageSource) }
     }
 
     private fun changeDataEnableCustomInstallRequester(enable: Boolean) {
-        _state.update { it.copy(data = it.data.copy(enableCustomizeInstallRequester = enable)) }
+        _data.update { it.copy(enableCustomizeInstallRequester = enable) }
         if (enable) {
-            changeDataInstallRequester(_state.value.data.installRequester)
+            changeDataInstallRequester(_data.value.installRequester)
         }
     }
 
     private var installRequesterJob: Job? = null
 
     private fun changeDataInstallRequester(packageName: String) {
-        _state.update { it.copy(data = it.data.copy(installRequester = packageName, installRequesterUid = null)) }
+        _data.update { it.copy(installRequester = packageName, installRequesterUid = null) }
         if (packageName.isBlank()) return
 
         installRequesterJob?.cancel()
@@ -184,111 +217,115 @@ class EditViewModel(
             // The UseCase handles the IO thread switching and exception catching internally
             val uid = getPackageUid(packageName)
 
-            _state.update { currentState ->
+            _data.update { currentData ->
                 // Double check if the package name has changed during the delay
-                if (currentState.data.installRequester == packageName) {
-                    currentState.copy(data = currentState.data.copy(installRequesterUid = uid))
-                } else currentState
+                if (currentData.installRequester == packageName) {
+                    currentData.copy(installRequesterUid = uid)
+                } else currentData
             }
         }
     }
 
     private fun changeDataInstallerMode(mode: InstallerMode) {
-        _state.update { it.copy(data = it.data.copy(installerMode = mode)) }
+        _data.update { it.copy(installerMode = mode) }
     }
 
     private fun changeDataInstaller(installer: String) {
-        _state.update { it.copy(data = it.data.copy(installer = installer)) }
+        _data.update { it.copy(installer = installer) }
     }
 
     private fun changeDataCustomizeUser(enable: Boolean) {
-        _state.update { it.copy(data = it.data.copy(enableCustomizeUser = enable)) }
+        _data.update { it.copy(enableCustomizeUser = enable) }
         if (enable) {
             loadAvailableUsers()
         } else {
-            _state.update { it.copy(availableUsers = emptyMap(), data = it.data.copy(targetUserId = 0)) }
+            _availableUsers.value = emptyMap()
+            _data.update { it.copy(targetUserId = 0) }
         }
     }
 
     private fun changeDataTargetUserId(userId: Int) {
-        _state.update { it.copy(data = it.data.copy(targetUserId = userId)) }
+        _data.update { it.copy(targetUserId = userId) }
     }
 
     private fun changeDataEnableManualDexopt(enable: Boolean) {
-        _state.update { it.copy(data = it.data.copy(enableManualDexopt = enable)) }
+        _data.update { it.copy(enableManualDexopt = enable) }
     }
 
     private fun changeDataForceDexopt(force: Boolean) {
-        _state.update { it.copy(data = it.data.copy(forceDexopt = force)) }
+        _data.update { it.copy(forceDexopt = force) }
     }
 
     private fun changeDataDexoptMode(mode: DexoptMode) {
-        _state.update { it.copy(data = it.data.copy(dexoptMode = mode)) }
+        _data.update { it.copy(dexoptMode = mode) }
     }
 
     private fun changeDataAutoDelete(autoDelete: Boolean) {
-        _state.update { it.copy(data = it.data.copy(autoDelete = autoDelete, autoDeleteZip = false)) }
+        _data.update { it.copy(autoDelete = autoDelete, autoDeleteZip = false) }
     }
 
     private fun changeDataZipAutoDelete(autoDelete: Boolean) {
-        _state.update { it.copy(data = it.data.copy(autoDeleteZip = autoDelete)) }
+        _data.update { it.copy(autoDeleteZip = autoDelete) }
     }
 
     private fun changeDisplaySdk(displaySdk: Boolean) {
-        _state.update { it.copy(data = it.data.copy(displaySdk = displaySdk)) }
+        _data.update { it.copy(displaySdk = displaySdk) }
     }
 
     private fun changeDisplaySize(displaySize: Boolean) {
-        _state.update { it.copy(data = it.data.copy(displaySize = displaySize)) }
+        _data.update { it.copy(displaySize = displaySize) }
     }
 
     private fun changeDataForAllUser(forAllUser: Boolean) {
-        _state.update { it.copy(data = it.data.copy(forAllUser = forAllUser)) }
+        _data.update { it.copy(forAllUser = forAllUser) }
     }
 
     private fun changeDataAllowTestOnly(allowTestOnly: Boolean) {
-        _state.update { it.copy(data = it.data.copy(allowTestOnly = allowTestOnly)) }
+        _data.update { it.copy(allowTestOnly = allowTestOnly) }
     }
 
     private fun changeDataAllowDowngrade(allowDowngrade: Boolean) {
-        _state.update { it.copy(data = it.data.copy(allowDowngrade = allowDowngrade)) }
+        _data.update { it.copy(allowDowngrade = allowDowngrade) }
     }
 
     private fun changeDataBypassLowTargetSdk(bypassLowTargetSdk: Boolean) {
-        _state.update { it.copy(data = it.data.copy(bypassLowTargetSdk = bypassLowTargetSdk)) }
+        _data.update { it.copy(bypassLowTargetSdk = bypassLowTargetSdk) }
     }
 
     private fun changeDataAllowAllRequestedPermissions(allowAllRequestedPermissions: Boolean) {
-        _state.update { it.copy(data = it.data.copy(allowAllRequestedPermissions = allowAllRequestedPermissions)) }
+        _data.update { it.copy(allowAllRequestedPermissions = allowAllRequestedPermissions) }
     }
 
     private fun changeDataRequestUpdateOwnership(requestUpdateOwnership: Boolean) {
-        _state.update { it.copy(data = it.data.copy(requestUpdateOwnership = requestUpdateOwnership)) }
+        _data.update { it.copy(requestUpdateOwnership = requestUpdateOwnership) }
     }
 
     private fun changeSplitChooseAll(splitChooseAll: Boolean) {
-        _state.update { it.copy(data = it.data.copy(splitChooseAll = splitChooseAll)) }
+        _data.update { it.copy(splitChooseAll = splitChooseAll) }
     }
 
     private fun changeApkChooseAll(apkChooseAll: Boolean) {
-        _state.update { it.copy(data = it.data.copy(apkChooseAll = apkChooseAll)) }
+        _data.update { it.copy(apkChooseAll = apkChooseAll) }
+    }
+
+    private fun changeRequireBiometricAuth(require: Boolean) {
+        _data.update { it.copy(requireBiometricAuth = require) }
     }
 
     private fun loadAvailableUsers() {
         viewModelScope.launch {
-            val currentState = _state.value
+            val currentData = _data.value
             val authorizer =
-                if (currentState.data.authorizer == Authorizer.Global) currentState.globalAuthorizer else currentState.data.authorizer
+                if (currentData.authorizer == Authorizer.Global) state.value.globalAuthorizer else currentData.authorizer
 
             val newAvailableUsers = getAvailableUsers(authorizer).getOrElse { emptyMap() }
 
-            _state.update { state ->
-                val currentTargetUserId = state.data.targetUserId
+            _availableUsers.value = newAvailableUsers
+
+            _data.update { data ->
+                val currentTargetUserId = data.targetUserId
                 val newTargetUserId = if (newAvailableUsers.containsKey(currentTargetUserId)) currentTargetUserId else 0
-                state.copy(
-                    availableUsers = newAvailableUsers,
-                    data = state.data.copy(targetUserId = newTargetUserId)
-                )
+                data.copy(targetUserId = newTargetUserId)
             }
         }
     }
@@ -299,26 +336,15 @@ class EditViewModel(
         loadDataJob?.cancel()
         loadDataJob = viewModelScope.launch(Dispatchers.IO) {
             val prefs = appSettingsRepo.preferencesFlow.first()
-            val managedPackages =
-                appSettingsRepo.getNamedPackageList(NamedPackageListSetting.ManagedInstallerPackages).firstOrNull() ?: emptyList()
-            val isCustomInstallRequesterEnabled = appSettingsRepo.getBoolean(BooleanSetting.LabSetInstallRequester).first()
             val configModel = getConfigDraft(id, prefs.authorizer)
 
             val initialData = EditViewState.Data.build(configModel).copy(
                 installRequesterUid = configModel.callingFromUid
             )
 
-            _state.update {
-                it.copy(
-                    data = initialData,
-                    originalData = initialData,
-                    globalAuthorizer = prefs.authorizer,
-                    globalInstallMode = prefs.installMode,
-                    managedInstallerPackages = managedPackages,
-                    availableUsers = emptyMap(),
-                    isCustomInstallRequesterEnabled = isCustomInstallRequesterEnabled
-                )
-            }
+            // Local state updates only. Global states are now entirely managed reactively by StateFlow combined flow.
+            _data.value = initialData
+            _originalData.value = initialData
 
             if (initialData.enableCustomizeUser) {
                 loadAvailableUsers()
@@ -331,15 +357,15 @@ class EditViewModel(
     private fun saveData() {
         saveDataJob?.cancel()
         saveDataJob = viewModelScope.launch(Dispatchers.IO) {
-            val currentState = _state.value
-            var model = currentState.data.toConfigModel()
+            val currentData = _data.value
+            var model = currentData.toConfigModel()
             if (id != null) model = model.copy(id = id)
-            val hasRequesterUid = currentState.data.installRequesterUid != null
+            val hasRequesterUid = currentData.installRequesterUid != null
 
             val result = saveConfig(model, hasRequesterUid)
 
             result.onSuccess {
-                _state.update { it.copy(originalData = it.data) }
+                _originalData.value = currentData
                 _eventFlow.emit(EditViewEvent.Saved)
             }.onFailure { error ->
                 Timber.e(error, "Failed to save config")

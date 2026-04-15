@@ -4,6 +4,7 @@ package com.rosan.installer.ui.page.main.settings.config.edit
 
 import com.rosan.installer.R
 import com.rosan.installer.domain.settings.model.Authorizer
+import com.rosan.installer.domain.settings.model.BiometricAuthMode
 import com.rosan.installer.domain.settings.model.ConfigModel
 import com.rosan.installer.domain.settings.model.DexoptMode
 import com.rosan.installer.domain.settings.model.InstallMode
@@ -21,7 +22,7 @@ data class EditViewState(
 
     // Global states integrated into the view state
     val globalAuthorizer: Authorizer = Authorizer.Global,
-    val globalInstallMode: InstallMode = InstallMode.Global
+    val globalInstallerBiometricAuthMode: BiometricAuthMode = BiometricAuthMode.Disable
 ) {
     // Computed property for unsaved changes
     val hasUnsavedChanges: Boolean
@@ -75,7 +76,8 @@ data class EditViewState(
         val allowAllRequestedPermissions: Boolean,
         val requestUpdateOwnership: Boolean,
         val splitChooseAll: Boolean,
-        val apkChooseAll: Boolean
+        val apkChooseAll: Boolean,
+        val requireBiometricAuth: Boolean
     ) {
         val errorName = name.isEmpty()// || name == "Default"
         val authorizerCustomize = authorizer == Authorizer.Customize
@@ -113,7 +115,8 @@ data class EditViewState(
             allowAllRequestedPermissions = this.allowAllRequestedPermissions,
             requestUpdateOwnership = this.requestUpdateOwnership,
             splitChooseAll = this.splitChooseAll,
-            apkChooseAll = this.apkChooseAll
+            apkChooseAll = this.apkChooseAll,
+            requireBiometricAuth = this.requireBiometricAuth
         )
 
         companion object {
@@ -149,7 +152,8 @@ data class EditViewState(
                 allowAllRequestedPermissions = config.allowAllRequestedPermissions,
                 requestUpdateOwnership = config.requestUpdateOwnership,
                 splitChooseAll = config.splitChooseAll,
-                apkChooseAll = config.apkChooseAll
+                apkChooseAll = config.apkChooseAll,
+                requireBiometricAuth = config.requireBiometricAuth
             )
         }
     }

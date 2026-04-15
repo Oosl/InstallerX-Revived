@@ -41,6 +41,8 @@ import com.rosan.installer.ui.page.main.settings.preferred.about.NewAboutPage
 import com.rosan.installer.ui.page.main.settings.preferred.about.OpenSourceLicensePage
 import com.rosan.installer.ui.page.main.settings.preferred.installer.LegacyInstallerGlobalSettingsPage
 import com.rosan.installer.ui.page.main.settings.preferred.installer.NewInstallerGlobalSettingsPage
+import com.rosan.installer.ui.page.main.settings.preferred.installer.dialog.DialogSettingsPage
+import com.rosan.installer.ui.page.main.settings.preferred.installer.dialog.NewDialogSettingsPage
 import com.rosan.installer.ui.page.main.settings.preferred.installer.notification.NewNotificationSettingsPage
 import com.rosan.installer.ui.page.main.settings.preferred.installer.notification.NotificationSettingsPage
 import com.rosan.installer.ui.page.main.settings.preferred.lab.LegacyLabPage
@@ -55,6 +57,7 @@ import com.rosan.installer.ui.page.miuix.settings.preferred.about.MiuixAboutPage
 import com.rosan.installer.ui.page.miuix.settings.preferred.about.MiuixBlendAboutPage
 import com.rosan.installer.ui.page.miuix.settings.preferred.about.ossLicensePage.MiuixOpenSourceLicensePage
 import com.rosan.installer.ui.page.miuix.settings.preferred.installer.MiuixInstallerGlobalSettingsPage
+import com.rosan.installer.ui.page.miuix.settings.preferred.installer.dialog.MiuixDialogSettingsPage
 import com.rosan.installer.ui.page.miuix.settings.preferred.installer.notification.MiuixNotificationSettingsPage
 import com.rosan.installer.ui.page.miuix.settings.preferred.lab.MiuixLabPage
 import com.rosan.installer.ui.page.miuix.settings.preferred.theme.MiuixThemeSettingsPage
@@ -199,6 +202,18 @@ fun InstallerNavContainer(
                                 NewInstallerGlobalSettingsPage(useBlur)
                             } else {
                                 LegacyInstallerGlobalSettingsPage()
+                            }
+                        }
+                    }
+                    entry<Route.DialogSettings> {
+                        if (uiState.useMiuix) {
+                            MiuixDialogSettingsPage(useBlur)
+                        } else {
+                            if (isExpressive) {
+                                NewDialogSettingsPage(useBlur)
+                            } else {
+                                DialogSettingsPage()
+
                             }
                         }
                     }

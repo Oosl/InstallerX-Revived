@@ -133,7 +133,13 @@
     <string name="uninstaller_settings_desc">Change the global settings of the uninstaller</string>
     <string name="installer_settings_global_installer">Global</string>
     <string name="installer_settings_require_biometric_auth">Require Biometric Auth to Install</string>
-    <string name="installer_settings_require_biometric_auth_desc">Require biometric auth when installing</string>
+    <string name="installer_settings_require_biometric_auth_desc">Require biometric auth when installing packages</string>
+    <string name="installer_biometric_auth_mode_disable">Disable Biometric Auth</string>
+    <string name="installer_biometric_auth_mode_enable">Enable Biometric Auth</string>
+    <string name="installer_biometric_auth_mode_follow_config">Follow Profile</string>
+    <string name="installer_biometric_auth_mode_disable_desc">Completely disable biometric authentication for every installs</string>
+    <string name="installer_biometric_auth_mode_enable_desc">Enable and allow the use of biometric authentication for every installs</string>
+    <string name="installer_biometric_auth_mode_follow_config_desc">Follow profile settings set for each app</string>
     <string name="uninstaller_settings_require_biometric_auth">Require Biometric Auth to Uninstall</string>
     <string name="uninstaller_settings_require_biometric_auth_desc">Require biometric auth when uninstalling</string>
     <string name="use_biometric_confirm_change_auth_settings">Are you sure you want to change this setting</string>
@@ -777,4 +783,6 @@
     <string name="lab_mi_island_bypass_restriction_desc">Bypass verification restriction for Mi Island</string>
     <string name="lab_mi_island_outer_glow">Outer Glow</string>
     <string name="lab_mi_island_outer_glow_desc">Add a system-app-style glow effect to the edge of Super Island</string>
+    <string name="dialog_settings">Dialog Settings</string>
+    <string name="dialog_settings_desc">Customize the appearance and behavior of installation dialog</string>
 </resources>

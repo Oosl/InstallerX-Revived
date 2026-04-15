@@ -2,7 +2,7 @@
 // Copyright (C) 2025-2026 InstallerX Revived contributors
 package com.rosan.installer.data.settings.repository
 
-import androidx.sqlite.db.SimpleSQLiteQuery
+import androidx.room3.RoomRawQuery
 import com.rosan.installer.data.settings.local.room.dao.AppDao
 import com.rosan.installer.data.settings.mapper.toDomainModel
 import com.rosan.installer.data.settings.mapper.toEntity
@@ -18,7 +18,7 @@ class AppRepositoryImpl(
 ) : AppRepository {
 
     // Helper method to build dynamic SQL queries for sorting
-    private fun buildOrderQuery(order: AppOrder): SimpleSQLiteQuery {
+    private fun buildOrderQuery(order: AppOrder): RoomRawQuery {
         val column = when (order) {
             is AppOrder.Id -> "id"
             is AppOrder.PackageName -> "package_name"
@@ -30,7 +30,7 @@ class AppRepositoryImpl(
             OrderType.Ascending -> "ASC"
             OrderType.Descending -> "DESC"
         }
-        return SimpleSQLiteQuery("SELECT * FROM app ORDER BY $column $direction")
+        return RoomRawQuery("SELECT * FROM app ORDER BY $column $direction")
     }
 
     override suspend fun all(order: AppOrder): List<AppModel> {

@@ -7,12 +7,10 @@ import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
 import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_WEAK
 import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -43,12 +41,11 @@ import com.rosan.installer.core.env.DeviceConfig
 import com.rosan.installer.domain.device.model.Manufacturer
 import com.rosan.installer.domain.device.provider.DeviceCapabilityProvider
 import com.rosan.installer.domain.settings.model.Authorizer
-import com.rosan.installer.domain.settings.model.InstallMode
 import com.rosan.installer.ui.icons.AppIcons
 import com.rosan.installer.ui.navigation.LocalNavigator
 import com.rosan.installer.ui.navigation.Route
 import com.rosan.installer.ui.page.main.settings.preferred.DataAuthorizerWidget
-import com.rosan.installer.ui.page.main.settings.preferred.DataInstallModeWidget
+import com.rosan.installer.ui.page.main.settings.preferred.DataInstallerBiometricAuthWidget
 import com.rosan.installer.ui.page.main.settings.preferred.ManagedPackagesWidget
 import com.rosan.installer.ui.page.main.settings.preferred.ManagedUidsWidget
 import com.rosan.installer.ui.page.main.settings.preferred.SettingsNavigationItemWidget
@@ -141,11 +138,11 @@ fun LegacyInstallerGlobalSettingsPage(
                 }
             }
             item {
-                DataInstallModeWidget(
-                    currentInstallMode = uiState.installMode,
-                    changeInstallMode = {
-                        viewModel.dispatch(InstallerSettingsAction.ChangeGlobalInstallMode(it))
-                    }
+                SettingsNavigationItemWidget(
+                    icon = AppIcons.Dialog,
+                    title = stringResource(R.string.dialog_settings),
+                    description = stringResource(R.string.dialog_settings_desc),
+                    onClick = { navigator.push(Route.DialogSettings) }
                 )
             }
             item {
@@ -161,105 +158,12 @@ fun LegacyInstallerGlobalSettingsPage(
                     .canAuthenticate(BIOMETRIC_WEAK or BIOMETRIC_STRONG or DEVICE_CREDENTIAL) == BiometricManager.BIOMETRIC_SUCCESS
             ) {
                 item {
-                    SwitchWidget(
-                        icon = AppIcons.BiometricAuth,
-                        title = stringResource(R.string.installer_settings_require_biometric_auth),
-                        description = stringResource(R.string.installer_settings_require_biometric_auth_desc),
-                        checked = uiState.installerRequireBiometricAuth,
-                        isM3E = false,
-                        onCheckedChange = {
+                    DataInstallerBiometricAuthWidget(
+                        currentMode = uiState.installerRequireBiometricAuth,
+                        onModeChange = {
                             viewModel.dispatch(InstallerSettingsAction.ChangeBiometricAuth(it))
                         }
                     )
-                }
-            }
-            item {
-                val isDialogMode =
-                    uiState.installMode == InstallMode.Dialog || uiState.installMode == InstallMode.AutoDialog
-
-                AnimatedVisibility(
-                    visible = isDialogMode,
-                    enter = fadeIn() + expandVertically(),
-                    exit = fadeOut() + shrinkVertically()
-                ) {
-                    Column(modifier = Modifier.animateContentSize()) {
-                        LabelWidget(label = stringResource(id = R.string.installer_settings_dialog_mode_options))
-
-                        SwitchWidget(
-                            icon = AppIcons.MultiLineSettingIcon,
-                            title = stringResource(id = R.string.version_compare_in_single_line),
-                            description = stringResource(id = R.string.version_compare_in_single_line_desc),
-                            checked = uiState.versionCompareInSingleLine,
-                            isM3E = false,
-                            onCheckedChange = {
-                                viewModel.dispatch(
-                                    InstallerSettingsAction.ChangeVersionCompareInSingleLine(it)
-                                )
-                            }
-                        )
-
-                        SwitchWidget(
-                            icon = AppIcons.SingleLineSettingIcon,
-                            title = stringResource(id = R.string.sdk_compare_in_multi_line),
-                            description = stringResource(id = R.string.sdk_compare_in_multi_line_desc),
-                            checked = uiState.sdkCompareInMultiLine,
-                            isM3E = false,
-                            onCheckedChange = {
-                                viewModel.dispatch(
-                                    InstallerSettingsAction.ChangeSdkCompareInMultiLine(it)
-                                )
-                            }
-                        )
-
-                        SwitchWidget(
-                            icon = AppIcons.MenuOpen,
-                            title = stringResource(id = R.string.show_dialog_install_extended_menu),
-                            description = stringResource(id = R.string.show_dialog_install_extended_menu_desc),
-                            checked = uiState.showDialogInstallExtendedMenu,
-                            isM3E = false,
-                            onCheckedChange = {
-                                viewModel.dispatch(
-                                    InstallerSettingsAction.ChangeShowDialogInstallExtendedMenu(it)
-                                )
-                            }
-                        )
-
-                        SwitchWidget(
-                            icon = AppIcons.Suggestion,
-                            title = stringResource(id = R.string.show_intelligent_suggestion),
-                            description = stringResource(id = R.string.show_intelligent_suggestion_desc),
-                            checked = uiState.showSmartSuggestion,
-                            isM3E = false,
-                            onCheckedChange = {
-                                viewModel.dispatch(
-                                    InstallerSettingsAction.ChangeShowSuggestion(it)
-                                )
-                            }
-                        )
-
-                        SwitchWidget(
-                            icon = AppIcons.Silent,
-                            title = stringResource(id = R.string.auto_silent_install),
-                            description = stringResource(id = R.string.auto_silent_install_desc),
-                            checked = uiState.autoSilentInstall,
-                            onCheckedChange = {
-                                viewModel.dispatch(InstallerSettingsAction.ChangeAutoSilentInstall(it))
-                            }
-                        )
-
-                        SwitchWidget(
-                            icon = AppIcons.NotificationDisabled,
-                            title = stringResource(id = R.string.disable_notification_on_dismiss),
-                            description = stringResource(id = R.string.close_notification_immediately_on_dialog_dismiss),
-                            checked = uiState.disableNotificationForDialogInstall,
-                            isM3E = false,
-                            onCheckedChange = {
-                                viewModel.dispatch(
-                                    InstallerSettingsAction.ChangeShowDisableNotification(it)
-                                )
-                            }
-                        )
-                    }
                 }
             }
             if (DeviceConfig.currentManufacturer == Manufacturer.OPPO || DeviceConfig.currentManufacturer == Manufacturer.ONEPLUS) {

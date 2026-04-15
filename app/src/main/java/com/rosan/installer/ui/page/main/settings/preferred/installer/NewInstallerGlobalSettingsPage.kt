@@ -52,12 +52,11 @@ import com.rosan.installer.core.env.DeviceConfig
 import com.rosan.installer.domain.device.model.Manufacturer
 import com.rosan.installer.domain.device.provider.DeviceCapabilityProvider
 import com.rosan.installer.domain.settings.model.Authorizer
-import com.rosan.installer.domain.settings.model.InstallMode
 import com.rosan.installer.ui.icons.AppIcons
 import com.rosan.installer.ui.navigation.LocalNavigator
 import com.rosan.installer.ui.navigation.Route
 import com.rosan.installer.ui.page.main.settings.preferred.DataAuthorizerWidget
-import com.rosan.installer.ui.page.main.settings.preferred.DataInstallModeWidget
+import com.rosan.installer.ui.page.main.settings.preferred.DataInstallerBiometricAuthWidget
 import com.rosan.installer.ui.page.main.settings.preferred.ManagedPackagesWidget
 import com.rosan.installer.ui.page.main.settings.preferred.ManagedUidsWidget
 import com.rosan.installer.ui.page.main.settings.preferred.SettingsNavigationItemWidget
@@ -89,11 +88,6 @@ fun NewInstallerGlobalSettingsPage(
     LaunchedEffect(Unit) {
         topAppBarState.heightOffset = topAppBarState.heightOffsetLimit
     }
-
-    val isDialogMode = uiState.installMode == InstallMode.Dialog ||
-            uiState.installMode == InstallMode.AutoDialog
-    val isNotificationMode = uiState.installMode == InstallMode.Notification ||
-            uiState.installMode == InstallMode.AutoNotification
 
     val layoutDirection = LocalLayoutDirection.current
     val horizontalSafeInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal).asPaddingValues()
@@ -196,9 +190,11 @@ fun NewInstallerGlobalSettingsPage(
                     }
 
                     item {
-                        DataInstallModeWidget(
-                            currentInstallMode = uiState.installMode,
-                            changeInstallMode = { viewModel.dispatch(InstallerSettingsAction.ChangeGlobalInstallMode(it)) }
+                        SettingsNavigationItemWidget(
+                            icon = AppIcons.Dialog,
+                            title = stringResource(R.string.dialog_settings),
+                            description = stringResource(R.string.dialog_settings_desc),
+                            onClick = { navigator.push(Route.DialogSettings) }
                         )
                     }
 
@@ -212,98 +208,17 @@ fun NewInstallerGlobalSettingsPage(
                     }
 
                     item(visible = biometricAvailable) {
-                        SwitchWidget(
-                            icon = AppIcons.BiometricAuth,
-                            title = stringResource(R.string.installer_settings_require_biometric_auth),
-                            description = stringResource(R.string.installer_settings_require_biometric_auth_desc),
-                            checked = uiState.installerRequireBiometricAuth,
-                            isM3E = true,
-                            onCheckedChange = { viewModel.dispatch(InstallerSettingsAction.ChangeBiometricAuth(it)) }
+                        DataInstallerBiometricAuthWidget(
+                            currentMode = uiState.installerRequireBiometricAuth,
+                            onModeChange = {
+                                viewModel.dispatch(InstallerSettingsAction.ChangeBiometricAuth(it))
+                            }
                         )
                     }
                 }
             }
 
-            // --- Group 2: Dialog Options (Refactored) ---
-            item {
-                AnimatedVisibility(
-                    visible = isDialogMode,
-                    enter = fadeIn() + expandVertically(),
-                    exit = fadeOut() + shrinkVertically()
-                ) {
-                    SplicedColumnGroup(
-                        title = stringResource(R.string.installer_settings_dialog_mode_options)
-                    ) {
-                        // 1. Version Compare
-                        item {
-                            SwitchWidget(
-                                icon = AppIcons.SingleLineSettingIcon,
-                                title = stringResource(id = R.string.version_compare_in_single_line),
-                                description = stringResource(id = R.string.version_compare_in_single_line_desc),
-                                checked = uiState.versionCompareInSingleLine,
-                                onCheckedChange = { viewModel.dispatch(InstallerSettingsAction.ChangeVersionCompareInSingleLine(it)) }
-                            )
-                        }
-
-                        // 2. SDK Compare
-                        item {
-                            SwitchWidget(
-                                icon = AppIcons.MultiLineSettingIcon,
-                                title = stringResource(id = R.string.sdk_compare_in_multi_line),
-                                description = stringResource(id = R.string.sdk_compare_in_multi_line_desc),
-                                checked = uiState.sdkCompareInMultiLine,
-                                onCheckedChange = { viewModel.dispatch(InstallerSettingsAction.ChangeSdkCompareInMultiLine(it)) }
-                            )
-                        }
-
-                        // 3. Extended Menu
-                        item {
-                            SwitchWidget(
-                                icon = AppIcons.MenuOpen,
-                                title = stringResource(id = R.string.show_dialog_install_extended_menu),
-                                description = stringResource(id = R.string.show_dialog_install_extended_menu_desc),
-                                checked = uiState.showDialogInstallExtendedMenu,
-                                onCheckedChange = { viewModel.dispatch(InstallerSettingsAction.ChangeShowDialogInstallExtendedMenu(it)) }
-                            )
-                        }
-
-                        // 4. Smart Suggestion
-                        item {
-                            SwitchWidget(
-                                icon = AppIcons.Suggestion,
-                                title = stringResource(id = R.string.show_intelligent_suggestion),
-                                description = stringResource(id = R.string.show_intelligent_suggestion_desc),
-                                checked = uiState.showSmartSuggestion,
-                                onCheckedChange = { viewModel.dispatch(InstallerSettingsAction.ChangeShowSuggestion(it)) }
-                            )
-                        }
-
-                        // 6. Auto Silent Install
-                        item {
-                            SwitchWidget(
-                                icon = AppIcons.Silent,
-                                title = stringResource(id = R.string.auto_silent_install),
-                                description = stringResource(id = R.string.auto_silent_install_desc),
-                                checked = uiState.autoSilentInstall,
-                                onCheckedChange = { viewModel.dispatch(InstallerSettingsAction.ChangeAutoSilentInstall(it)) }
-                            )
-                        }
-
-                        // 7. Disable Notification
-                        item {
-                            SwitchWidget(
-                                icon = AppIcons.NotificationDisabled,
-                                title = stringResource(id = R.string.disable_notification_on_dismiss),
-                                description = stringResource(id = R.string.close_notification_immediately_on_dialog_dismiss),
-                                checked = uiState.disableNotificationForDialogInstall,
-                                onCheckedChange = { viewModel.dispatch(InstallerSettingsAction.ChangeShowDisableNotification(it)) }
-                            )
-                        }
-                    }
-                }
-            }
-
-            // --- Group 3: OPPO Related ---
+            // --- Group 2: OPPO Related ---
             if (DeviceConfig.currentManufacturer == Manufacturer.OPPO || DeviceConfig.currentManufacturer == Manufacturer.ONEPLUS) {
                 item {
                     SplicedColumnGroup(
@@ -322,7 +237,7 @@ fun NewInstallerGlobalSettingsPage(
                 }
             }
 
-            // --- Group 4: Managed Installer Packages ---
+            // --- Group 3: Managed Installer Packages ---
             item {
                 SplicedColumnGroup(
                     title = stringResource(id = R.string.config_managed_installer_packages_title)
@@ -338,7 +253,7 @@ fun NewInstallerGlobalSettingsPage(
                 }
             }
 
-            // --- Group 5: Managed Blacklist ---
+            // --- Group 4: Managed Blacklist ---
             item {
                 SplicedColumnGroup(
                     title = stringResource(id = R.string.config_managed_blacklist_by_package_name_title)
@@ -354,7 +269,7 @@ fun NewInstallerGlobalSettingsPage(
                 }
             }
 
-            // --- Group 6: Managed Shared User IDs ---
+            // --- Group 5: Managed Shared User IDs ---
             item {
                 SplicedColumnGroup(
                     title = stringResource(R.string.config_managed_blacklist_by_shared_user_id_title)

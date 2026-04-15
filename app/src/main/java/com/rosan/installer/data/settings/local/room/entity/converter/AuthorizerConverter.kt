@@ -2,7 +2,7 @@
 // Copyright (C) 2023-2026 iamr0s InstallerX Revived contributors
 package com.rosan.installer.data.settings.local.room.entity.converter
 
-import androidx.room.TypeConverter
+import androidx.room3.TypeConverter
 import com.rosan.installer.domain.settings.model.Authorizer
 
 object AuthorizerConverter {
