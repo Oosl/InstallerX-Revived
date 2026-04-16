@@ -54,6 +54,7 @@ import com.rosan.installer.domain.engine.model.sortedBest
 import com.rosan.installer.domain.session.model.ExtendedMenuEntity
 import com.rosan.installer.domain.session.model.ExtendedMenuItemEntity
 import com.rosan.installer.domain.settings.model.Authorizer
+import com.rosan.installer.domain.settings.model.InstallerMode
 import com.rosan.installer.domain.settings.model.NamedPackage
 import com.rosan.installer.ui.icons.AppIcons
 import com.rosan.installer.ui.page.main.installer.InstallerViewAction
@@ -74,6 +75,7 @@ fun installExtendedMenuDialog(
     val managedPackages = uiState.managedInstallerPackages
 
     val installFlags = uiState.config.installFlags
+    val installerMode = uiState.config.installerMode
     val selectedInstallerPackageName = uiState.config.installer
     val selectedUserId = uiState.config.targetUserId
     val customizeUserEnabled = uiState.config.enableCustomizeUser
@@ -88,7 +90,23 @@ fun installExtendedMenuDialog(
     }
     val defaultInstallerHintText = stringResource(id = R.string.config_follow_settings)
 
-    val menuEntities = remember(installOptions, selectedInstaller, customizeUserEnabled, selectedUserId, uiState.availableUsers, authorizer) {
+    // Resolve description string for the current mode
+    val modeDesc = when (installerMode) {
+        InstallerMode.Self -> stringResource(R.string.config_installer_mode_self)
+        InstallerMode.Initiator -> stringResource(R.string.config_installer_mode_initiator)
+        InstallerMode.Custom -> stringResource(R.string.config_installer_mode_custom)
+    }
+
+    val menuEntities = remember(
+        installOptions,
+        selectedInstaller,
+        installerMode,
+        modeDesc,
+        customizeUserEnabled,
+        selectedUserId,
+        uiState.availableUsers,
+        authorizer
+    ) {
         buildList {
             // Permission List
             if (containerType == DataType.APK)
@@ -105,20 +123,19 @@ fun installExtendedMenuDialog(
                     )
                 )
 
-            // Installer selection
-            if (authorizer == Authorizer.Root || authorizer == Authorizer.Shizuku) {
+            // Installer Mode selection (Always shown for Root/Shizuku)
+            if (authorizer == Authorizer.Root || authorizer == Authorizer.Shizuku)
                 add(
                     ExtendedMenuEntity(
-                        action = InstallExtendedMenuAction.CustomizeInstaller,
+                        action = InstallExtendedMenuAction.CustomizeInstallerMode,
                         menuItem = ExtendedMenuItemEntity(
-                            nameResourceId = R.string.config_installer,
-                            description = selectedInstaller?.name ?: defaultInstallerHintText,
+                            nameResourceId = R.string.config_declare_installer,
+                            // description will be dynamically calculated below in MenuItemWidget
                             icon = AppIcons.InstallSource,
                             action = null
                         )
                     )
                 )
-            }
 
             // User selection
             if ((authorizer == Authorizer.Root || authorizer == Authorizer.Shizuku) && customizeUserEnabled) {
@@ -166,12 +183,14 @@ fun installExtendedMenuDialog(
         },
         content = DialogInnerParams(DialogParamsType.InstallExtendedMenu.id) {
             MenuItemWidget(
-                menuEntities,
-                viewModel,
-                installFlags,
-                managedPackages,
-                uiState.availableUsers,
-                uiState.defaultInstallerFromSettings
+                entities = menuEntities,
+                viewmodel = viewModel,
+                installFlags = installFlags,
+                installerMode = installerMode,
+                selectedInstallerPackageName = selectedInstallerPackageName,
+                managedPackages = managedPackages,
+                availableUsers = uiState.availableUsers,
+                defaultInstallerFromSettings = uiState.defaultInstallerFromSettings
             )
         },
         buttons = dialogButtons(
@@ -191,9 +210,11 @@ fun MenuItemWidget(
     entities: SnapshotStateList<ExtendedMenuEntity>,
     viewmodel: InstallerViewModel,
     installFlags: Int,
+    installerMode: InstallerMode,
+    selectedInstallerPackageName: String?,
     managedPackages: List<NamedPackage>,
     availableUsers: Map<Int, String>,
-    defaultInstallerFromSettings: String? // Added parameter to receive value
+    defaultInstallerFromSettings: String?
 ) {
     val haptic = LocalHapticFeedback.current
 
@@ -236,8 +257,39 @@ fun MenuItemWidget(
             }
 
             when (item.action) {
-                is InstallExtendedMenuAction.CustomizeInstaller -> {
+                is InstallExtendedMenuAction.CustomizeInstallerMode -> {
                     var expanded by remember { mutableStateOf(false) }
+
+                    // 1. Get all required string resources
+                    val modeSelf = stringResource(R.string.config_installer_mode_self)
+                    val modeInitiator = stringResource(R.string.config_installer_mode_initiator)
+                    val followSettingsText = stringResource(id = R.string.config_follow_settings)
+
+                    // 2. Build a unified option list
+                    val unifiedOptions = remember(managedPackages, modeSelf, modeInitiator, followSettingsText) {
+                        buildList {
+                            add(modeSelf) // Index 0
+                            add(modeInitiator) // Index 1
+                            add(followSettingsText) // Index 2
+                            addAll(managedPackages.map { it.name }) // Index 3+
+                        }
+                    }
+
+                    // 3. Compute the currently displayed description text
+                    val currentDescription =
+                        remember(installerMode, selectedInstallerPackageName, defaultInstallerFromSettings, managedPackages) {
+                            when (installerMode) {
+                                InstallerMode.Self -> modeSelf
+                                InstallerMode.Initiator -> modeInitiator
+                                InstallerMode.Custom -> {
+                                    if (selectedInstallerPackageName == defaultInstallerFromSettings || selectedInstallerPackageName == null) {
+                                        followSettingsText
+                                    } else {
+                                        managedPackages.find { it.packageName == selectedInstallerPackageName }?.name ?: followSettingsText
+                                    }
+                                }
+                            }
+                        }
 
                     ExposedDropdownMenuBox(
                         expanded = expanded,
@@ -246,8 +298,8 @@ fun MenuItemWidget(
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable), // This is important for the dropdown position
-                            onClick = { /* Card itself is not clickable, dropdown handles it */ },
+                                .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
+                            onClick = { /* Dropdown handles click */ },
                             shape = shape,
                             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
@@ -270,41 +322,42 @@ fun MenuItemWidget(
                                         style = MaterialTheme.typography.titleMedium,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
-                                    // Use the dynamic description from the entity
-                                    item.menuItem.description?.let { description ->
-                                        Text(
-                                            text = description,
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
+                                    // Dynamically display the current installer source description
+                                    Text(
+                                        text = currentDescription,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
                                 }
                                 Icon(
                                     imageVector = Icons.TwoTone.ArrowDropDown,
-                                    contentDescription = "Open menu"
+                                    contentDescription = null
                                 )
                             }
                         }
 
-                        // The actual dropdown menu
                         ExposedDropdownMenu(
                             expanded = expanded,
                             onDismissRequest = { expanded = false }
                         ) {
-                            // "System Default" option
-                            DropdownMenuItem(
-                                text = { Text(text = stringResource(id = R.string.config_follow_settings)) },
-                                onClick = {
-                                    viewmodel.dispatch(InstallerViewAction.SetInstaller(defaultInstallerFromSettings))
-                                    expanded = false
-                                }
-                            )
-                            // Options from managed packages
-                            managedPackages.forEach { pkg ->
+                            unifiedOptions.forEachIndexed { index, title ->
                                 DropdownMenuItem(
-                                    text = { Text(text = pkg.name) },
+                                    text = { Text(text = title) },
                                     onClick = {
-                                        viewmodel.dispatch(InstallerViewAction.SetInstaller(pkg.packageName))
+                                        when (index) {
+                                            0 -> viewmodel.dispatch(InstallerViewAction.SetInstallerMode(InstallerMode.Self))
+                                            1 -> viewmodel.dispatch(InstallerViewAction.SetInstallerMode(InstallerMode.Initiator))
+                                            2 -> {
+                                                viewmodel.dispatch(InstallerViewAction.SetInstallerMode(InstallerMode.Custom))
+                                                viewmodel.dispatch(InstallerViewAction.SetInstaller(defaultInstallerFromSettings))
+                                            }
+
+                                            else -> {
+                                                viewmodel.dispatch(InstallerViewAction.SetInstallerMode(InstallerMode.Custom))
+                                                val pkg = managedPackages.getOrNull(index - 3)
+                                                viewmodel.dispatch(InstallerViewAction.SetInstaller(pkg?.packageName))
+                                            }
+                                        }
                                         expanded = false
                                     }
                                 )

@@ -6,7 +6,6 @@ import android.content.Context
 import com.rosan.installer.domain.settings.model.AppModel
 import com.rosan.installer.domain.settings.model.Authorizer
 import com.rosan.installer.domain.settings.model.ConfigModel
-import com.rosan.installer.domain.settings.model.InstallerMode
 import com.rosan.installer.domain.settings.repository.AppRepository
 import com.rosan.installer.domain.settings.repository.AppSettingsRepository
 import com.rosan.installer.domain.settings.repository.BooleanSetting
@@ -34,10 +33,8 @@ class GetResolvedConfigUseCase(
             )
         }
 
-        if (model.installerMode == InstallerMode.Initiator) {
-            // packageName is the initiator. If null, it will fall back safely in the repository.
-            model = model.copy(initiatorPackageName = packageName)
-        }
+        // Always store the initiator package name so it is available if the user switches to Initiator mode in the UI later.
+        model = model.copy(initiatorPackageName = packageName)
 
         val currentUninstallFlags = appSettingsRepo.getInt(IntSetting.UninstallFlags, 0).first()
         model = model.copy(uninstallFlags = currentUninstallFlags)

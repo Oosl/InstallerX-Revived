@@ -26,6 +26,7 @@ import com.rosan.installer.domain.session.repository.InstallerSessionRepository
 import com.rosan.installer.domain.settings.model.Authorizer
 import com.rosan.installer.domain.settings.model.ConfigModel
 import com.rosan.installer.domain.settings.model.InstallMode
+import com.rosan.installer.domain.settings.model.InstallerMode
 import com.rosan.installer.domain.settings.repository.AppSettingsRepository
 import com.rosan.installer.domain.settings.repository.BooleanSetting
 import com.rosan.installer.util.addFlag
@@ -100,11 +101,12 @@ class InstallerViewModel(
                 autoSilentInstall = prefs.autoSilentInstall,
                 labTapIconToShare = prefs.labTapIconToShare
             ),
+            rootMode = prefs.labRootMode,
             managedInstallerPackages = prefs.managedInstallerPackages,
         )
     }.stateIn(
         scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
+        started = SharingStarted.Eagerly,
         initialValue = _localState.value
     )
 
@@ -182,6 +184,7 @@ class InstallerViewModel(
             is InstallerViewAction.SetTempShowOPPOSpecial -> _localState.update { it.copy(tempShowOPPOSpecial = action.show) }
             is InstallerViewAction.ToggleSelection -> toggleSelection(action.packageName, action.entity, action.isMultiSelect)
             is InstallerViewAction.ToggleUninstallFlag -> toggleUninstallFlag(action.flag, action.enable)
+            is InstallerViewAction.SetInstallerMode -> selectInstallerMode(action.mode)
             is InstallerViewAction.SetInstaller -> selectInstaller(action.installer)
             is InstallerViewAction.SetTargetUser -> selectTargetUser(action.userId)
             is InstallerViewAction.ApproveSession -> session.approveConfirmation(action.sessionId, action.granted)
@@ -430,6 +433,10 @@ class InstallerViewModel(
 
     fun toggleBypassBlacklist(enable: Boolean) {
         updateConfig { it.copy(bypassBlacklistInstallSetByUser = enable) }
+    }
+
+    private fun selectInstallerMode(mode: InstallerMode) {
+        updateConfig { it.copy(installerMode = mode) }
     }
 
     private fun selectInstaller(packageName: String?) {

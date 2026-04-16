@@ -518,12 +518,20 @@ class ActionHandler(scope: CoroutineScope, session: InstallerSessionRepository) 
 
         // Execute the reboot command
         withContext(Dispatchers.IO) {
-            val cmd = if (reason == "recovery") {
-                // KEYCODE_POWER = 26. Hides incorrect "Factory data reset" message in recovery
-                "input keyevent 26 ; svc power reboot $reason || reboot $reason"
-            } else {
-                val reasonArg = if (reason.isNotEmpty()) " $reason" else ""
-                "svc power reboot$reasonArg || reboot$reasonArg"
+            val cmd = when (reason) {
+                "ksud_soft_reboot" -> {
+                    "ksud soft-reboot"
+                }
+
+                "recovery" -> {
+                    // KEYCODE_POWER = 26. Hides incorrect "Factory data reset" message in recovery
+                    "input keyevent 26 ; svc power reboot $reason || reboot $reason"
+                }
+
+                else -> {
+                    val reasonArg = if (reason.isNotEmpty()) " $reason" else ""
+                    "svc power reboot$reasonArg || reboot$reasonArg"
+                }
             }
 
             val commandArray = arrayOf("sh", "-c", cmd)

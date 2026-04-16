@@ -37,6 +37,7 @@ import com.rosan.installer.domain.engine.exception.ModuleInstallException
 import com.rosan.installer.domain.engine.exception.ModuleInstallFailedIncompatibleAuthorizerException
 import com.rosan.installer.domain.engine.model.DataType
 import com.rosan.installer.domain.session.repository.InstallerSessionRepository
+import com.rosan.installer.domain.settings.model.RootMode
 import com.rosan.installer.ui.icons.AppMiuixIcons
 import com.rosan.installer.ui.page.main.installer.InstallerStage
 import com.rosan.installer.ui.page.main.installer.InstallerViewAction
@@ -321,6 +322,7 @@ fun MiuixInstallerPage(
                             // Only show the reboot menu when the installation is finished
                             if (stage.isFinished) {
                                 RebootListPopup(
+                                    rootMode = uiState.rootMode,
                                     onReboot = { reason ->
                                         viewModel.dispatch(InstallerViewAction.Reboot(reason))
                                     }
@@ -588,6 +590,7 @@ fun MiuixInstallerPage(
 private fun RebootListPopup(
     modifier: Modifier = Modifier,
     alignment: PopupPositionProvider.Align = PopupPositionProvider.Align.TopEnd,
+    rootMode: RootMode,
     onReboot: (String) -> Unit
 ) {
     val showTopPopup = remember { mutableStateOf(false) }
@@ -628,6 +631,9 @@ private fun RebootListPopup(
                 )
                 if (isRebootingUserspaceSupported) {
                     options.add(1, Pair(R.string.reboot_userspace, "userspace"))
+                }
+                if (rootMode == RootMode.KernelSU) {
+                    options.add(1, Pair(R.string.reboot_soft_reboot, "ksud_soft_reboot"))
                 }
                 options
             }

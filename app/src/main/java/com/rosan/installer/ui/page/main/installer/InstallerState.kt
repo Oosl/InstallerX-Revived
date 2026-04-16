@@ -8,6 +8,7 @@ import com.rosan.installer.domain.engine.model.PackageAnalysisResult
 import com.rosan.installer.domain.session.model.UninstallInfo
 import com.rosan.installer.domain.settings.model.ConfigModel
 import com.rosan.installer.domain.settings.model.NamedPackage
+import com.rosan.installer.domain.settings.model.RootMode
 
 /**
  * Represents the entire UI state for the Installer screen.
@@ -36,6 +37,7 @@ data class InstallerState(
     val managedInstallerPackages: List<NamedPackage> = emptyList(),
 
     // User State & Other
+    val rootMode: RootMode = RootMode.Magisk,
     val availableUsers: Map<Int, String> = emptyMap(),
     val uiUninstallInfo: UninstallInfo? = null,
 

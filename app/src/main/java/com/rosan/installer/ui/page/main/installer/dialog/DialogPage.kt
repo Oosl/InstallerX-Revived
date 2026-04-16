@@ -106,9 +106,11 @@ fun DialogPage(
                     }
 
                     ModuleInstallSheetContent(
+                        rootMode = uiState.rootMode,
                         outputLines = stage.output,
                         isFinished = stage.isFinished,
                         onReboot = { viewModel.dispatch(InstallerViewAction.Reboot("")) },
+                        onSoftReboot = { viewModel.dispatch(InstallerViewAction.Reboot("ksud_soft_reboot")) },
                         onClose = { viewModel.dispatch(InstallerViewAction.Close) },
                         colorScheme = colorScheme
                     )

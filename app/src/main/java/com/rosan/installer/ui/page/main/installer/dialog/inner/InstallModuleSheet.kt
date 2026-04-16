@@ -33,6 +33,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rosan.installer.R
+import com.rosan.installer.domain.settings.model.RootMode
 import com.rosan.installer.ui.util.KeyEventBlocker
 
 /**
@@ -41,9 +42,11 @@ import com.rosan.installer.ui.util.KeyEventBlocker
  */
 @Composable
 fun ModuleInstallSheetContent(
+    rootMode: RootMode,
     outputLines: List<String>,
     isFinished: Boolean,
     onReboot: () -> Unit,
+    onSoftReboot: () -> Unit,
     onClose: () -> Unit,
     colorScheme: ColorScheme
 ) {
@@ -113,6 +116,13 @@ fun ModuleInstallSheetContent(
                 ) {
                     Text(stringResource(R.string.reboot))
                 }
+                if (rootMode == RootMode.KernelSU)
+                    Button(
+                        onClick = onSoftReboot,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(stringResource(R.string.reboot_soft_reboot))
+                    }
                 Button(
                     onClick = onClose,
                     modifier = Modifier.fillMaxWidth()

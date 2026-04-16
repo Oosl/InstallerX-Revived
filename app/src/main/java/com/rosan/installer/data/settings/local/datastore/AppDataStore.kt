@@ -100,6 +100,10 @@ class AppDataStore(
         // Customize Installer
         val MANAGED_INSTALLER_PACKAGES_LIST =
             stringPreferencesKey("managed_packages_list")
+        val DEFAULT_MANAGED_INSTALLER_PACKAGES = listOf(
+            NamedPackage("Google Play Store", "com.android.vending"),
+            NamedPackage("Shell", "com.android.shell")
+        )
         val MANAGED_BLACKLIST_PACKAGES_LIST =
             stringPreferencesKey("managed_blacklist_packages_list")
         val MANAGED_SHARED_USER_ID_BLACKLIST =

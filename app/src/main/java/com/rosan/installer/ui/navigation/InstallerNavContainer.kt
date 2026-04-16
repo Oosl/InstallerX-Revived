@@ -15,6 +15,7 @@ import androidx.navigation3.runtime.NavEntryDecorator
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberDecoratedNavEntries
+import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.scene.SceneInfo
 import androidx.navigation3.scene.SinglePaneSceneStrategy
@@ -77,7 +78,12 @@ fun InstallerNavContainer(
             PredictiveBackAnimation.MIUIX -> MiuixPredictiveBackAnimation()
         }
     }
-    val navigator = rememberNavigator(Route.Main)
+
+    // Initialize the back stack with rememberNavBackStack
+    val backStack = rememberNavBackStack(Route.Main)
+
+    // Pass the managed back stack to the Navigator
+    val navigator = remember(backStack) { Navigator(backStack) }
     val useBlur = uiState.useBlur
     val isExpressive = uiState.isExpressive
 

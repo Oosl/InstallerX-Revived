@@ -70,7 +70,10 @@ class AppSettingsRepositoryImpl(
             appDataStore.getBoolean(AppDataStore.SHOW_LAUNCHER_ICON, true),
 
             // Lists
-            appDataStore.getNamedPackageList(AppDataStore.MANAGED_INSTALLER_PACKAGES_LIST),
+            appDataStore.getNamedPackageList(
+                AppDataStore.MANAGED_INSTALLER_PACKAGES_LIST,
+                AppDataStore.DEFAULT_MANAGED_INSTALLER_PACKAGES
+            ),
             appDataStore.getNamedPackageList(AppDataStore.MANAGED_BLACKLIST_PACKAGES_LIST),
             appDataStore.getSharedUidList(AppDataStore.MANAGED_SHARED_USER_ID_BLACKLIST),
             appDataStore.getNamedPackageList(AppDataStore.MANAGED_SHARED_USER_ID_EXEMPTED_PACKAGES_LIST),

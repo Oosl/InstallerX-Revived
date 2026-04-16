@@ -6,6 +6,7 @@ import androidx.annotation.StringRes
 import com.rosan.installer.domain.engine.model.AppEntity
 import com.rosan.installer.domain.session.model.SelectInstallEntity
 import com.rosan.installer.domain.session.repository.InstallerSessionRepository
+import com.rosan.installer.domain.settings.model.InstallerMode
 
 sealed class InstallerViewAction {
     data class CollectSession(val session: InstallerSessionRepository) : InstallerViewAction()
@@ -49,8 +50,13 @@ sealed class InstallerViewAction {
     /**
      * Toggles the selection state of the current app.
      */
-    data class ToggleSelection(val packageName: String, val entity: SelectInstallEntity, val isMultiSelect: Boolean) :
-        InstallerViewAction()
+    data class ToggleSelection(val packageName: String, val entity: SelectInstallEntity, val isMultiSelect: Boolean) : InstallerViewAction()
+
+    /**
+     * Sets the installer mode.
+     * @param mode The [InstallerMode] to set.
+     */
+    data class SetInstallerMode(val mode: InstallerMode) : InstallerViewAction()
 
     /**
      * Sets the installer package name.

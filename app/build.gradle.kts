@@ -11,8 +11,20 @@ val gitHash: String = try {
     "unknown"
 }
 
+// Get the date of the latest commit directly formatted as yy.MM
+val gitDate: String = try {
+    providers.exec {
+        commandLine("git", "log", "-1", "--format=%cd", "--date=format:%y.%m")
+    }.standardOutput.asText.get().trim()
+} catch (_: Exception) {
+    // Fallback to current date if git command fails
+    LocalDate.now().format(DateTimeFormatter.ofPattern("yy.MM"))
+}
+
 val manualVersionName = project.findProperty("VERSION_NAME") as String?
-val dynamicVersionName: String = LocalDate.now().format(DateTimeFormatter.ofPattern("yy.MM"))
+
+// Combine the git commit date and the short hash
+val dynamicVersionName = gitDate
 val baseVersionName: String = manualVersionName ?: dynamicVersionName
 
 plugins {
@@ -22,7 +34,6 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.aboutLibraries)
-    id("kotlin-parcelize")
 }
 
 android {
