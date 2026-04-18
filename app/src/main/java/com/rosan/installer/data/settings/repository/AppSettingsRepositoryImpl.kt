@@ -90,6 +90,8 @@ class AppSettingsRepositoryImpl(
             appDataStore.getBoolean(AppDataStore.LAB_HTTP_SAVE_FILE, false),
             appDataStore.getBoolean(AppDataStore.LAB_SET_INSTALL_REQUESTER, false),
             appDataStore.getBoolean(AppDataStore.LAB_TAP_ICON_TO_SHARE, false),
+            appDataStore.getBoolean(AppDataStore.LAB_SHOW_FILE_PATH, false),
+            appDataStore.getBoolean(AppDataStore.LAB_SHOW_INSTALL_INITIATOR, false),
             appDataStore.getBoolean(AppDataStore.ENABLE_FILE_LOGGING, true),
 
             // Theme settings
@@ -150,13 +152,15 @@ class AppSettingsRepositoryImpl(
             managedBlacklistPackages = values[idx++] as List<NamedPackage>,
             managedSharedUserIdBlacklist = values[idx++] as List<SharedUid>,
             managedSharedUserIdExemptedPackages = values[idx++] as List<NamedPackage>,
-
+            // Uninstaller
             uninstallFlags = values[idx++] as Int,
+            // Updater
             githubUpdateChannel = run {
                 val value = values[idx++] as String
                 runCatching { GithubUpdateChannel.valueOf(value) }.getOrDefault(GithubUpdateChannel.OFFICIAL)
             },
             customGithubProxyUrl = values[idx++] as String,
+            // Lab
             labRootEnableModuleFlash = values[idx++] as Boolean,
             labRootShowModuleArt = values[idx++] as Boolean,
             labRootMode = RootMode.fromString(values[idx++] as String),
@@ -164,8 +168,10 @@ class AppSettingsRepositoryImpl(
             labHttpSaveFile = values[idx++] as Boolean,
             labSetInstallRequester = values[idx++] as Boolean,
             labTapIconToShare = values[idx++] as Boolean,
+            labShowFilePath = values[idx++] as Boolean,
+            labShowInstallInitiator = values[idx++] as Boolean,
             enableFileLogging = values[idx++] as Boolean,
-
+            // UI State
             themeMode = runCatching { ThemeMode.valueOf(values[idx++] as String) }.getOrDefault(ThemeMode.SYSTEM),
             paletteStyle = runCatching { PaletteStyle.valueOf(values[idx++] as String) }.getOrDefault(PaletteStyle.TonalSpot),
             colorSpec = runCatching { ThemeColorSpec.valueOf(values[idx++] as String) }.getOrDefault(ThemeColorSpec.SPEC_2025),
@@ -219,7 +225,12 @@ class AppSettingsRepositoryImpl(
     override fun getNamedPackageList(
         setting: NamedPackageListSetting,
         default: List<NamedPackage>
-    ): Flow<List<NamedPackage>> = appDataStore.getNamedPackageList(namedPackageListKey(setting), default)
+    ): Flow<List<NamedPackage>> {
+        val finalDefault = if (setting == NamedPackageListSetting.ManagedInstallerPackages && default.isEmpty()) {
+            AppDataStore.DEFAULT_MANAGED_INSTALLER_PACKAGES
+        } else default
+        return appDataStore.getNamedPackageList(namedPackageListKey(setting), finalDefault)
+    }
 
     override suspend fun putSharedUidList(setting: SharedUidListSetting, uids: List<SharedUid>) =
         appDataStore.putSharedUidList(sharedUidListKey(setting), uids)
@@ -295,6 +306,8 @@ class AppSettingsRepositoryImpl(
             BooleanSetting.LabHttpSaveFile -> AppDataStore.LAB_HTTP_SAVE_FILE
             BooleanSetting.LabSetInstallRequester -> AppDataStore.LAB_SET_INSTALL_REQUESTER
             BooleanSetting.LabTapIconToShare -> AppDataStore.LAB_TAP_ICON_TO_SHARE
+            BooleanSetting.LabShowFilePath -> AppDataStore.LAB_SHOW_FILE_PATH
+            BooleanSetting.LabShowInstallInitiator -> AppDataStore.LAB_SHOW_INSTALL_INITIATOR
             BooleanSetting.EnableFileLogging -> AppDataStore.ENABLE_FILE_LOGGING
         }
 

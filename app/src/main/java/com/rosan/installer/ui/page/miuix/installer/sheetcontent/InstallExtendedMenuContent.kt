@@ -25,8 +25,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rosan.installer.R
-import com.rosan.installer.domain.session.model.ExtendedMenuEntity
-import com.rosan.installer.domain.session.model.ExtendedMenuItemEntity
 import com.rosan.installer.domain.settings.model.Authorizer
 import com.rosan.installer.domain.settings.model.InstallerMode
 import com.rosan.installer.domain.settings.model.NamedPackage
@@ -36,6 +34,8 @@ import com.rosan.installer.ui.page.main.installer.InstallerViewAction.SetInstall
 import com.rosan.installer.ui.page.main.installer.InstallerViewAction.SetTargetUser
 import com.rosan.installer.ui.page.main.installer.InstallerViewModel
 import com.rosan.installer.ui.page.main.installer.components.rememberInstallOptions
+import com.rosan.installer.ui.page.main.installer.dialog.ExtendedMenuEntity
+import com.rosan.installer.ui.page.main.installer.dialog.ExtendedMenuItemEntity
 import com.rosan.installer.ui.page.main.installer.dialog.inner.InstallExtendedMenuAction
 import com.rosan.installer.ui.page.miuix.widgets.MiuixSwitchWidget
 import com.rosan.installer.ui.theme.InstallerTheme

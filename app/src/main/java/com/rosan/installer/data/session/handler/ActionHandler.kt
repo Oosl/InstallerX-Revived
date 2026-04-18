@@ -220,16 +220,19 @@ class ActionHandler(scope: CoroutineScope, session: InstallerSessionRepository) 
 
         // Resolve Data (IO Heavy - Cancellable via SourceResolver)
         Timber.d("[id=$sessionId] resolve: Resolving data URIs...")
-        val data = sourceResolver.resolve(activity.intent)
+        val resolveResult = sourceResolver.resolve(activity.intent)
 
         // Check active after IO
         if (!currentCoroutineContext().isActive) throw CancellationException()
 
-        session.data = data
+        // Store both stringified URIs and parsed data into the session
+        session.sourceUris = resolveResult.uris
+        session.data = resolveResult.data
+
         Timber.d("[id=$sessionId] resolve: Data resolved successfully (${session.data.size} items).")
 
         // Post-Resolution Logic
-        val forceDialog = data.size > 1 || data.any { it.sourcePath()?.endsWith(".zip", true) == true }
+        val forceDialog = session.data.size > 1 || session.data.any { it.sourcePath()?.endsWith(".zip", true) == true }
         if (forceDialog) {
             Timber.d("[id=$sessionId] resolve: Batch share or module file detected. Forcing install mode to Dialog.")
             session.config = session.config.copy(installMode = InstallMode.Dialog)
@@ -545,6 +548,7 @@ class ActionHandler(scope: CoroutineScope, session: InstallerSessionRepository) 
     private fun resetState() {
         session.error = Throwable()
         session.config = default
+        session.sourceUris = emptyList()
         session.data = emptyList()
         session.analysisResults = emptyList()
         session.progress.tryEmit(ProgressEntity.Ready)

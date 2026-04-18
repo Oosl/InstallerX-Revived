@@ -24,9 +24,12 @@ data class InstallerState(
     val navigatedFromPrepareToChoice: Boolean = false,
     // Used to temporarily override the persistent setting during this session
     val tempShowOPPOSpecial: Boolean? = null,
+    val tempLabShowFilePath: Boolean? = null,
+    val tempLabShowInstallInitiator: Boolean? = null,
 
     // Visual data
     val currentPackageName: String? = null,
+    val initiatorAppLabel: String? = null,
     val displayIcons: Map<String, ImageBitmap?> = emptyMap(),
     val seedColor: Color? = null,
 

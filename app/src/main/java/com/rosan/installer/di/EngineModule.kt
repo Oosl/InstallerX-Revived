@@ -25,6 +25,7 @@ import com.rosan.installer.domain.engine.usecase.ApproveSessionUseCase
 import com.rosan.installer.domain.engine.usecase.ClearAppIconCacheUseCase
 import com.rosan.installer.domain.engine.usecase.GetAppIconColorUseCase
 import com.rosan.installer.domain.engine.usecase.GetAppIconUseCase
+import com.rosan.installer.domain.engine.usecase.GetAppLabelUseCase
 import com.rosan.installer.domain.engine.usecase.GetSessionConfirmationDetailsUseCase
 import com.rosan.installer.domain.engine.usecase.ProcessInstallationUseCase
 import com.rosan.installer.domain.engine.usecase.ProcessUninstallUseCase
@@ -66,4 +67,5 @@ val engineModule = module {
     factoryOf(::GetAppIconUseCase)
     factoryOf(::GetAppIconColorUseCase)
     factoryOf(::ClearAppIconCacheUseCase)
+    factoryOf(::GetAppLabelUseCase)
 }

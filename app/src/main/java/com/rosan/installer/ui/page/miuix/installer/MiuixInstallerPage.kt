@@ -42,7 +42,8 @@ import com.rosan.installer.ui.icons.AppMiuixIcons
 import com.rosan.installer.ui.page.main.installer.InstallerStage
 import com.rosan.installer.ui.page.main.installer.InstallerViewAction
 import com.rosan.installer.ui.page.main.installer.InstallerViewModel
-import com.rosan.installer.ui.page.main.widget.util.ToastEventCollector
+import com.rosan.installer.ui.page.main.widget.util.InstallerEventCollector
+import com.rosan.installer.ui.page.miuix.installer.components.rememberAppInfoState
 import com.rosan.installer.ui.page.miuix.installer.sheetcontent.InstallChoiceContent
 import com.rosan.installer.ui.page.miuix.installer.sheetcontent.InstallCompletedContent
 import com.rosan.installer.ui.page.miuix.installer.sheetcontent.InstallConfirmContent
@@ -61,7 +62,6 @@ import com.rosan.installer.ui.page.miuix.installer.sheetcontent.UninstallFailedC
 import com.rosan.installer.ui.page.miuix.installer.sheetcontent.UninstallPrepareContent
 import com.rosan.installer.ui.page.miuix.installer.sheetcontent.UninstallSuccessContent
 import com.rosan.installer.ui.page.miuix.installer.sheetcontent.UninstallingContent
-import com.rosan.installer.ui.page.miuix.installer.sheetcontent.rememberAppInfoState
 import com.rosan.installer.ui.page.miuix.widgets.DropdownItem
 import com.rosan.installer.ui.page.miuix.widgets.MiuixBackButton
 import com.rosan.installer.ui.theme.InstallerMiuixTheme
@@ -137,7 +137,7 @@ fun MiuixInstallerPage(
         viewModel.dispatch(InstallerViewAction.CollectSession(session))
     }
 
-    ToastEventCollector(viewModel)
+    InstallerEventCollector(viewModel)
 
     val sheetTitle = when (stage) {
         is InstallerStage.Preparing -> stringResource(R.string.installer_preparing)
@@ -472,6 +472,18 @@ fun MiuixInstallerPage(
                                             onInstall = {
                                                 viewModel.dispatch(InstallerViewAction.Install(true))
                                                 if (settings.autoSilentInstall && !viewModel.isInstallingModule) {
+                                                    showBottomSheet.value = false
+                                                    scope.launch {
+                                                        delay(SHEET_ANIMATION_DURATION)
+                                                        viewModel.dispatch(InstallerViewAction.Background)
+                                                    }
+                                                }
+                                            },
+                                            onLongInstall = {
+                                                // Trigger install directly
+                                                viewModel.dispatch(InstallerViewAction.Install(true))
+                                                // Force background auto silent install regardless of settings
+                                                if (!viewModel.isInstallingModule) {
                                                     showBottomSheet.value = false
                                                     scope.launch {
                                                         delay(SHEET_ANIMATION_DURATION)

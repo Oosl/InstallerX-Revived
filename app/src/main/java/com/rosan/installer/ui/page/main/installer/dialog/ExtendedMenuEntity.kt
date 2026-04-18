@@ -1,4 +1,4 @@
-package com.rosan.installer.domain.session.model
+package com.rosan.installer.ui.page.main.installer.dialog
 
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.rosan.installer.domain.engine.model.InstallOption

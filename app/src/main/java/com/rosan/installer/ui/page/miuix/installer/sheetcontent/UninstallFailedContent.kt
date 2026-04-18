@@ -19,6 +19,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rosan.installer.R
 import com.rosan.installer.ui.page.main.installer.InstallerViewModel
+import com.rosan.installer.ui.page.miuix.installer.components.AppInfoSlot
+import com.rosan.installer.ui.page.miuix.installer.components.AppInfoState
 import com.rosan.installer.ui.page.miuix.widgets.MiuixErrorTextBlock
 import com.rosan.installer.ui.util.isGestureNavigation
 import top.yukonga.miuix.kmp.basic.ButtonDefaults

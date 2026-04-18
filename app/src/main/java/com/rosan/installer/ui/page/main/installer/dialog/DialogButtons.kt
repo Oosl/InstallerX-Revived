@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2023-2026 iamr0s, InstallerX Revived contributors
-package com.rosan.installer.ui.page.main.installer.dialog.inner
+package com.rosan.installer.ui.page.main.installer.dialog
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,10 +19,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.unit.dp
-import com.rosan.installer.ui.page.main.installer.dialog.DialogInnerParams
+import kotlinx.coroutines.delay
 
 @Composable
 fun dialogButtons(
@@ -44,7 +52,7 @@ fun dialogButtons(
             Box {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    // Key Change 1: Force the Row to be as tall as its tallest child
+                    // Force the Row to be as tall as its tallest child
                     modifier = Modifier.height(IntrinsicSize.Max)
                 ) {
                     buttons[i].let {
@@ -52,7 +60,7 @@ fun dialogButtons(
                             it,
                             Modifier
                                 .weight(it.weight)
-                                .fillMaxHeight() // Key Change 2: Stretch to fill the parent Row's height
+                                .fillMaxHeight() // Stretch to fill the parent Row's height
                         )
                     }
                     buttons[i + 1].let {
@@ -60,7 +68,7 @@ fun dialogButtons(
                             it,
                             Modifier
                                 .weight(it.weight)
-                                .fillMaxHeight() // Key Change 2: Stretch here too
+                                .fillMaxHeight() // Stretch here too
                         )
                     }
                 }
@@ -73,15 +81,39 @@ fun dialogButtons(
 private fun InnerButton(
     button: DialogButton, modifier: Modifier = Modifier
 ) {
+    // Track the press interaction state for the button
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    var hasLongPressed by remember { mutableStateOf(false) }
+    val viewConfiguration = LocalViewConfiguration.current
+
+    // Handle the long press delay logic
+    LaunchedEffect(isPressed) {
+        if (isPressed) {
+            hasLongPressed = false
+            // Wait for the system's default long press duration
+            delay(viewConfiguration.longPressTimeoutMillis)
+            hasLongPressed = true
+            // Trigger the long press callback if it exists
+            button.onLongClick?.invoke()
+        }
+    }
+
     TextButton(
-        button.onClick,
+        onClick = {
+            // Only trigger normal click if long press didn't happen
+            if (!hasLongPressed) {
+                button.onClick()
+            }
+        },
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(4.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer,
             contentColor = MaterialTheme.colorScheme.onPrimaryContainer
         ),
-        contentPadding = PaddingValues(16.dp)
+        contentPadding = PaddingValues(16.dp),
+        interactionSource = interactionSource // Bind the interaction source
     ) {
         Text(button.text)
     }

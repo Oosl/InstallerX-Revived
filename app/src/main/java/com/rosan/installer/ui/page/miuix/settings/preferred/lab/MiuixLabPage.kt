@@ -37,7 +37,6 @@ import com.rosan.installer.core.env.AppConfig
 import com.rosan.installer.domain.settings.model.GithubUpdateChannel
 import com.rosan.installer.domain.settings.model.HttpProfile
 import com.rosan.installer.domain.settings.model.RootMode
-import com.rosan.installer.ui.icons.AppIcons
 import com.rosan.installer.ui.navigation.LocalNavigator
 import com.rosan.installer.ui.page.main.settings.preferred.lab.LabSettingsAction
 import com.rosan.installer.ui.page.main.settings.preferred.lab.LabSettingsViewModel
@@ -215,6 +214,27 @@ fun MiuixLabPage(
                     }
                 }
             }
+            item { SmallTitle(stringResource(R.string.lab_ui_settings)) }
+            item {
+                Card(
+                    modifier = Modifier
+                        .padding(horizontal = 12.dp)
+                        .padding(bottom = 12.dp)
+                ) {
+                    MiuixSwitchWidget(
+                        title = stringResource(R.string.lab_show_apk_path),
+                        description = stringResource(R.string.lab_show_apk_path_desc),
+                        checked = uiState.labShowFilePath,
+                        onCheckedChange = { viewModel.dispatch(LabSettingsAction.LabChangeShowFilePath(it)) }
+                    )
+                    MiuixSwitchWidget(
+                        title = stringResource(R.string.lab_show_install_initiator),
+                        description = stringResource(R.string.lab_show_install_initiator_desc),
+                        checked = uiState.labShowInstallInitiator,
+                        onCheckedChange = { viewModel.dispatch(LabSettingsAction.LabChangeShowInstallInitiator(it)) }
+                    )
+                }
+            }
             item { SmallTitle(stringResource(R.string.lab_unstable_features)) }
             item {
                 Card(
@@ -223,7 +243,6 @@ fun MiuixLabPage(
                         .padding(bottom = 12.dp)
                 ) {
                     MiuixSwitchWidget(
-                        icon = AppIcons.Share,
                         title = stringResource(R.string.lab_tap_icon_to_share),
                         description = stringResource(R.string.lab_tap_icon_to_share_desc),
                         checked = uiState.labTapIconToShare,
@@ -245,13 +264,6 @@ fun MiuixLabPage(
                             .padding(horizontal = 12.dp)
                             .padding(bottom = 12.dp)
                     ) {
-                        // TODO
-                        /*MiuixSwitchWidget(
-                            title = stringResource(R.string.lab_http_save_file),
-                            description = stringResource(R.string.lab_http_save_file_desc),
-                            checked = uiState.labHttpSaveFile,
-                            onCheckedChange = { viewModel.dispatch(LabSettingsAction.LabChangeHttpSaveFile(it)) }
-                        )*/
                         val currentProfile = uiState.labHttpProfile
                         val allowSecureString = stringResource(R.string.lab_http_profile_secure)
                         val allowLocalString = stringResource(R.string.lab_http_profile_local)

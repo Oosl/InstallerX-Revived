@@ -22,6 +22,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.rosan.installer.R
 import com.rosan.installer.ui.page.main.installer.InstallerStage
+import com.rosan.installer.ui.page.miuix.installer.components.AppInfoSlot
+import com.rosan.installer.ui.page.miuix.installer.components.AppInfoState
 import com.rosan.installer.ui.util.isGestureNavigation
 import top.yukonga.miuix.kmp.basic.InfiniteProgressIndicator
 import top.yukonga.miuix.kmp.basic.Text

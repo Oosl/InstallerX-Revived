@@ -1,4 +1,4 @@
-package com.rosan.installer.ui.page.main.widget.dialog
+package com.rosan.installer.ui.page.main.installer.components
 
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring

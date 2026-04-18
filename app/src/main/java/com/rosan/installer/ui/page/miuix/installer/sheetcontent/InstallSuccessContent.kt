@@ -30,6 +30,8 @@ import com.rosan.installer.domain.privileged.usecase.OpenLSPosedUseCase
 import com.rosan.installer.domain.settings.model.Authorizer
 import com.rosan.installer.domain.settings.model.isPrivileged
 import com.rosan.installer.ui.page.main.installer.InstallerViewModel
+import com.rosan.installer.ui.page.miuix.installer.components.AppInfoSlot
+import com.rosan.installer.ui.page.miuix.installer.components.AppInfoState
 import com.rosan.installer.ui.util.isGestureNavigation
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay

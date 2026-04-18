@@ -46,6 +46,8 @@ sealed class InstallerViewAction {
     data object HideMiuixPermissionList : InstallerViewAction()
 
     data class SetTempShowOPPOSpecial(val show: Boolean) : InstallerViewAction()
+    data class SetTempLabShowFilePath(val show: Boolean) : InstallerViewAction()           // 新增 Action
+    data class SetTempLabShowInstallInitiator(val show: Boolean) : InstallerViewAction()
 
     /**
      * Toggles the selection state of the current app.

@@ -38,9 +38,13 @@ import com.rosan.installer.domain.engine.usecase.AnalyzeInstallStateUseCase
 import com.rosan.installer.ui.icons.AppIcons
 import com.rosan.installer.ui.page.main.installer.InstallerViewAction
 import com.rosan.installer.ui.page.main.installer.InstallerViewModel
+import com.rosan.installer.ui.page.main.installer.components.WarningTextBlock
+import com.rosan.installer.ui.page.main.installer.components.pausingIcon
+import com.rosan.installer.ui.page.main.installer.dialog.DialogButton
 import com.rosan.installer.ui.page.main.installer.dialog.DialogInnerParams
 import com.rosan.installer.ui.page.main.installer.dialog.DialogParams
 import com.rosan.installer.ui.page.main.installer.dialog.DialogParamsType
+import com.rosan.installer.ui.page.main.installer.dialog.dialogButtons
 import com.rosan.installer.ui.page.main.installer.mapper.InstallStateUiMapper
 import com.rosan.installer.ui.page.main.widget.chip.Chip
 import com.rosan.installer.ui.page.main.widget.chip.InstallInfoChipGroup
@@ -360,11 +364,25 @@ fun installPrepareDialog(
                     })
                 }
                 if (canInstall) {
-                    add(DialogButton(stringResource(buttonTextId), 1f) {
-                        viewModel.dispatch(InstallerViewAction.Install(true))
-                        if (settings.autoSilentInstall && !viewModel.isInstallingModule)
-                            viewModel.dispatch(InstallerViewAction.Background)
-                    })
+                    add(
+                        DialogButton(
+                            text = stringResource(buttonTextId),
+                            weight = 1f,
+                            onLongClick = {
+                                // Trigger install directly
+                                viewModel.dispatch(InstallerViewAction.Install(true))
+                                // Force background auto silent install regardless of settings
+                                if (!viewModel.isInstallingModule) {
+                                    viewModel.dispatch(InstallerViewAction.Background)
+                                }
+                            },
+                            onClick = {
+                                viewModel.dispatch(InstallerViewAction.Install(true))
+                                if (settings.autoSilentInstall && !viewModel.isInstallingModule)
+                                    viewModel.dispatch(InstallerViewAction.Background)
+                            }
+                        )
+                    )
                 }
                 // else if app can be installed and extended menu is shown
                 if (canInstall && settings.showExtendedMenu && primaryEntity !is AppEntity.ModuleEntity) {

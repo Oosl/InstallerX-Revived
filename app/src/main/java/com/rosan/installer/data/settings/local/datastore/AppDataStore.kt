@@ -121,6 +121,8 @@ class AppDataStore(
         val LAB_HTTP_SAVE_FILE = booleanPreferencesKey("lab_http_save_file")
         val LAB_SET_INSTALL_REQUESTER = booleanPreferencesKey("lab_set_install_requester")
         val LAB_TAP_ICON_TO_SHARE = booleanPreferencesKey("lab_tap_icon_to_share")
+        val LAB_SHOW_FILE_PATH = booleanPreferencesKey("lab_show_file_path")
+        val LAB_SHOW_INSTALL_INITIATOR = booleanPreferencesKey("lab_show_install_initiator")
 
         // Debug
         val ENABLE_FILE_LOGGING = booleanPreferencesKey("enable_file_logging")

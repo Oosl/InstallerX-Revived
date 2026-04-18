@@ -67,6 +67,8 @@ enum class BooleanSetting {
     LabHttpSaveFile,
     LabSetInstallRequester,
     LabTapIconToShare,
+    LabShowFilePath,
+    LabShowInstallInitiator,
     EnableFileLogging
 }
 

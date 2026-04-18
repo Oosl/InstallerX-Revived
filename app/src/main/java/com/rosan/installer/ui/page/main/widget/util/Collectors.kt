@@ -13,6 +13,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.core.net.toUri
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
@@ -28,8 +29,10 @@ import com.rosan.installer.ui.page.main.settings.config.edit.EditViewEvent
 import com.rosan.installer.ui.page.main.settings.config.edit.EditViewModel
 import com.rosan.installer.ui.page.main.settings.preferred.about.AboutEvent
 import com.rosan.installer.ui.page.main.settings.preferred.about.AboutViewModel
+import com.rosan.installer.util.getErrorMessage
 import com.rosan.installer.util.toast
 import kotlinx.coroutines.flow.collectLatest
+import timber.log.Timber
 
 @Composable
 fun LogEventCollector(viewModel: AboutViewModel) {
@@ -113,13 +116,41 @@ fun OnLifecycleEvent(
 }
 
 @Composable
-fun ToastEventCollector(viewModel: InstallerViewModel) {
+fun InstallerEventCollector(viewModel: InstallerViewModel) {
     val context = LocalContext.current
+
     LaunchedEffect(Unit) {
         viewModel.uiEvents.collect { event ->
             when (event) {
                 is InstallerViewEvent.ShowToast -> context.toast(event.message)
+
                 is InstallerViewEvent.ShowToastRes -> context.toast(event.messageResId)
+
+                is InstallerViewEvent.ShowErrorToast -> context.toast(event.error.getErrorMessage(context))
+
+                is InstallerViewEvent.ShareFile -> {
+                    try {
+                        // Parse the original URI string back into an android.net.Uri
+                        val uri = event.uriString.toUri()
+
+                        // Directly use the URI in the intent
+                        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                            type = event.mimeType
+                            putExtra(Intent.EXTRA_STREAM, uri)
+                            // Grant read permission so the receiving app can access the URI
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        }
+
+                        val chooser = Intent.createChooser(shareIntent, null)
+                        chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+
+                        context.startActivity(chooser)
+
+                    } catch (e: Exception) {
+                        Timber.e(e, "Failed to share file via URI")
+                        context.toast("Failed to share file")
+                    }
+                }
             }
         }
     }

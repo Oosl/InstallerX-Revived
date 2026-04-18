@@ -21,6 +21,7 @@ import com.rosan.installer.domain.engine.model.DataEntity
 import com.rosan.installer.domain.session.exception.ResolveException
 import com.rosan.installer.domain.session.exception.ResolvedFailedNoInternetAccessException
 import com.rosan.installer.domain.session.model.ProgressEntity
+import com.rosan.installer.domain.session.model.ResolveResult
 import com.rosan.installer.domain.session.repository.NetworkResolver
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -45,7 +46,7 @@ class SourceResolver(
 
     fun getTrackedCloseables(): List<Closeable> = closeables
 
-    suspend fun resolve(intent: Intent): List<DataEntity> {
+    suspend fun resolve(intent: Intent): ResolveResult {
         val uris = extractUris(intent)
         Timber.d("resolve: URIs extracted from intent (${uris.size}).")
 
@@ -55,7 +56,12 @@ class SourceResolver(
             if (!currentCoroutineContext().isActive) throw CancellationException()
             data.addAll(resolveSingleUri(uri))
         }
-        return data
+
+        // Return the packaged result
+        return ResolveResult(
+            uris = uris.map { it.toString() },
+            data = data
+        )
     }
 
     private fun extractUris(intent: Intent): List<Uri> {

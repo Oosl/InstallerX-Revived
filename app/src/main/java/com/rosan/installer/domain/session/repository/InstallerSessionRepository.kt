@@ -18,6 +18,7 @@ interface InstallerSessionRepository : Closeable {
     var error: Throwable
     var config: ConfigModel
     var data: List<DataEntity>
+    var sourceUris: List<String>
     var analysisResults: List<PackageAnalysisResult>
     val progress: Flow<ProgressEntity>
     val background: Flow<Boolean>

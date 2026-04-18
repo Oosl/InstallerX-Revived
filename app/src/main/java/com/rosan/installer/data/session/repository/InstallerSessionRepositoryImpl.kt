@@ -31,6 +31,7 @@ class InstallerSessionRepositoryImpl(
     override var error: Throwable = Throwable()
     override var config: ConfigModel = ConfigModel.default
     override var data: List<DataEntity> by mutableStateOf(emptyList())
+    override var sourceUris: List<String> by mutableStateOf(emptyList())
     override var analysisResults: List<PackageAnalysisResult> by mutableStateOf(emptyList())
     override val progress: MutableSharedFlow<ProgressEntity> = MutableStateFlow(ProgressEntity.Ready)
 

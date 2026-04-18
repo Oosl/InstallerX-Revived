@@ -19,6 +19,7 @@ import com.rosan.installer.ui.page.main.installer.InstallerViewModel
 import com.rosan.installer.ui.page.main.installer.dialog.DialogInnerParams
 import com.rosan.installer.ui.page.main.installer.dialog.DialogParams
 import com.rosan.installer.ui.page.main.installer.dialog.DialogParamsType
+import com.rosan.installer.ui.page.main.installer.dialog.dialogButtons
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable

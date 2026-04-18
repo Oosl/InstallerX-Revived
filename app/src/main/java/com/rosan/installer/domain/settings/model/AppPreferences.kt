@@ -48,6 +48,8 @@ data class AppPreferences(
     val labHttpSaveFile: Boolean,
     val labSetInstallRequester: Boolean,
     val labTapIconToShare: Boolean,
+    val labShowFilePath: Boolean,
+    val labShowInstallInitiator: Boolean,
     val enableFileLogging: Boolean,
     // Theme Settings
     val themeMode: ThemeMode,

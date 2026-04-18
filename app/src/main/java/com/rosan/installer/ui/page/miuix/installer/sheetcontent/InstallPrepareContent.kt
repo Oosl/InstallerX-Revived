@@ -2,6 +2,7 @@
 // Copyright (C) 2025-2026 InstallerX Revived contributors
 package com.rosan.installer.ui.page.miuix.installer.sheetcontent
 
+import android.content.ClipData
 import android.os.Build
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
@@ -9,6 +10,8 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -21,18 +24,21 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalViewConfiguration
+import androidx.compose.ui.platform.toClipEntry
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rosan.installer.R
@@ -42,6 +48,7 @@ import com.rosan.installer.domain.engine.model.AppEntity
 import com.rosan.installer.domain.engine.model.DataType
 import com.rosan.installer.domain.engine.model.InstalledAppInfo
 import com.rosan.installer.domain.engine.model.sortedBest
+import com.rosan.installer.domain.engine.model.sourcePath
 import com.rosan.installer.domain.engine.usecase.AnalyzeInstallStateUseCase
 import com.rosan.installer.domain.settings.model.Authorizer
 import com.rosan.installer.ui.icons.AppIcons
@@ -49,6 +56,9 @@ import com.rosan.installer.ui.page.main.installer.InstallerViewAction
 import com.rosan.installer.ui.page.main.installer.InstallerViewModel
 import com.rosan.installer.ui.page.main.installer.dialog.inner.InstallNoticeResources
 import com.rosan.installer.ui.page.main.installer.mapper.InstallStateUiMapper
+import com.rosan.installer.ui.page.miuix.installer.components.AdaptiveInfoRow
+import com.rosan.installer.ui.page.miuix.installer.components.AppInfoSlot
+import com.rosan.installer.ui.page.miuix.installer.components.AppInfoState
 import com.rosan.installer.ui.page.miuix.settings.preferred.MiuixNavigationItemWidget
 import com.rosan.installer.ui.page.miuix.widgets.MiuixInfoChipGroup
 import com.rosan.installer.ui.page.miuix.widgets.MiuixInstallerTipCard
@@ -56,7 +66,11 @@ import com.rosan.installer.ui.theme.InstallerTheme
 import com.rosan.installer.ui.theme.miuixSheetCardColorDark
 import com.rosan.installer.ui.util.formatSize
 import com.rosan.installer.ui.util.isGestureNavigation
+import com.rosan.installer.util.toast
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
+import top.yukonga.miuix.kmp.basic.BasicComponent
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CardColors
@@ -71,8 +85,12 @@ fun InstallPrepareContent(
     viewModel: InstallerViewModel,
     appInfo: AppInfoState,
     onCancel: () -> Unit,
-    onInstall: () -> Unit
+    onInstall: () -> Unit,
+    onLongInstall: () -> Unit
 ) {
+    val context = LocalContext.current
+    val clipboard = LocalClipboard.current
+    val scope = rememberCoroutineScope()
     val isDarkMode = InstallerTheme.isDark
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val config = uiState.config
@@ -433,6 +451,68 @@ fun InstallPrepareContent(
             }
         }
 
+        // Display lab info card if either setting is enabled
+        item {
+            AnimatedVisibility(
+                visible = !isExpanded && (settings.labShowFilePath || settings.labShowInstallInitiator),
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    colors = CardColors(
+                        color = if (isDynamicColor) MiuixTheme.colorScheme.surfaceContainer else
+                            if (isDarkMode) miuixSheetCardColorDark else Color.White,
+                        contentColor = MiuixTheme.colorScheme.onSurface
+                    )
+                ) {
+                    if (settings.labShowFilePath) {
+                        // Safely extract the source path
+                        val path = runCatching {
+                            val rawPath = primaryEntity.data.sourcePath()
+                            // If multiple files are selected (like Splits), show the parent directory
+                            if (selectedEntities.size > 1 && rawPath != null) {
+                                rawPath.substringBeforeLast("/") + " (Multi-part)"
+                            } else {
+                                rawPath
+                            }
+                        }.getOrNull() ?: stringResource(R.string.installer_label_unknown)
+
+                        BasicComponent(
+                            title = stringResource(R.string.lab_show_apk_path_label),
+                            summary = path,
+                            onClick = {
+                                scope.launch {
+                                    val clipData = ClipData.newPlainText("APK Path", path)
+                                    clipboard.setClipEntry(clipData.toClipEntry())
+                                    context.toast(R.string.copied_format, path)
+                                }
+                            }
+                        )
+                    }
+
+                    if (settings.labShowInstallInitiator) {
+                        // Use the runtime field initiatorPackageName from ConfigModel
+                        val initiator = uiState.initiatorAppLabel ?: stringResource(R.string.installer_label_unknown)
+
+                        BasicComponent(
+                            title = stringResource(R.string.lab_show_install_initiator_label),
+                            summary = initiator,
+                            onClick = {
+                                scope.launch {
+                                    val clipData = ClipData.newPlainText("Install Initiator", initiator)
+                                    clipboard.setClipEntry(clipData.toClipEntry())
+                                    context.toast(R.string.copied_format, initiator)
+                                }
+                            }
+                        )
+                    }
+                }
+            }
+        }
+
         val canInstallBaseEntity = (primaryEntity as? AppEntity.BaseEntity)?.let { base ->
             if (entityToInstall != null) {
                 // Installing Base: Check SDK
@@ -458,6 +538,23 @@ fun InstallPrepareContent(
         val showExpandButton = rawBaseEntity != null && settings.showExtendedMenu
 
         item {
+            val interactionSource = remember { MutableInteractionSource() }
+            val isPressed by interactionSource.collectIsPressedAsState()
+            var hasLongPressed by remember { mutableStateOf(false) }
+            val viewConfiguration = LocalViewConfiguration.current
+
+            // Handle the long press delay logic
+            LaunchedEffect(isPressed) {
+                if (isPressed) {
+                    hasLongPressed = false
+                    // Wait for the system's default long press duration
+                    delay(viewConfiguration.longPressTimeoutMillis)
+                    hasLongPressed = true
+                    // Trigger the long press action
+                    onLongInstall()
+                }
+            }
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -469,7 +566,7 @@ fun InstallPrepareContent(
                 if (showExpandButton)
                     TextButton(
                         onClick = { isExpanded = !isExpanded },
-                        text = if (isExpanded) stringResource(R.string.collapse) else stringResource(R.string.expand),
+                        text = if (isExpanded) stringResource(R.string.collapse) else stringResource(R.string.more),
                         colors = ButtonDefaults.textButtonColors(
                             color = if (isDynamicColor) MiuixTheme.colorScheme.secondaryContainer else MiuixTheme.colorScheme.secondaryVariant,
                             textColor = if (isDynamicColor) MiuixTheme.colorScheme.onSecondaryContainer else MiuixTheme.colorScheme.onSecondaryVariant
@@ -487,179 +584,15 @@ fun InstallPrepareContent(
                         modifier = Modifier.weight(1f),
                     )
                 TextButton(
-                    onClick = onInstall,
+                    onClick = {
+                        // Only trigger normal install if long press didn't happen
+                        if (!hasLongPressed) onInstall()
+                    },
                     enabled = canInstall,
                     text = stringResource(buttonTextId),
                     colors = ButtonDefaults.textButtonColorsPrimary(),
-                    modifier = Modifier.weight(1f)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun AdaptiveInfoRow(
-    @StringRes labelResId: Int,
-    newValue: String,
-    oldValue: String?,
-    isUninstalled: Boolean = false,
-    isArchived: Boolean = false
-) {
-    val showComparison = oldValue != null && newValue != oldValue
-    val oldTextContent = when {
-        isArchived -> stringResource(R.string.old_version_archived)
-        isUninstalled -> if (oldValue.isNullOrEmpty()) stringResource(R.string.old_version_uninstalled) else oldValue
-        else -> oldValue.orEmpty()
-    }
-
-    Layout(
-        content = {
-            // Index 0: Label
-            Text(
-                text = stringResource(labelResId),
-                style = MiuixTheme.textStyles.body2,
-                fontWeight = FontWeight.SemiBold
-            )
-
-            if (showComparison) {
-                // Index 1: Old text
-                Text(
-                    text = oldTextContent,
-                    style = MiuixTheme.textStyles.body2,
-                    textAlign = TextAlign.End
-                )
-                // Index 2: Arrow
-                Icon(
-                    imageVector = AppIcons.ArrowIndicator,
-                    contentDescription = "to",
-                    modifier = Modifier
-                        .padding(horizontal = 4.dp)
-                        .size(16.dp)
-                )
-                // Index 3: New text
-                Text(
-                    text = newValue,
-                    style = MiuixTheme.textStyles.body2,
-                    textAlign = TextAlign.End
-                )
-            } else {
-                // Index 1: Single text when no comparison
-                Text(
-                    text = newValue,
-                    style = MiuixTheme.textStyles.body2,
-                    textAlign = TextAlign.End
-                )
-            }
-        },
-        modifier = Modifier.fillMaxWidth()
-    ) { measurables, constraints ->
-        val spacing = 16.dp.roundToPx()
-
-        // Measure label exactly once
-        val labelPlaceable = measurables[0].measure(Constraints(minWidth = 0, maxWidth = constraints.maxWidth))
-
-        if (showComparison) {
-            val oldMeasurable = measurables[1]
-            val arrowMeasurable = measurables[2]
-            val newMeasurable = measurables[3]
-
-            // Use Intrinsic measurements to check required width WITHOUT calling measure() multiple times
-            val oldMaxWidthReq = oldMeasurable.maxIntrinsicWidth(constraints.maxHeight)
-            val arrowMaxWidthReq = arrowMeasurable.maxIntrinsicWidth(constraints.maxHeight)
-            val newMaxWidthReq = newMeasurable.maxIntrinsicWidth(constraints.maxHeight)
-
-            val totalSingleLineWidth = labelPlaceable.width + spacing + oldMaxWidthReq + arrowMaxWidthReq + newMaxWidthReq
-
-            if (totalSingleLineWidth <= constraints.maxWidth) {
-                // Single line mode: Space is sufficient. We can safely measure them now.
-                val oldPlaceable = oldMeasurable.measure(Constraints(minWidth = 0, maxWidth = oldMaxWidthReq))
-                val arrowPlaceable = arrowMeasurable.measure(Constraints(minWidth = 0, maxWidth = arrowMaxWidthReq))
-                val newPlaceable = newMeasurable.measure(Constraints(minWidth = 0, maxWidth = newMaxWidthReq))
-
-                val height = maxOf(labelPlaceable.height, oldPlaceable.height, arrowPlaceable.height, newPlaceable.height)
-
-                layout(constraints.maxWidth, height) {
-                    labelPlaceable.placeRelative(
-                        x = 0,
-                        y = Alignment.CenterVertically.align(labelPlaceable.height, height)
-                    )
-
-                    var currentX = constraints.maxWidth
-
-                    currentX -= newPlaceable.width
-                    newPlaceable.placeRelative(
-                        x = currentX,
-                        y = Alignment.CenterVertically.align(newPlaceable.height, height)
-                    )
-
-                    currentX -= arrowPlaceable.width
-                    arrowPlaceable.placeRelative(
-                        x = currentX,
-                        y = Alignment.CenterVertically.align(arrowPlaceable.height, height)
-                    )
-
-                    currentX -= oldPlaceable.width
-                    oldPlaceable.placeRelative(
-                        x = currentX,
-                        y = Alignment.CenterVertically.align(oldPlaceable.height, height)
-                    )
-                }
-            } else {
-                // Stacked mode: Space is insufficient. Two rows.
-
-                // Line 1: Old text shares the row with the Label
-                val oldMaxWidth = maxOf(0, constraints.maxWidth - labelPlaceable.width - spacing)
-                val oldPlaceable = oldMeasurable.measure(Constraints(minWidth = 0, maxWidth = oldMaxWidth))
-
-                // Line 2: New text takes full width minus the arrow
-                val arrowPlaceable = arrowMeasurable.measure(Constraints())
-                val newMaxWidth = maxOf(0, constraints.maxWidth - arrowPlaceable.width)
-                val newPlaceable = newMeasurable.measure(Constraints(minWidth = 0, maxWidth = newMaxWidth))
-
-                val verticalSpacing = 4.dp.roundToPx()
-                val line1Height = maxOf(labelPlaceable.height, oldPlaceable.height)
-                val line2Height = maxOf(arrowPlaceable.height, newPlaceable.height)
-                val totalHeight = line1Height + verticalSpacing + line2Height
-
-                layout(constraints.maxWidth, totalHeight) {
-                    // Place Line 1
-                    labelPlaceable.placeRelative(
-                        x = 0,
-                        y = Alignment.CenterVertically.align(labelPlaceable.height, line1Height)
-                    )
-                    oldPlaceable.placeRelative(
-                        x = constraints.maxWidth - oldPlaceable.width,
-                        y = Alignment.CenterVertically.align(oldPlaceable.height, line1Height)
-                    )
-
-                    // Place Line 2
-                    val line2Y = line1Height + verticalSpacing
-                    newPlaceable.placeRelative(
-                        x = constraints.maxWidth - newPlaceable.width,
-                        y = line2Y + Alignment.CenterVertically.align(newPlaceable.height, line2Height)
-                    )
-                    // Anchor arrow directly to the left of the new text
-                    arrowPlaceable.placeRelative(
-                        x = constraints.maxWidth - newPlaceable.width - arrowPlaceable.width,
-                        y = line2Y + Alignment.CenterVertically.align(arrowPlaceable.height, line2Height)
-                    )
-                }
-            }
-        } else {
-            // Single value mode
-            val valueMaxWidth = maxOf(0, constraints.maxWidth - labelPlaceable.width - spacing)
-            val valuePlaceable = measurables[1].measure(Constraints(minWidth = 0, maxWidth = valueMaxWidth))
-
-            val height = maxOf(labelPlaceable.height, valuePlaceable.height)
-            layout(constraints.maxWidth, height) {
-                labelPlaceable.placeRelative(
-                    x = 0,
-                    y = Alignment.CenterVertically.align(labelPlaceable.height, height)
-                )
-                valuePlaceable.placeRelative(
-                    x = constraints.maxWidth - valuePlaceable.width,
-                    y = Alignment.CenterVertically.align(valuePlaceable.height, height)
+                    modifier = Modifier.weight(1f),
+                    interactionSource = interactionSource
                 )
             }
         }

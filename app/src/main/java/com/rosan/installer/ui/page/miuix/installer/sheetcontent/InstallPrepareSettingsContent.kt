@@ -22,6 +22,7 @@ import com.rosan.installer.core.env.DeviceConfig
 import com.rosan.installer.domain.device.model.Manufacturer
 import com.rosan.installer.ui.page.main.installer.InstallerViewAction
 import com.rosan.installer.ui.page.main.installer.InstallerViewModel
+import com.rosan.installer.ui.page.miuix.widgets.MiuixInstallerTipCard
 import com.rosan.installer.ui.page.miuix.widgets.MiuixSwitchWidget
 import com.rosan.installer.ui.theme.InstallerTheme
 import com.rosan.installer.ui.theme.miuixSheetCardColorDark
@@ -49,11 +50,12 @@ fun PrepareSettingsContent(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 16.dp, bottom = if (isGestureNavigation()) 24.dp else 0.dp),
+            .padding(bottom = if (isGestureNavigation()) 24.dp else 0.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        MiuixInstallerTipCard(stringResource(R.string.installer_temp_settings_tip))
         Card(
-            modifier = Modifier.padding(bottom = 6.dp),
+            modifier = Modifier.padding(top = 12.dp, bottom = 12.dp),
             colors = CardColors(
                 color = if (isDynamicColor) MiuixTheme.colorScheme.surfaceContainer else
                     if (isDarkMode) miuixSheetCardColorDark else Color.White,
@@ -100,6 +102,32 @@ fun PrepareSettingsContent(
                     }
                 )
             }
+        }
+        Card(
+            modifier = Modifier.padding(bottom = 6.dp),
+            colors = CardColors(
+                color = if (isDynamicColor) MiuixTheme.colorScheme.surfaceContainer else
+                    if (isDarkMode) miuixSheetCardColorDark else Color.White,
+                contentColor = MiuixTheme.colorScheme.onSurface
+            )
+        ) {
+            MiuixSwitchWidget(
+                title = stringResource(R.string.lab_show_apk_path),
+                description = stringResource(R.string.lab_show_apk_path_desc),
+                checked = settings.labShowFilePath,
+                onCheckedChange = { newValue ->
+                    viewModel.dispatch(InstallerViewAction.SetTempLabShowFilePath(newValue))
+                }
+            )
+
+            MiuixSwitchWidget(
+                title = stringResource(R.string.lab_show_install_initiator),
+                description = stringResource(R.string.lab_show_install_initiator_desc),
+                checked = settings.labShowInstallInitiator,
+                onCheckedChange = { newValue ->
+                    viewModel.dispatch(InstallerViewAction.SetTempLabShowInstallInitiator(newValue))
+                }
+            )
         }
         Spacer(
             modifier = Modifier

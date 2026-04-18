@@ -17,5 +17,7 @@ data class InstallerViewSettings(
     val enableModuleInstall: Boolean = false,
     val useDynColorFollowPkgIcon: Boolean = false,
     // Lab
-    val labTapIconToShare: Boolean = false
+    val labTapIconToShare: Boolean = false,
+    val labShowFilePath: Boolean = false,
+    val labShowInstallInitiator: Boolean = false
 )

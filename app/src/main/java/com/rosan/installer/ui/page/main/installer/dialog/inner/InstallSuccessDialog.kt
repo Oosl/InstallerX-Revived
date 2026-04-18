@@ -22,8 +22,10 @@ import com.rosan.installer.domain.settings.model.Authorizer
 import com.rosan.installer.domain.settings.model.isPrivileged
 import com.rosan.installer.ui.page.main.installer.InstallerViewAction
 import com.rosan.installer.ui.page.main.installer.InstallerViewModel
+import com.rosan.installer.ui.page.main.installer.dialog.DialogButton
 import com.rosan.installer.ui.page.main.installer.dialog.DialogParams
 import com.rosan.installer.ui.page.main.installer.dialog.DialogParamsType
+import com.rosan.installer.ui.page.main.installer.dialog.dialogButtons
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch

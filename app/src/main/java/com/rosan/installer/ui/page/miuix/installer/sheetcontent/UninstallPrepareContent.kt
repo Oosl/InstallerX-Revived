@@ -23,6 +23,8 @@ import com.rosan.installer.R
 import com.rosan.installer.data.engine.executor.PackageManagerUtil
 import com.rosan.installer.ui.page.main.installer.InstallerViewAction
 import com.rosan.installer.ui.page.main.installer.InstallerViewModel
+import com.rosan.installer.ui.page.miuix.installer.components.AppInfoSlot
+import com.rosan.installer.ui.page.miuix.installer.components.AppInfoState
 import com.rosan.installer.ui.page.miuix.widgets.MiuixCheckboxWidget
 import com.rosan.installer.ui.theme.InstallerTheme
 import com.rosan.installer.ui.theme.miuixSheetCardColorDark
