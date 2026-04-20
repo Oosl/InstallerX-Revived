@@ -61,17 +61,13 @@ fun NotificationSettingsPage(
     val horizontalSafeInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal).asPaddingValues()
 
     val isModernEligible = Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA
-    val isMiIslandSupported = remember { capabilityProvider.isSupportMiIsland }
+    val isMiIslandSupported = capabilityProvider.isSupportMiIsland
 
     // Dynamically build the dropdown options based on device capabilities
     val styleOptions = remember(isModernEligible, isMiIslandSupported) {
         val list = mutableListOf(NotificationStyle.STANDARD)
-        if (isModernEligible) {
-            list.add(NotificationStyle.LIVE_ACTIVITY)
-            if (isMiIslandSupported) {
-                list.add(NotificationStyle.MI_ISLAND)
-            }
-        }
+        if (isModernEligible) list.add(NotificationStyle.LIVE_ACTIVITY)
+        if (isMiIslandSupported) list.add(NotificationStyle.MI_ISLAND)
         list
     }
 

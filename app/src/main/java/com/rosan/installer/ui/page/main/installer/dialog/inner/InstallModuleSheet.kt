@@ -82,7 +82,10 @@ fun ModuleInstallSheetContent(
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = 300.dp, max = 500.dp),
+                // Use weight to fill available remaining space without pushing bottom elements out of screen.
+                // fill = false allows it to be smaller than the available space if log content is short.
+                .weight(1f, fill = false)
+                .heightIn(min = 300.dp), // Removed max = 500.dp so weight can fully dictate upper limits
             colors = CardDefaults.cardColors(
                 containerColor = colorScheme.surfaceContainerHigh
             ),

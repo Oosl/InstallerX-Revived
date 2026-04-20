@@ -104,21 +104,34 @@ class ActionHandler(scope: CoroutineScope, session: InstallerSessionRepository) 
             session.action.collect { action ->
                 Timber.d("[id=$sessionId] Received action: ${action::class.simpleName}")
 
-                // If the action is Cancel, we handle it immediately by cancelling the processing job.
                 when (action) {
                     is InstallerSessionRepositoryImpl.Action.Cancel -> {
                         handleCancel()
                     }
 
                     is InstallerSessionRepositoryImpl.Action.Finish -> {
-                        // Finish should also stop any ongoing work
                         processingJob?.cancel()
                         session.progress.emit(ProgressEntity.Finish)
                     }
 
+                    // Handle Confirmation Actions Concurrently
+                    is InstallerSessionRepositoryImpl.Action.ResolveConfirmInstall -> {
+                        // Launch concurrently, DO NOT cancel the main processingJob (which is likely suspended waiting for commit)
+                        scope.launch {
+                            runCatching { handleAction(action) }
+                                .onFailure { Timber.e(it, "ResolveConfirmInstall failed") }
+                        }
+                    }
+
+                    is InstallerSessionRepositoryImpl.Action.ApproveSession -> {
+                        // Launch concurrently
+                        scope.launch {
+                            runCatching { handleAction(action) }
+                                .onFailure { Timber.e(it, "ApproveSession failed") }
+                        }
+                    }
+
                     else -> {
-                        // For other actions, we launch a new job to process them.
-                        // This prevents the collector from being blocked, allowing Action.Cancel to be received.
                         startProcessingJob(action)
                     }
                 }
@@ -441,13 +454,32 @@ class ActionHandler(scope: CoroutineScope, session: InstallerSessionRepository) 
         }
     }
 
-    private suspend fun resolveConfirm(activity: Activity, sessionId: Int) {
-        Timber.d("[id=$sessionId] resolveConfirmInstall: Starting for session $sessionId.")
-        session.config = configResolver.resolve(activity)
+    private suspend fun resolveConfirm(activity: Activity, sysSessionId: Int) {
+        Timber.d("[id=$sessionId] resolveConfirmInstall: Starting for system session $sysSessionId.")
 
-        val details = getSessionConfirmationDetails(sessionId, session.config)
+        // 1. Capture the exact Installing state before we override it
+        val previousState = session.progress.replayCache.firstOrNull()
+        val installingState = previousState as? ProgressEntity.Installing
+        val isSelfSession = installingState != null
+
+        // Extract the progress, defaulting to 1 if it wasn't an Installing state
+        val currentProgress = installingState?.current ?: 1
+        val totalProgress = installingState?.total ?: 1
+
+        if (!isSelfSession) {
+            session.config = configResolver.resolve(activity)
+        }
+
+        // Pass the captured progress into the UseCase
+        val details = getSessionConfirmationDetails(
+            sessionId = sysSessionId,
+            config = session.config,
+            isSelfSession = isSelfSession,
+            currentProgress = currentProgress,
+            totalProgress = totalProgress
+        )
+
         session.confirmationDetails.value = details
-
         Timber.d("[id=$sessionId] resolveConfirmInstall: Success. Emitting InstallConfirming.")
         session.progress.emit(ProgressEntity.InstallConfirming)
     }
@@ -504,7 +536,30 @@ class ActionHandler(scope: CoroutineScope, session: InstallerSessionRepository) 
             granted = granted,
             config = session.config
         )
-        session.progress.emit(ProgressEntity.Finish)
+
+        val details = session.confirmationDetails.value
+        val isSelfSession = details?.isSelfSession == true
+
+        if (!isSelfSession) {
+            // For external apps, approving/denying the session is the end of our job.
+            session.progress.emit(ProgressEntity.Finish)
+        } else {
+            // For our own installations, we need to wait for the system callback.
+            if (granted) {
+                // Restore the Installing UI while we wait for LocalIntentReceiver.
+                val current = details.currentProgress
+                val total = details.totalProgress
+                val label = details.appLabel.toString()
+
+                session.progress.emit(ProgressEntity.Installing(current, total, label))
+            } else {
+                // DO NOT emit InstallFailed manually here!
+                // The system will abort the session and send an INSTALL_FAILED_ABORTED intent
+                // to our LocalIntentReceiver. The suspended ProcessInstallationUseCase will catch it,
+                // throw the correct InstallException, update session.error, and naturally emit InstallFailed.
+                Timber.d("[id=$sessionId] Self-session rejected. Waiting for system abort callback to trigger InstallException.")
+            }
+        }
     }
 
     private suspend fun handleReboot(reason: String) {

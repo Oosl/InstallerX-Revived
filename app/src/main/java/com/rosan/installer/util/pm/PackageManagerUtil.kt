@@ -9,6 +9,8 @@ import timber.log.Timber
 
 private const val FLAG_ARCHIVED = 1 shl 30
 
+const val REASON_REMIND_OWNERSHIP = 2
+
 val PackageInfo.compatVersionCode: Long
     get() = PackageInfoCompat.getLongVersionCode(this)
 

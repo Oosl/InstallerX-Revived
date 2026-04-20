@@ -40,6 +40,7 @@ import com.rosan.installer.data.privileged.util.SystemContext
 import com.rosan.installer.data.privileged.util.deletePaths
 import com.rosan.installer.data.privileged.util.resolveSettingsBinder
 import com.rosan.installer.domain.device.provider.DeviceCapabilityProvider
+import com.rosan.installer.util.pm.REASON_REMIND_OWNERSHIP
 import org.koin.core.component.inject
 import timber.log.Timber
 import java.io.ByteArrayOutputStream
@@ -672,6 +673,77 @@ class DefaultPrivilegedService(
                 }
             }
 
+            val packageName = sessionInfo.appPackageName ?: ""
+            var isUpdate = false
+            var isOwnershipConflict = false
+            var sourceAppLabel: CharSequence? = null
+
+            try {
+                if (packageName.isNotEmpty()) {
+                    // 1. Check if this is an update (overlaying an existing installation)
+                    try {
+                        context.packageManager.getPackageInfo(packageName, 0)
+                        isUpdate = true
+                    } catch (e: PackageManager.NameNotFoundException) {
+                        isUpdate = false
+                    }
+
+                    // 2. Check for Android 14+ Update Ownership Conflict (using reflection for hidden API)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                        try {
+                            // Reflectively call int getPendingUserActionReason()
+                            val pendingReason = reflect.invoke<Int>(
+                                sessionInfo,
+                                "getPendingUserActionReason",
+                                sessionInfo::class.java,
+                                emptyArray() // No arguments
+                            ) ?: 0
+
+                            if (pendingReason == REASON_REMIND_OWNERSHIP) {
+                                isOwnershipConflict = true
+                            }
+                        } catch (e: Exception) {
+                            Timber.tag(TAG).w(e, "Failed to reflect getPendingUserActionReason, falling back to inference.")
+
+                            // Fallback Strategy: If reflection fails, and the target app has an updateOwner
+                            // that is not us, and we are in the ACTION_CONFIRM_INSTALL interception flow,
+                            // it is highly likely an ownership conflict.
+                            val sourceInfo = context.packageManager.getInstallSourceInfo(packageName)
+                            val ownerPkg = sourceInfo.updateOwnerPackageName
+                            if (!ownerPkg.isNullOrEmpty() && ownerPkg != context.packageName) {
+                                isOwnershipConflict = true
+                            }
+                        }
+                    }
+
+                    // 3. Determine the appropriate source app label (Owner > Initiator)
+                    try {
+                        if (isOwnershipConflict) {
+                            // Priority 1: It's a conflict. Fetch the label of the app that currently owns the update rights.
+                            val sourceInfo = context.packageManager.getInstallSourceInfo(packageName)
+                            val ownerPkg = sourceInfo.updateOwnerPackageName
+                            if (!ownerPkg.isNullOrEmpty()) {
+                                val ownerAppInfo = context.packageManager.getApplicationInfo(ownerPkg, PackageManager.ApplicationInfoFlags.of(0))
+                                sourceAppLabel = context.packageManager.getApplicationLabel(ownerAppInfo)
+                                Timber.tag(TAG).d("Ownership conflict with: $sourceAppLabel")
+                            }
+                        } else {
+                            // Priority 2: Not a conflict. Try to fetch the label of the app that initiated the installation.
+                            val installerPackageName = sessionInfo.installerPackageName
+                            if (!installerPackageName.isNullOrEmpty()) {
+                                val appInfo = context.packageManager.getApplicationInfo(installerPackageName, 0)
+                                sourceAppLabel = context.packageManager.getApplicationLabel(appInfo)
+                                Timber.tag(TAG).d("External installation request initiated by: $sourceAppLabel")
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Timber.tag(TAG).e(e, "Failed to resolve sourceAppLabel")
+                    }
+                }
+            } catch (e: Exception) {
+                Timber.tag(TAG).e(e, "Error extracting extended session metadata")
+            }
+
             // ---------------------------------------------------------
             // Final Data Preparation
             // ---------------------------------------------------------
@@ -682,6 +754,14 @@ class DefaultPrivilegedService(
 
             val bundle = Bundle()
             bundle.putCharSequence("appLabel", finalLabel)
+            bundle.putString("packageName", packageName)
+            bundle.putBoolean("isUpdate", isUpdate)
+            bundle.putBoolean("isOwnershipConflict", isOwnershipConflict)
+
+            // Inject the generic source label
+            if (sourceAppLabel != null) {
+                bundle.putCharSequence("sourceAppLabel", sourceAppLabel)
+            }
 
             if (finalIcon != null) {
                 try {

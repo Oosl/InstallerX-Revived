@@ -237,8 +237,18 @@ class InstallerViewModel(
 
         ProgressEntity.InstallConfirming -> {
             val details = session.confirmationDetails.value
-            if (details != null) InstallerStage.InstallConfirm(details.appLabel, details.appIcon, details.sessionId)
-            else InstallerStage.ResolveFailed
+            if (details != null) {
+                InstallerStage.InstallConfirm(
+                    appLabel = details.appLabel,
+                    appIcon = details.appIcon,
+                    sessionId = details.sessionId,
+                    isSelfSession = details.isSelfSession,
+                    isOwnershipConflict = details.isOwnershipConflict,
+                    sourceAppLabel = details.sourceAppLabel
+                )
+            } else {
+                InstallerStage.ResolveFailed
+            }
         }
 
         ProgressEntity.Uninstalling -> if (isRetrying) InstallerStage.InstallRetryDowngradeUsingUninstall else InstallerStage.Uninstalling

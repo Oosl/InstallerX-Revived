@@ -123,8 +123,22 @@ fun DialogPage(
                 PositionDialog(
                     useBlur = useBlur,
                     onDismissRequest = {
-                        if (uiState.isDismissible) {
-                            if (viewSettings.disableNotificationOnDismiss) {
+                        val currentUiState = viewModel.uiState.value
+                        val currentStage = currentUiState.stage
+
+                        if (currentUiState.isDismissible) {
+                            // If we are in the confirmation stage and the user taps outside (scrim) or swipes back
+                            if (currentStage is InstallerStage.InstallConfirm) {
+                                // UNCONDITIONAL EXIT
+                                // 1. Reject the session to clean up the system state
+                                viewModel.dispatch(InstallerViewAction.ApproveSession(currentStage.sessionId, false))
+                                // 2. Immediately force close the UI, bypassing any subsequent error screens
+                                viewModel.dispatch(InstallerViewAction.Close)
+                                return@PositionDialog
+                            }
+
+                            // Normal dismissal logic for other stages
+                            if (currentUiState.viewSettings.disableNotificationOnDismiss) {
                                 viewModel.dispatch(InstallerViewAction.Close)
                             } else {
                                 viewModel.dispatch(InstallerViewAction.Background)

@@ -404,6 +404,8 @@
     <string name="installer_silent_install">Silent Install</string>
     <string name="installer_error_reason">Error Reason</string>
     <string name="installer_unknown_error">Unknown Error</string>
+    <string name="install_confirm_question_update_owner_reminder">This app is usually updated by %1$s. If you update it from another source, your phone may receive future updates from any source. App functionality may change.</string>
+    <string name="install_confirm_external_request_tip">Approve installation request from %1$s ?</string>
     <string name="installer_notification_tap_to_disable">Foreground service notification, tap to disable</string>
     <string name="installer_channel_name">Install Notification</string>
     <string name="installer_channel_name_desc">Shows the installation stage</string>
@@ -440,7 +442,7 @@
     <string name="uninstall_call_uninstaller">Call uninstaller</string>
     <string name="uninstall_call_uninstaller_manually">Call uninstaller manually</string>
     <string name="uninstall_call_uninstaller_manually_desc">Uninstall app by given package name</string>
-    <string name="uninstall_progress_text">Uninstalling...</string>
+    <string name="uninstall_progress_text">Uninstalling…</string>
     <string name="uninstall_enter_package_name">Enter package name to uninstall</string>
     <string name="permission_read_external_storage">Read external storage</string>
     <string name="permission_write_external_storage">Write external storage</string>

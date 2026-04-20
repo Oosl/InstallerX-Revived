@@ -21,9 +21,19 @@ class GetSessionConfirmationDetailsUseCase(
     /**
      * Retrieves session details based on the provided configuration.
      */
-    suspend operator fun invoke(sessionId: Int, config: ConfigModel): ConfirmationDetails {
-        var label: CharSequence? = "N/A"
+    operator fun invoke(
+        sessionId: Int,
+        config: ConfigModel,
+        isSelfSession: Boolean = false,
+        currentProgress: Int = 1,
+        totalProgress: Int = 1
+    ): ConfirmationDetails {
+        var label: CharSequence? = null
         var icon: Bitmap? = null
+        var packageName = ""
+        var isUpdate = false
+        var isOwnershipConflict = false
+        var sourceAppLabel: CharSequence? = null
 
         Timber.d("Getting session details via service (Authorizer: ${config.authorizer})")
 
@@ -41,6 +51,11 @@ class GetSessionConfirmationDetailsUseCase(
 
         if (bundle != null) {
             label = bundle.getCharSequence("appLabel") ?: "N/A"
+            packageName = bundle.getString("packageName", "")
+            isUpdate = bundle.getBoolean("isUpdate", false)
+            isOwnershipConflict = bundle.getBoolean("isOwnershipConflict", false)
+            sourceAppLabel = bundle.getCharSequence("sourceAppLabel")
+
             val bytes = bundle.getByteArray("appIcon")
             if (bytes != null) {
                 try {
@@ -53,6 +68,17 @@ class GetSessionConfirmationDetailsUseCase(
             Timber.w("Service returned null bundle for session $sessionId")
         }
 
-        return ConfirmationDetails(sessionId, label ?: "N/A", icon)
+        return ConfirmationDetails(
+            sessionId = sessionId,
+            appLabel = label ?: "N/A",
+            appIcon = icon,
+            packageName = packageName,
+            isUpdate = isUpdate,
+            isOwnershipConflict = isOwnershipConflict,
+            sourceAppLabel = sourceAppLabel,
+            isSelfSession = isSelfSession,
+            currentProgress = currentProgress,
+            totalProgress = totalProgress
+        )
     }
 }

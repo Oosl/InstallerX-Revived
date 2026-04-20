@@ -160,8 +160,11 @@ class InstallerActivity : ComponentActivity(), KoinComponent {
         Timber.d("onNewIntent: Received new intent.")
         if (AppConfig.isDebug && AppConfig.LEVEL == Level.UNSTABLE)
             logIntentDetails("onNewIntent", intent)
-        // Fix for Microsoft Edge
-        if (this.session != null && intent.flags.hasFlag(Intent.FLAG_ACTIVITY_NEW_TASK)) {
+
+        val isSystemConfirmAction = intent.action == ACTION_CONFIRM_INSTALL || intent.action == ACTION_CONFIRM_PERMISSIONS
+
+        // Prevent re-initialization on Microsoft Edge, but allow system confirmation intents to pass through.
+        if (!isSystemConfirmAction && this.session != null && intent.flags.hasFlag(Intent.FLAG_ACTIVITY_NEW_TASK)) {
             Timber.w("onNewIntent was called with NEW_TASK, but an installer instance already exists. Ignoring re-initialization.")
             super.onNewIntent(intent)
             return
@@ -169,18 +172,31 @@ class InstallerActivity : ComponentActivity(), KoinComponent {
 
         this.intent = intent
         super.onNewIntent(intent)
-        restoreInstaller()
 
-        if (intent.action == ACTION_CONFIRM_INSTALL || intent.action == ACTION_CONFIRM_PERMISSIONS) {
-            val sessionId = intent.getIntExtra(PackageInstaller.EXTRA_SESSION_ID, -1)
-            if (sessionId != -1) {
-                Timber.d("onNewIntent: Dispatching resolveConfirmInstall for session $sessionId")
-                session?.resolveConfirmInstall(this, sessionId)
+        if (isSystemConfirmAction) {
+            val sysSessionId = intent.getIntExtra(PackageInstaller.EXTRA_SESSION_ID, -1)
+
+            if (sysSessionId != -1) {
+                // Route the system confirmation request to the currently active session if one exists.
+                // This bridges the gap between the suspended commit coroutine and the system UI request.
+                val currentSession = this.session
+                if (currentSession != null) {
+                    Timber.d("onNewIntent: Sending confirm request to ACTIVE session [id=${currentSession.id}]")
+                    currentSession.resolveConfirmInstall(this, sysSessionId)
+                } else {
+                    // Fallback: Restore or create a new session if this confirmation was triggered
+                    // without an active foreground installation process (e.g., silent background trigger).
+                    Timber.d("onNewIntent: No active session found. Restoring for system confirm.")
+                    restoreInstaller()
+                    session?.resolveConfirmInstall(this, sysSessionId)
+                }
             } else {
                 Timber.e("onNewIntent: CONFIRM_INSTALL intent missing EXTRA_SESSION_ID")
                 finish()
             }
         } else {
+            // Proceed with normal intent resolution for standard APK installations.
+            restoreInstaller()
             Timber.d("onNewIntent: Dispatching resolveInstall")
             session?.resolveInstall(this)
         }

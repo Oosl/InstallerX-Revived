@@ -301,7 +301,7 @@
     <string name="install">安装</string>
     <string name="upgrade">升级</string>
     <string name="reinstall">重新安装</string>
-    <string name="install_anyway">强制安装</string>
+    <string name="install_anyway">仍然安装</string>
     <string name="uninstall">卸载</string>
     <string name="next">下一步</string>
     <string name="previous">上一步</string>
@@ -389,6 +389,8 @@
     <string name="batch_install_result_message">批量安装：%1$d/%2$d 成功</string>
     <string name="installer_silent_install">静默安装</string>
     <string name="installer_unknown_error">未知错误</string>
+    <string name="install_confirm_question_update_owner_reminder">此应用通常由 %1$s 接收更新。如果通过其他来源更新，手机未来可能会收到任何来源的更新。应用功能可能会改变。</string>
+    <string name="install_confirm_external_request_tip">是否要批准来自 %1$s 的安装请求？</string>
     <string name="installer_channel_name">安装通知</string>
     <string name="installer_channel_name_desc">显示安装的阶段</string>
     <string name="installer_notification_tap_to_disable">前台服务通知，点击以禁用</string>

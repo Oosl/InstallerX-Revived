@@ -26,6 +26,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
@@ -86,6 +88,7 @@ private fun InnerButton(
     val isPressed by interactionSource.collectIsPressedAsState()
     var hasLongPressed by remember { mutableStateOf(false) }
     val viewConfiguration = LocalViewConfiguration.current
+    val hapticFeedback = LocalHapticFeedback.current
 
     // Handle the long press delay logic
     LaunchedEffect(isPressed) {
@@ -93,9 +96,11 @@ private fun InnerButton(
             hasLongPressed = false
             // Wait for the system's default long press duration
             delay(viewConfiguration.longPressTimeoutMillis)
-            hasLongPressed = true
-            // Trigger the long press callback if it exists
-            button.onLongClick?.invoke()
+            button.onLongClick?.let { onLongClickAction ->
+                hasLongPressed = true
+                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                onLongClickAction.invoke()
+            }
         }
     }
 

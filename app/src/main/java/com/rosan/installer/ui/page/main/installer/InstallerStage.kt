@@ -27,7 +27,15 @@ sealed class InstallerStage {
     data object InstallFailed : InstallerStage()
     data object InstallRetryDowngradeUsingUninstall : InstallerStage()
     data class InstallCompleted(val results: List<InstallResult>) : InstallerStage()
-    data class InstallConfirm(val appLabel: CharSequence, val appIcon: Bitmap?, val sessionId: Int) : InstallerStage()
+    data class InstallConfirm(
+        val appLabel: CharSequence,
+        val appIcon: Bitmap?,
+        val sessionId: Int,
+        val isSelfSession: Boolean,
+        val isOwnershipConflict: Boolean,
+        val sourceAppLabel: CharSequence?
+    ) : InstallerStage()
+
     data object UninstallReady : InstallerStage()
     data object UninstallResolveFailed : InstallerStage()
     data object Uninstalling : InstallerStage()
