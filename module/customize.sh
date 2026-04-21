@@ -30,7 +30,7 @@ install_package() {
     ui_print "- Replacing with $installer"
 
     mkdir -p "$MODPATH$replace_folder"
-    cp -rf "$MODPATH/${installer}.apk" "$MODPATH$replace_folder"
+    cp -rf "$MODPATH/${installer}.apk" "$MODPATH$replace_folder/OppoPackageInstaller.apk"
 
     REPLACE="
     $replace_folder
