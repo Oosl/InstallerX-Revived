@@ -1,5 +1,5 @@
+- Update APK copy destination in customize.sh (Oosl)
+- chore(release): update module update.json for 26.04.d59afd0 [skip ci] (github-actions[bot])
 - auto sync upstream (d59afd09) (github-actions[bot])
 - i18n: Translations update from Hosted Weblate (#609) (Weblate (bot))
 - fix: simplify notification style eligibility logic, fix #613 (wxxsfxyzm)
-- feat: optimize log container sizing in InstallModuleSheet, close #611 (wxxsfxyzm)
-- feat: enhance installation confirmation and support Android 14+ ownership updates (wxxsfxyzm)
