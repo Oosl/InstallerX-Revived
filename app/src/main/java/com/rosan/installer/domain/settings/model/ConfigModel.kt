@@ -53,7 +53,8 @@ data class ConfigModel(
     val bypassBlacklistInstallSetByUser: Boolean = false,
     val uninstallFlags: Int = 0,
     val callingFromUid: Int? = null,
-    val initiatorPackageName: String? = null
+    val initiatorPackageName: String? = null,
+    val allowInstallWithoutUserAction: Boolean = false
 ) {
     companion object {
         var default = ConfigModel(

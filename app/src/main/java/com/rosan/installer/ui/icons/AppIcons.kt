@@ -31,6 +31,7 @@ import androidx.compose.material.icons.twotone.ArrowDropDown
 import androidx.compose.material.icons.twotone.ArrowUpward
 import androidx.compose.material.icons.twotone.AutoAwesome
 import androidx.compose.material.icons.twotone.AutoFixHigh
+import androidx.compose.material.icons.twotone.Autorenew
 import androidx.compose.material.icons.twotone.Badge
 import androidx.compose.material.icons.twotone.BatterySaver
 import androidx.compose.material.icons.twotone.BlurOn
@@ -221,4 +222,5 @@ object AppIcons {
 
     // Lab Icons
     val InstallRequester = Icons.AutoMirrored.TwoTone.FactCheck
+    val InstallSilent = Icons.TwoTone.Autorenew
 }

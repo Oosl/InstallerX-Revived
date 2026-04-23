@@ -20,7 +20,11 @@ class PostInstallTaskProviderImpl(
     private val capabilityProvider: DeviceCapabilityProvider
 ) : PostInstallTaskProvider {
 
-    override suspend fun executeTasks(authorizer: Authorizer, customizeAuthorizer: String, info: PostInstallTaskInfo) {
+    override suspend fun executeTasks(
+        authorizer: Authorizer,
+        customizeAuthorizer: String,
+        info: PostInstallTaskInfo
+    ) {
         // Early exit if no tasks are present
         if (!info.hasTasks) return
 
@@ -29,7 +33,7 @@ class PostInstallTaskProviderImpl(
             .getBoolean(BooleanSetting.AlwaysUseRootInSystem, false)
             .first()
 
-        // 2. Elevation logic: If authorizer is None but it's a system app with AlwaysUseRoot enabled, elevate to Root
+        // 2. Elevation logic: If authorizer is None, but it's a system app with AlwaysUseRoot enabled, elevate to Root
         val finalAuthorizer = if (authorizer == Authorizer.None &&
             capabilityProvider.isSystemApp &&
             alwaysUseRootInSystem
@@ -48,14 +52,15 @@ class PostInstallTaskProviderImpl(
                 if (info.enableDexopt) {
                     // Skip dexopt for non-privileged authorizers as they lack the required permissions.
                     if (noPerm) {
-                        Timber.d("Dexopt skipped for non-privileged authorizer: $authorizer")
+                        Timber.d("Dexopt skipped for non-privileged authorizer: $finalAuthorizer")
                         return@launch
                     }
 
                     runCatching {
+                        // Pass finalAuthorizer instead of the original authorizer
                         useUserService(
                             isSystemApp = capabilityProvider.isSystemApp,
-                            authorizer = authorizer,
+                            authorizer = finalAuthorizer,
                             customizeAuthorizer = customizeAuthorizer
                         ) {
                             val result = it.privileged.performDexOpt(info.packageName, info.dexoptMode, info.forceDexopt)
@@ -70,14 +75,15 @@ class PostInstallTaskProviderImpl(
                     runCatching {
                         // Local deletion for non-privileged authorizers, silently fails on errors.
                         if (noPerm) {
-                            Timber.d("Attempting local file deletion for non-privileged authorizer: $authorizer")
+                            Timber.d("Attempting local file deletion for non-privileged authorizer: $finalAuthorizer")
                             deletePaths(info.deletePaths)
                             Timber.i("Local delete completed")
                         } else {
                             // Privileged deletion using UserService.
+                            // Pass finalAuthorizer instead of the original authorizer
                             useUserService(
                                 isSystemApp = capabilityProvider.isSystemApp,
-                                authorizer = authorizer,
+                                authorizer = finalAuthorizer,
                                 customizeAuthorizer = customizeAuthorizer,
                                 useHookMode = false
                             ) {

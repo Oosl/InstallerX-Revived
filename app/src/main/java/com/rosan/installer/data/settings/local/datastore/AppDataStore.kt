@@ -123,6 +123,7 @@ class AppDataStore(
         val LAB_TAP_ICON_TO_SHARE = booleanPreferencesKey("lab_tap_icon_to_share")
         val LAB_SHOW_FILE_PATH = booleanPreferencesKey("lab_show_file_path")
         val LAB_SHOW_INSTALL_INITIATOR = booleanPreferencesKey("lab_show_install_initiator")
+        val LAB_INSTALL_WITHOUT_USER_ACTION = booleanPreferencesKey("lab_install_without_user_action")
 
         // Debug
         val ENABLE_FILE_LOGGING = booleanPreferencesKey("enable_file_logging")

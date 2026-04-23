@@ -9,6 +9,9 @@
 - Strictly follows GNU GPLv3 - all modifications are open source
 - We welcome community contributions!
 
+> [!NOTE]
+> This project is currently undergoing a major refactoring. As a result, a new stable release will not be available in the short term. Instead, continuous updates will be rolled out via pre-releases. Please note that certain features may be modified at any time without prior notice. The user interface will be finalized based on community feedback before the next stable release. If you wish to experience the latest features and bug fixes, we encourage you to download the pre-release versions and actively share your feedback with us.
+
 ## Introduction
 
 > A modern and functional Android app installer. (You know some birds are not meant to be caged, their feathers are just too bright.)
@@ -18,6 +21,7 @@ Looking for a better app installer? Try **InstallerX**!
 Many customized Chinese ROMs come with subpar default installers. You can replace them with **InstallerX Revived**.
 
 Compared to stock installers, **InstallerX Revived** offers more installation features:
+
 - Rich installation types: APK, APKS, APKM, XAPK, APKs inside ZIP, and batch APKs.
 - Dialog-based installation
 - Notification-based installation (Live Activity API supported)
@@ -43,18 +47,22 @@ Compared to stock installers, **InstallerX Revived** offers more installation fe
 - **Performance:** Optimized parsing speed, improved parsing of various package types.
 - **Multilingual support:** More languages supported. Contributions for more languages are welcome!
 - **Dialog optimization:** Improved installation dialog display.
-- **System Icons:** Support for displaying system icon packs during installation. Allows switching between APK icons and system icon packs through a toggle.
+- **System Icons:
+  ** Support for displaying system icon packs during installation. Allows switching between APK icons and system icon packs through a toggle.
 - **Version Comparison:** Support for displaying version number comparison in single-line or multi-line format.
 - **SDK Information:** Installation dialogs show targetSDK and minSDK in single-line or multi-line format.
-- **Session Install Confirmation**: With the help of [InxLocker](https://github.com/Chimioo/InxLocker), confirming installations from store apps (Aurora Store, F-Droid, etc.) is now supported.
+- **Session Install Confirmation
+  **: With the help of [InxLocker](https://github.com/Chimioo/InxLocker), confirming installations from store apps (Aurora Store, F-Droid, etc.) is now supported.
 - **Bypass Interceptions:** Shizuku/Root can bypass custom OS chain-start restrictions when opening an App after installation.
     - Currently only works for dialog installation.
     - Dhizuku lacks sufficient permissions, so a customizable countdown option was added to reserve time for the app opening action.
 - **Extended Menu:** For dialog installation (can be enabled in settings):
     - Displays permissions requested by the application.
     - InstallFlags configuration (can inherit global Profile settings).
-      - **Important:** Setting InstallFlags **does not guarantee** they will always work. Some options might pose security risks, depending on the system.
-- **Preset Sources:** Support for pre-configuring installation source package names in settings, allowing quick selection in profiles and the dialog installation menu.
+        - **Important:** Setting InstallFlags **does not guarantee
+          ** they will always work. Some options might pose security risks, depending on the system.
+- **Preset Sources:
+  ** Support for pre-configuring installation source package names in settings, allowing quick selection in profiles and the dialog installation menu.
 - **Install from ZIP:** Support for installing APK files inside ZIP archives (dialog installation only).
     - Supports unlimited quantity and multiple ZIP files.
     - Supports APK files in nested directories within the ZIP, **not limited to the root directory**.
@@ -71,16 +79,19 @@ Compared to stock installers, **InstallerX Revived** offers more installation fe
         - Clicking "Install" in the notification selects the best option and proceeds with installation.
         - In the dialog, the best option is selected by default, but can be chosen manually.
     - The split selection interface shows user-friendly descriptions.
-- **Architecture Support:** Allows installing armeabi-v7a packages on arm64-v8a only systems (actual functionality depends on the system providing runtime translation).
+- **Architecture Support:
+  ** Allows installing armeabi-v7a packages on arm64-v8a only systems (actual functionality depends on the system providing runtime translation).
 - **Downgrade with or without Data:** Support for performing app downgrades with or without data preservation on some OEM Android 15 systems.
     - This feature only supports Android 15. On Android 14 or below, try the `Allow downgrade` option in the install options.
     - The feature is available in the smart suggestions of the dialog installation. To use it, first enable the `Show smart suggestions` option.
     - **Use this feature with extreme caution on system apps!** Loss of data from a system app could render the device unusable.
-    - Not compatible with OneUI 7.0, RealmeUI, and some ColorOS versions (AOSP has fixed). If you only see the downgrade option *without* data preservation, it means your system does not support downgrade *with* data.
+    - Not compatible with OneUI 7.0, RealmeUI, and some ColorOS versions (AOSP has fixed). If you only see the downgrade option
+      *without* data preservation, it means your system does not support downgrade *with* data.
 - **Blacklist:** Support for configuring a list of banned package names for installation in the settings.
     - Support blacklist by packageName / sharedUID with exemptions
     - `Allow once` in smart suggestions
-- **DexOpt:** After successful installation, the app can automatically perform dex2oat on the installed applications according to the configured Profile settings.
+- **DexOpt:
+  ** After successful installation, the app can automatically perform dex2oat on the installed applications according to the configured Profile settings.
     - Does not support Dhizuku
 - **Signature Verification：** Verify the signature of the installed app and apk to install, and give a warning if they do not match.
 - **Select Target User:** Support installing apps to a specific user.
@@ -88,7 +99,8 @@ Compared to stock installers, **InstallerX Revived** offers more installation fe
     - Does not support Dhizuku
     - Can be overridden by `Install For All Users` install option
 - **Declare as Uninstaller:** Accept Uninstall intent on certain OS, custom OS may not be supported.
-- [Experimental] **Directly Install From Download Link:** The online version supports directly sharing the download link of an APK file to InstallerX for installation. Currently, the APK is not kept locally, but an option to retain the installation package will be added in the future.
+- [Experimental] **Directly Install From Download Link:
+  ** The online version supports directly sharing the download link of an APK file to InstallerX for installation. Currently, the APK is not kept locally, but an option to retain the installation package will be added in the future.
 
 ## FAQ
 
@@ -111,9 +123,11 @@ Compared to stock installers, **InstallerX Revived** offers more installation fe
     - You have enabled Hide app list or similar functions, please configure the whitelist.
 
 - **HyperOS shows "Installing system apps requires declaring a valid installer" error**
-    - It's a system security restriction. You must declare an installer that is a system app (recommended: `com.android.fileexplorer` or `com.android.vending` for HyperOS; app store for Vivo).
+    - It's a system security restriction. You must declare an installer that is a system app (recommended: `com.android.fileexplorer` or
+      `com.android.vending` for HyperOS; app store for Vivo).
     - Works with Shizuku/Root. **Dhizuku is not supported**.
-    - New feature: InstallerX automatically detects HyperOS and adds a default configuration (`com.miui.packageinstaller`). You can change it in the settings if needed.
+    - New feature: InstallerX automatically detects HyperOS and adds a default configuration (
+      `com.miui.packageinstaller`). You can change it in the settings if needed.
 
 - **HyperOS reinstalls the default installer / locking fails**
     - Try enabling `Auto Lock Installer` in settings.
@@ -138,9 +152,15 @@ Compared to stock installers, **InstallerX Revived** offers more installation fe
 - **`dev` branch:** Contains features under development. If you want to test them, look for the corresponding CI builds in Github Actions.
 - **`main` branch:** When stable changes are merged from `dev`, the CI/CD system automatically builds and publishes a new alpha version.
 - **Stable releases:** Manually published when finishing a development/testing phase. CI/CD automatically publishes them as a release.
-- **About network permission:** As features have expanded, some network-related functions have been introduced. However, many users prefer the installer to remain purely local without requiring network access. Therefore, two versions will be released: **online** and **offline**. Both versions share the same package name, version code, and signature, so they can't be installed side by side (but can be replaced directly). Please download according to your needs.
-  - **Online version**: Supports sharing direct download links to InstallerX for installation. More network-related utilities may be added in the future, but network permission will **never** be used for non-installation purposes. Safe to use.
-  - **Offline version**: Requests no network permissions at all. When attempting to use online features, you will receive a clear error message. This version remains a purely local installer.
+- **About network permission:
+  ** As features have expanded, some network-related functions have been introduced. However, many users prefer the installer to remain purely local without requiring network access. Therefore, two versions will be released:
+  **online** and **offline
+  **. Both versions share the same package name, version code, and signature, so they can't be installed side by side (but can be replaced directly). Please download according to your needs.
+    - **Online version
+      **: Supports sharing direct download links to InstallerX for installation. More network-related utilities may be added in the future, but network permission will
+      **never** be used for non-installation purposes. Safe to use.
+    - **Offline version
+      **: Requests no network permissions at all. When attempting to use online features, you will receive a clear error message. This version remains a purely local installer.
 
 ## About Localization
 
@@ -154,7 +174,8 @@ Help us translate this project! You can contribute at: https://hosted.weblate.or
 
 Copyright © [iamr0s](https://github.com/iamr0s) and [contributors](https://github.com/wxxsfxyzm/InstallerX-Revived/graphs/contributors)
 
-InstallerX is currently released under [**GNU General Public License v3 (GPL-3)**](http://www.gnu.org/licenses/gpl-3.0), though this commitment may change in the future. Maintainers reserve the right to modify license terms or the open-source status of the project.
+InstallerX is currently released under [**GNU General Public License v3 (GPL-3)
+**](http://www.gnu.org/licenses/gpl-3.0), though this commitment may change in the future. Maintainers reserve the right to modify license terms or the open-source status of the project.
 
 If you base your development on InstallerX, you must comply with the terms of the open-source license of the specific version of the source code you use as a base, regardless of future changes made to the main project.
 

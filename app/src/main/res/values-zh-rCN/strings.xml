@@ -766,6 +766,8 @@
     <string name="lab_show_install_initiator_desc">显示由哪个应用发起安装</string>
     <string name="lab_set_install_requester">设置安装请求方</string>
     <string name="lab_set_install_requester_desc">向安装会话填写 OriginatingUid 字段来记录发起安装的应用，匹配系统包管理器行为</string>
+    <string name="lab_install_without_user_action">无需确认即可安装</string>
+    <string name="lab_install_without_user_action_desc">尝试在无需用户操作的情况下安装应用。此功能仅在不使用授权器时有效</string>
     <string name="lab_mi_island">小米超级岛</string>
     <string name="lab_mi_island_countdown">XMSF 断网时长</string>
     <string name="lab_mi_island_countdown_desc">设置 XMSF 断网时长。仅对 Shizuku 生效。请仅在明确影响时修改！</string>

@@ -69,6 +69,7 @@ enum class BooleanSetting {
     LabTapIconToShare,
     LabShowFilePath,
     LabShowInstallInitiator,
+    LabInstallWithoutUserAction,
     EnableFileLogging
 }
 

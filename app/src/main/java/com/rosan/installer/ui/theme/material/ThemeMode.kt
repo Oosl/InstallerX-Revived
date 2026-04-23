@@ -5,5 +5,9 @@ package com.rosan.installer.ui.theme.material
 enum class ThemeMode {
     LIGHT,
     DARK,
-    SYSTEM
+    SYSTEM;
+
+    companion object {
+        fun fromValueOrDefault(value: String) = entries.find { it.name == value } ?: SYSTEM
+    }
 }

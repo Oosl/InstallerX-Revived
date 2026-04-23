@@ -12,6 +12,10 @@ enum class Authorizer(val value: String) {
     Shizuku("shizuku"),
     Dhizuku("dhizuku"),
     Customize("customize");
+
+    companion object {
+        fun fromValueOrDefault(value: String) = entries.find { it.value == value } ?: Global
+    }
 }
 
 /**
@@ -111,7 +115,11 @@ enum class PackageSource(val value: Int) {
 enum class GithubUpdateChannel {
     OFFICIAL,
     PROXY_7ED,
-    CUSTOM
+    CUSTOM;
+
+    companion object {
+        fun fromValueOrDefault(value: String) = entries.find { it.name == value } ?: OFFICIAL
+    }
 }
 
 /**
@@ -123,6 +131,6 @@ enum class BiometricAuthMode(val value: String) {
     FollowConfig("follow_config");
 
     companion object {
-        fun fromValue(value: String) = entries.find { it.value == value } ?: FollowConfig
+        fun fromValueOrDefault(value: String) = entries.find { it.value == value } ?: FollowConfig
     }
 }

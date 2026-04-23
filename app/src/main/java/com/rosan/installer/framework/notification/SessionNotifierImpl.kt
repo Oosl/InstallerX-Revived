@@ -232,13 +232,20 @@ class SessionNotifierImpl(
     private fun createNotificationChannels() {
         val channels = listOf(
             NotificationChannelCompat.Builder(NotificationHelper.Channel.InstallerChannel.value, NotificationManagerCompat.IMPORTANCE_HIGH)
-                .setName(context.getString(R.string.installer_channel_name)).build(),
+                .setName(context.getString(R.string.installer_channel_name))
+                .setDescription(context.getString(R.string.installer_channel_name_desc))
+                .build(),
             NotificationChannelCompat.Builder(
                 NotificationHelper.Channel.InstallerProgressChannel.value,
                 NotificationManagerCompat.IMPORTANCE_LOW
-            ).setName(context.getString(R.string.installer_progress_channel_name)).build(),
+            )
+                .setName(context.getString(R.string.installer_progress_channel_name))
+                .setDescription(context.getString(R.string.installer_progress_channel_name_desc))
+                .build(),
             NotificationChannelCompat.Builder(NotificationHelper.Channel.InstallerLiveChannel.value, NotificationManagerCompat.IMPORTANCE_HIGH)
-                .setName(context.getString(R.string.installer_live_channel_name)).build()
+                .setName(context.getString(R.string.installer_live_channel_name))
+                .setDescription(context.getString(R.string.installer_live_channel_name_desc))
+                .build()
         )
         channels.forEach { notificationManager.createNotificationChannel(it) }
     }

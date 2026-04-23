@@ -50,6 +50,7 @@ data class AppPreferences(
     val labTapIconToShare: Boolean,
     val labShowFilePath: Boolean,
     val labShowInstallInitiator: Boolean,
+    val labInstallWithoutUserAction: Boolean,
     val enableFileLogging: Boolean,
     // Theme Settings
     val themeMode: ThemeMode,

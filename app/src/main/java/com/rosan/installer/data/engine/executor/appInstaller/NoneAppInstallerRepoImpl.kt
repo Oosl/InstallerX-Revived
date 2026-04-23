@@ -6,6 +6,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageInstaller
+import android.os.Build
 import android.provider.Settings
 import androidx.core.net.toUri
 import com.rosan.installer.core.reflection.ReflectionProvider
@@ -41,6 +42,7 @@ class NoneAppInstallerRepoImpl(
         sharedUserIdBlacklist: List<String>,
         sharedUserIdExemption: List<String>
     ) {
+        val allowInstallWithoutUserAction = config.allowInstallWithoutUserAction
         val result = runCatching {
             if (!context.packageManager.canRequestPackageInstalls()) {
                 val intent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
@@ -60,6 +62,12 @@ class NoneAppInstallerRepoImpl(
             try {
                 val params = PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL)
                 entities.firstOrNull()?.packageName?.let { params.setAppPackageName(it) }
+
+                // Check API level to avoid NoSuchMethodError on older devices
+                // Request silent update if conditions are met (requires UPDATE_PACKAGES_WITHOUT_USER_ACTION permission)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && allowInstallWithoutUserAction) {
+                    params.setRequireUserAction(PackageInstaller.SessionParams.USER_ACTION_NOT_REQUIRED)
+                }
 
                 val sessionId = packageInstaller.createSession(params)
                 session = packageInstaller.openSession(sessionId)

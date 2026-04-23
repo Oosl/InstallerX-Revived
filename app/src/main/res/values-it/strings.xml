@@ -9,7 +9,7 @@
     <string name="search">Cerca</string>
     <string name="menu">Menu</string>
     <string name="other">Altro</string>
-    <string name="updating">Aggiornamento...</string>
+    <string name="updating">Aggiornamento…</string>
     <string name="get_update">Ricevi aggiornamento</string>
     <string name="update_available">Aggiornamento Disponibile: %1$s</string>
     <string name="stable">Stabile</string>
@@ -51,8 +51,13 @@
     <string name="theme_settings_ui_style">Stile dell’interfaccia</string>
     <string name="theme_settings_desc">Cambia il tema dell’app</string>
     <string name="theme_settings_miuix_ui">Miuix</string>
-    <string name="theme_settings_miuix_ui_desc">Simile a Hyperos</string>
+    <string name="theme_settings_miuix_ui_desc">Simile a HyperOS</string>
     <string name="theme_settings_miuix_custom_colors">Colori personalizzati</string>
     <string name="theme_settings_miuix_custom_colors_desc">Personalizza i colori del tema in stile Miuix</string>
     <string name="theme_settings_google_ui">Google Material 3</string>
+    <string name="app">App</string>
+    <string name="theme_settings_google_ui_desc">Interfaccia Material Design Standard</string>
+    <string name="theme_settings_ui_engine">Motore Interfaccia</string>
+    <string name="theme_settings_use_expressive_ui">Utilizza Interfaccia Expressive</string>
+    <string name="theme_settings_use_expressive_ui_desc">Usa il nuovo stile Expressive M3</string>
 </resources>

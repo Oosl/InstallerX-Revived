@@ -786,6 +786,8 @@
     <string name="lab_show_install_initiator_desc">Display which app started the installation</string>
     <string name="lab_set_install_requester">Set Install Requester</string>
     <string name="lab_set_install_requester_desc">Fill OriginatingUid field with caller package to match system behavior</string>
+    <string name="lab_install_without_user_action">Install without user action</string>
+    <string name="lab_install_without_user_action_desc">Attempt to update apps without user confirmation. This feature is only effective when the authorizer is set to None</string>
     <string name="lab_mi_island">Mi Super Island</string>
     <string name="lab_mi_island_countdown">XMSF block duration</string>
     <string name="lab_mi_island_countdown_desc">Sets the XMSF network block duration. Only applies to Shizuku. Modify only if you understand the consequences!</string>

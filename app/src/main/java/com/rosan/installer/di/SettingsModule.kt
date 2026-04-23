@@ -83,7 +83,12 @@ val settingsModule = module {
     singleOf(::SystemAppProviderImpl) { bind<SystemAppProvider>() }
     singleOf(::PrivilegedProviderImpl) { bind<PrivilegedProvider>() }
 
-    singleOf(::ThemeStateProvider)
+    single {
+        ThemeStateProvider(
+            appSettingsRepo = get(),
+            appScope = get(named("AppScope"))
+        )
+    }
 
     // UseCases
     factoryOf(::GetResolvedConfigUseCase)

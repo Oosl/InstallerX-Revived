@@ -314,7 +314,7 @@ class ActionHandler(scope: CoroutineScope, session: InstallerSessionRepository) 
             val globalMode = appSettingsRepo.getString(
                 StringSetting.InstallerBiometricAuthMode,
                 BiometricAuthMode.FollowConfig.value
-            ).first().let { BiometricAuthMode.fromValue(it) }
+            ).first().let { BiometricAuthMode.fromValueOrDefault(it) }
 
             when (globalMode) {
                 BiometricAuthMode.Disable -> false

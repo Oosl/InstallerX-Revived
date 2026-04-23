@@ -51,6 +51,9 @@ class GetResolvedConfigUseCase(
             model = model.copy(callingFromUid = targetUid)
         }
 
+        val allowInstallWithoutUserAction = appSettingsRepo.getBoolean(BooleanSetting.LabInstallWithoutUserAction).first()
+        model = model.copy(allowInstallWithoutUserAction = allowInstallWithoutUserAction)
+
         return@withContext model
     }
 

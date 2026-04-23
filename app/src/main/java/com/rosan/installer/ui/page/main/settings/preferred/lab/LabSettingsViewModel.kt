@@ -30,6 +30,7 @@ class LabSettingsViewModel(
             labTapIconToShare = prefs.labTapIconToShare,
             labShowFilePath = prefs.labShowFilePath,
             labShowInstallInitiator = prefs.labShowInstallInitiator,
+            labAllowInstallWithoutUserAction = prefs.labInstallWithoutUserAction,
             githubUpdateChannel = prefs.githubUpdateChannel,
             customGithubProxyUrl = prefs.customGithubProxyUrl
         )
@@ -100,6 +101,13 @@ class LabSettingsViewModel(
             is LabSettingsAction.LabChangeShowInstallInitiator -> viewModelScope.launch {
                 updateSetting(
                     BooleanSetting.LabShowInstallInitiator,
+                    action.enable
+                )
+            }
+
+            is LabSettingsAction.LabChangeAllowInstallWithoutUserAction -> viewModelScope.launch {
+                updateSetting(
+                    BooleanSetting.LabInstallWithoutUserAction,
                     action.enable
                 )
             }

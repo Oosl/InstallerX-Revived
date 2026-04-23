@@ -92,6 +92,7 @@ class AppSettingsRepositoryImpl(
             appDataStore.getBoolean(AppDataStore.LAB_TAP_ICON_TO_SHARE, false),
             appDataStore.getBoolean(AppDataStore.LAB_SHOW_FILE_PATH, false),
             appDataStore.getBoolean(AppDataStore.LAB_SHOW_INSTALL_INITIATOR, false),
+            appDataStore.getBoolean(AppDataStore.LAB_INSTALL_WITHOUT_USER_ACTION, false),
             appDataStore.getBoolean(AppDataStore.ENABLE_FILE_LOGGING, true),
 
             // Theme settings
@@ -105,23 +106,17 @@ class AppSettingsRepositoryImpl(
             appDataStore.getBoolean(AppDataStore.UI_DYN_COLOR_FOLLOW_PKG_ICON, false),
             appDataStore.getBoolean(AppDataStore.LIVE_ACTIVITY_DYN_COLOR_FOLLOW_PKG_ICON, false),
             appDataStore.getBoolean(AppDataStore.UI_USE_BLUR, Build.VERSION.SDK_INT >= Build.VERSION_CODES.S),
-            appDataStore.getString(AppDataStore.PREDICTIVE_BACK_ANIMATION, PredictiveBackAnimation.Scale.value),
+            appDataStore.getString(AppDataStore.PREDICTIVE_BACK_ANIMATION, PredictiveBackAnimation.MIUIX.value),
             appDataStore.getString(AppDataStore.PREDICTIVE_BACK_EXIT_DIRECTION, PredictiveBackExitDirection.ALWAYS_RIGHT.value)
         )
     ) { values: Array<Any?> ->
         var idx = 0
 
-        // Map raw strings back to Domain Enums
-        val authorizerStr = values[idx++] as String
-        val authorizer = Authorizer.entries.find { it.value == authorizerStr } ?: Authorizer.Global
-        val alwaysUseRootInSystem = values[idx++] as Boolean
-        val customizeAuthorizer = values[idx++] as String
-
         @Suppress("UNCHECKED_CAST")
         AppPreferences(
-            authorizer = authorizer,
-            alwaysUseRootInSystem = alwaysUseRootInSystem,
-            customizeAuthorizer = customizeAuthorizer,
+            authorizer = Authorizer.fromValueOrDefault(values[idx++] as String),
+            alwaysUseRootInSystem = values[idx++] as Boolean,
+            customizeAuthorizer = values[idx++] as String,
             showDialogInstallExtendedMenu = values[idx++] as Boolean,
             showSmartSuggestion = values[idx++] as Boolean,
             disableNotificationForDialogInstall = values[idx++] as Boolean,
@@ -132,10 +127,7 @@ class AppSettingsRepositoryImpl(
             sdkCompareInMultiLine = values[idx++] as Boolean,
             showOPPOSpecial = values[idx++] as Boolean,
             showExpressiveUI = values[idx++] as Boolean,
-            installerRequireBiometricAuth = run {
-                val value = values[idx++] as String
-                BiometricAuthMode.entries.find { it.value == value } ?: BiometricAuthMode.FollowConfig
-            },
+            installerRequireBiometricAuth = BiometricAuthMode.fromValueOrDefault(values[idx++] as String),
             uninstallerRequireBiometricAuth = values[idx++] as Boolean,
             showLiveActivity = values[idx++] as Boolean,
             useMiIsland = values[idx++] as Boolean,
@@ -155,10 +147,7 @@ class AppSettingsRepositoryImpl(
             // Uninstaller
             uninstallFlags = values[idx++] as Int,
             // Updater
-            githubUpdateChannel = run {
-                val value = values[idx++] as String
-                runCatching { GithubUpdateChannel.valueOf(value) }.getOrDefault(GithubUpdateChannel.OFFICIAL)
-            },
+            githubUpdateChannel = GithubUpdateChannel.fromValueOrDefault(values[idx++] as String),
             customGithubProxyUrl = values[idx++] as String,
             // Lab
             labRootEnableModuleFlash = values[idx++] as Boolean,
@@ -170,11 +159,12 @@ class AppSettingsRepositoryImpl(
             labTapIconToShare = values[idx++] as Boolean,
             labShowFilePath = values[idx++] as Boolean,
             labShowInstallInitiator = values[idx++] as Boolean,
+            labInstallWithoutUserAction = values[idx++] as Boolean,
             enableFileLogging = values[idx++] as Boolean,
             // UI State
-            themeMode = runCatching { ThemeMode.valueOf(values[idx++] as String) }.getOrDefault(ThemeMode.SYSTEM),
-            paletteStyle = runCatching { PaletteStyle.valueOf(values[idx++] as String) }.getOrDefault(PaletteStyle.TonalSpot),
-            colorSpec = runCatching { ThemeColorSpec.valueOf(values[idx++] as String) }.getOrDefault(ThemeColorSpec.SPEC_2025),
+            themeMode = ThemeMode.fromValueOrDefault(values[idx++] as String),
+            paletteStyle = PaletteStyle.fromValueOrDefault(values[idx++] as String),
+            colorSpec = ThemeColorSpec.fromValueOrDefault(values[idx++] as String),
             useDynamicColor = values[idx++] as Boolean,
             useMiuixMonet = values[idx++] as Boolean,
             useAppleFloatingBar = values[idx++] as Boolean,
@@ -182,16 +172,8 @@ class AppSettingsRepositoryImpl(
             useDynColorFollowPkgIcon = values[idx++] as Boolean,
             useDynColorFollowPkgIconForLiveActivity = values[idx++] as Boolean,
             useBlur = values[idx++] as Boolean,
-            predictiveBackAnimation = run {
-                val value = values[idx++] as String
-                PredictiveBackAnimation.entries.find { it.value == value }
-                    ?: PredictiveBackAnimation.Scale
-            },
-            predictiveBackExitDirection = run {
-                val value = values[idx++] as String
-                PredictiveBackExitDirection.entries.find { it.value == value }
-                    ?: PredictiveBackExitDirection.ALWAYS_RIGHT
-            }
+            predictiveBackAnimation = PredictiveBackAnimation.fromValueOrDefault(values[idx++] as String),
+            predictiveBackExitDirection = PredictiveBackExitDirection.fromValueOrDefault(values[idx++] as String),
         )
     }.shareIn(
         scope = appScope,
@@ -308,6 +290,7 @@ class AppSettingsRepositoryImpl(
             BooleanSetting.LabTapIconToShare -> AppDataStore.LAB_TAP_ICON_TO_SHARE
             BooleanSetting.LabShowFilePath -> AppDataStore.LAB_SHOW_FILE_PATH
             BooleanSetting.LabShowInstallInitiator -> AppDataStore.LAB_SHOW_INSTALL_INITIATOR
+            BooleanSetting.LabInstallWithoutUserAction -> AppDataStore.LAB_INSTALL_WITHOUT_USER_ACTION
             BooleanSetting.EnableFileLogging -> AppDataStore.ENABLE_FILE_LOGGING
         }
 

@@ -22,6 +22,6 @@ data class ThemeState(
     val useAppleFloatingBar: Boolean = false,
     val seedColor: Color = PresetColors.first().color,
     val useBlur: Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S,
-    val predictiveBackAnimation: PredictiveBackAnimation = PredictiveBackAnimation.Scale,
-    val predictiveBackExitDirection: PredictiveBackExitDirection = PredictiveBackExitDirection.FOLLOW_GESTURE
+    val predictiveBackAnimation: PredictiveBackAnimation = PredictiveBackAnimation.MIUIX,
+    val predictiveBackExitDirection: PredictiveBackExitDirection = PredictiveBackExitDirection.ALWAYS_RIGHT
 )

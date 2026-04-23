@@ -16,6 +16,7 @@ sealed class LabSettingsAction {
     data class LabChangeTapIconToShare(val enable: Boolean) : LabSettingsAction()
     data class LabChangeShowFilePath(val enable: Boolean) : LabSettingsAction()
     data class LabChangeShowInstallInitiator(val enable: Boolean) : LabSettingsAction()
+    data class LabChangeAllowInstallWithoutUserAction(val enable: Boolean) : LabSettingsAction()
     data class LabChangeGithubUpdateChannel(val channel: GithubUpdateChannel) : LabSettingsAction()
     data class LabChangeCustomGithubProxyUrl(val url: String) : LabSettingsAction()
 }

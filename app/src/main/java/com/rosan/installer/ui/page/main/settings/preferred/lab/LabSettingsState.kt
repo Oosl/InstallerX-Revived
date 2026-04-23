@@ -16,6 +16,7 @@ data class LabSettingsState(
     val labTapIconToShare: Boolean = false,
     val labShowFilePath: Boolean = false,
     val labShowInstallInitiator: Boolean = false,
-    val githubUpdateChannel: GithubUpdateChannel = GithubUpdateChannel.PROXY_7ED,
+    val labAllowInstallWithoutUserAction: Boolean = false,
+    val githubUpdateChannel: GithubUpdateChannel = GithubUpdateChannel.OFFICIAL,
     val customGithubProxyUrl: String = ""
 )

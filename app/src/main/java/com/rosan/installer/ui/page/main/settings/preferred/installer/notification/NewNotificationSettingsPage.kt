@@ -94,7 +94,11 @@ fun NewNotificationSettingsPage(
         }
     }
 
-    val activeStyle = if (!isModernEligible) NotificationStyle.STANDARD else uiState.currentStyle
+    val activeStyle = if (styleOptions.contains(uiState.currentStyle)) {
+        uiState.currentStyle
+    } else {
+        NotificationStyle.STANDARD
+    }
     val selectedIndex = styleOptions.indexOf(activeStyle).coerceAtLeast(0)
 
     val backdrop = rememberMaterial3BlurBackdrop(useBlur)
@@ -148,11 +152,12 @@ fun NewNotificationSettingsPage(
                     title = stringResource(R.string.notification_style)
                 ) {
                     item {
+                        val isStyleSelectionEnabled = isModernEligible || isMiIslandSupported
                         DropDownMenuWidget(
                             icon = AppIcons.Palette,
                             title = stringResource(R.string.notification_style),
-                            description = if (isModernEligible) styleNames[selectedIndex] else stringResource(R.string.notification_style_unsupported_desc),
-                            enabled = isModernEligible,
+                            description = if (isStyleSelectionEnabled) styleNames[selectedIndex] else stringResource(R.string.notification_style_unsupported_desc),
+                            enabled = isStyleSelectionEnabled,
                             choice = selectedIndex,
                             data = styleNames,
                             onChoiceChange = { index ->

@@ -21,4 +21,8 @@ enum class PaletteStyle(
                 this == Neutral ||
                 this == Vibrant ||
                 this == Expressive
+
+    companion object {
+        fun fromValueOrDefault(value: String) = entries.find { it.name == value } ?: TonalSpot
+    }
 }
