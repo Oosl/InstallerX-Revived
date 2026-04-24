@@ -161,7 +161,13 @@ class AppIconRepositoryImpl(
         }
 
         return try {
-            deferred.await() ?: fallbackSystemIcon
+            val bitmap = deferred.await()
+
+            if (bitmap == null) {
+                conditionalRemove(cacheKey, deferred)
+            }
+
+            bitmap ?: fallbackSystemIcon
         } catch (_: CancellationException) {
             // If the *caller* was cancelled, ensureActive() rethrows immediately,
             // honouring structured concurrency.
@@ -182,7 +188,7 @@ class AppIconRepositoryImpl(
     override suspend fun extractColorFromApp(
         sessionId: String,
         packageName: String,
-        entityToInstall: AppEntity.BaseEntity?,
+        entityToInstall: AppEntity?,
         preferSystemIcon: Boolean,
         userId: Int?
     ): Int? {

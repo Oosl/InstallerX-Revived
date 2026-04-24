@@ -77,7 +77,7 @@ interface AppIconRepository {
      *
      * @param sessionId        Cache grouping key.
      * @param packageName      The application's package name.
-     * @param entityToInstall  The parsed APK entity, or null.
+     * @param entityToInstall  The parsed [AppEntity], or null.
      * @param preferSystemIcon Whether to prefer the system-themed icon.
      * @param userId           Android user ID; defaults to the current process
      *                         user if null.
@@ -86,7 +86,7 @@ interface AppIconRepository {
     suspend fun extractColorFromApp(
         sessionId: String,
         packageName: String,
-        entityToInstall: AppEntity.BaseEntity?,
+        entityToInstall: AppEntity?,
         preferSystemIcon: Boolean,
         userId: Int? = null
     ): Int?

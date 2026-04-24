@@ -105,23 +105,31 @@ class ModuleStrategy(
                     return emptyList()
                 }
 
-                // Attempt to parse and load the action icon from zip
+                // Attempt to parse and load the icon from zip, fallback to webuiIcon if actionIcon is missing or invalid
                 var iconDrawable: Drawable? = null
-                // Remove leading slash and whitespaces just in case the developer incorrectly format the path
-                val actionIconPath = properties.getProperty("actionIcon")?.trim()?.removePrefix("/")
+                val iconKeys = listOf("actionIcon", "webuiIcon")
 
-                if (!actionIconPath.isNullOrEmpty()) {
-                    val iconEntry = zipFile.getEntry(actionIconPath)
-                    if (iconEntry != null) {
-                        try {
-                            zipFile.getInputStream(iconEntry).use { iconStream ->
-                                iconDrawable = Drawable.createFromStream(iconStream, actionIconPath)
+                for (key in iconKeys) {
+                    // Remove leading slash and whitespaces just in case the developer incorrectly format the path
+                    val iconPath = properties.getProperty(key)?.trim()?.removePrefix("/")
+
+                    if (!iconPath.isNullOrEmpty()) {
+                        val iconEntry = zipFile.getEntry(iconPath)
+                        if (iconEntry != null) {
+                            try {
+                                zipFile.getInputStream(iconEntry).use { iconStream ->
+                                    iconDrawable = Drawable.createFromStream(iconStream, iconPath)
+                                }
+                                // Break the loop if the icon is successfully loaded
+                                if (iconDrawable != null) {
+                                    break
+                                }
+                            } catch (e: Exception) {
+                                Timber.w(e, "Module: Failed to decode $key from entry: $iconPath")
                             }
-                        } catch (e: Exception) {
-                            Timber.w(e, "Module: Failed to decode actionIcon from entry: $actionIconPath")
+                        } else {
+                            Timber.d("Module: $key entry not found in zip: $iconPath")
                         }
-                    } else {
-                        Timber.d("Module: actionIcon entry not found in zip: $actionIconPath")
                     }
                 }
 

@@ -21,7 +21,7 @@ class GetAppIconColorUseCase(
     suspend operator fun invoke(
         sessionId: String,
         packageName: String,
-        entityToInstall: AppEntity.BaseEntity? = null,
+        entityToInstall: AppEntity? = null,
         preferSystemIcon: Boolean = true
     ): Int? = try {
         appIconRepo.extractColorFromApp(

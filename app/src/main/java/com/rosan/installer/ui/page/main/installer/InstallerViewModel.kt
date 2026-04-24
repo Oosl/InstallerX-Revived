@@ -368,7 +368,6 @@ class InstallerViewModel(
 
                 val oldPackageName = _localState.value.currentPackageName
 
-                // 1. 纯粹的状态更新，里面绝对不能有 viewModelScope.launch 或任何副作用
                 _localState.update { currentState ->
                     val mergedUninstallInfo = uninstallInfo?.let { incoming ->
                         val current = currentState.uiUninstallInfo
@@ -409,9 +408,19 @@ class InstallerViewModel(
                             }
                         } else {
                             viewModelScope.launch {
+                                val rawEntities = _localState.value.analysisResults
+                                    .find { it.packageName == newPackageName }?.appEntities?.map { it.app }
+
+                                val entityToInstall = rawEntities?.filterIsInstance<AppEntity.BaseEntity>()?.firstOrNull()
+                                    ?: rawEntities?.filterIsInstance<AppEntity.ModuleEntity>()?.firstOrNull()
+
+                                // [Log] Check if ViewModel successfully resolved the entity
+                                Timber.d("ExtractColorTrace: ViewModel getting color for pkg=$newPackageName. Resolved entityToInstall: $entityToInstall")
+
                                 val colorInt = getAppIconColor(
                                     sessionId = session.id,
                                     packageName = newPackageName,
+                                    entityToInstall = entityToInstall,
                                     preferSystemIcon = _localState.value.viewSettings.preferSystemIconForUpdates
                                 )
                                 _localState.update { it.copy(seedColor = colorInt?.let { c -> Color(c) }) }
