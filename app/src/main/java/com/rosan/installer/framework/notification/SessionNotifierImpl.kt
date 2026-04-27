@@ -346,12 +346,20 @@ class SessionNotifierImpl(
                     delay(blockInterval.toLong())
                 } catch (e: Exception) {
                     Timber.e(e, "Xiaomi magic execution failed")
+                    // Fallback to notify normally if Shizuku magic fails, preventing silent UI failures
+                    notificationManager.notify(notificationId, notification)
                 } finally {
                     withContext(NonCancellable) {
-                        try {
-                            appOps.setPackageNetworkingEnabled(authorizer = globalAuthorizer, uid = targetUid, enabled = true)
-                        } finally {
-                            isXiaomiNetworkBlocked = false
+                        // Only attempt to restore network if we successfully disabled it
+                        if (isXiaomiNetworkBlocked) {
+                            try {
+                                appOps.setPackageNetworkingEnabled(authorizer = globalAuthorizer, uid = targetUid, enabled = true)
+                            } catch (e: Exception) {
+                                // Catch exceptions during restoration to prevent unhandled crashes in finally block
+                                Timber.e(e, "Xiaomi magic network restoration failed")
+                            } finally {
+                                isXiaomiNetworkBlocked = false
+                            }
                         }
                     }
                 }

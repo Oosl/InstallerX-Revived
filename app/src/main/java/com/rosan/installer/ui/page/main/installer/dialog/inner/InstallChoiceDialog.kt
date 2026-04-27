@@ -4,7 +4,6 @@ package com.rosan.installer.ui.page.main.installer.dialog.inner
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -22,7 +21,6 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -419,7 +417,6 @@ private fun ChoiceContent(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 private fun MultiApkGroupCard(
     packageResult: PackageAnalysisResult,
@@ -427,7 +424,12 @@ private fun MultiApkGroupCard(
     shape: Shape
 ) {
     val itemsInGroup = packageResult.appEntities
-    val isSingleItemInGroup = itemsInGroup.size == 1
+
+    // Filter out the base entities to determine if it should be displayed as a single app item
+    val baseEntities = remember(itemsInGroup) {
+        itemsInGroup.filter { it.app is AppEntity.BaseEntity }
+    }
+    val isSingleItemInGroup = baseEntities.size <= 1
 
     var isExpanded by remember { mutableStateOf(itemsInGroup.any { it.selected }) }
 
@@ -436,18 +438,25 @@ private fun MultiApkGroupCard(
     val appLabel = baseInfo?.label ?: moduleInfo?.name ?: packageResult.packageName
 
     if (isSingleItemInGroup) {
-        val item = itemsInGroup.first()
+        // Fallback to the first item if no BaseEntity is found
+        val item = baseEntities.firstOrNull() ?: itemsInGroup.first()
         SingleItemCard(
             item = item,
             shape = shape,
             onClick = {
-                viewModel.dispatch(
-                    InstallerViewAction.ToggleSelection(
-                        packageName = packageResult.packageName,
-                        entity = item,
-                        isMultiSelect = true
-                    )
-                )
+                // Sync the selection state for all items (Base and Splits) in the group
+                val targetState = !item.selected
+                itemsInGroup.forEach { entity ->
+                    if (entity.selected != targetState) {
+                        viewModel.dispatch(
+                            InstallerViewAction.ToggleSelection(
+                                packageName = packageResult.packageName,
+                                entity = entity,
+                                isMultiSelect = true
+                            )
+                        )
+                    }
+                }
             }
         )
     } else {
@@ -509,7 +518,6 @@ private fun MultiApkGroupCard(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 private fun SingleItemCard(
     item: SelectInstallEntity,
@@ -545,7 +553,6 @@ private fun SingleItemCard(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SelectableSubCard(
     item: SelectInstallEntity,
@@ -583,7 +590,6 @@ private fun SelectableSubCard(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ItemContent(app: AppEntity) {
     Column(
@@ -667,7 +673,7 @@ private fun ItemContent(app: AppEntity) {
  * A composable for displaying an item in a multi-APK selection list.
  * Shows version information and the source file name.
  */
-@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun MultiApkItemContent(app: AppEntity.BaseEntity) {
     Column(

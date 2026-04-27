@@ -13,7 +13,7 @@ import androidx.compose.ui.unit.dp
 
 /**
  * Dynamically calculates the device's physical corner radius.
- * * @param defaultRadius The fallback radius to use if the API is lower than 31
+ * @param defaultRadius The fallback radius to use if the API is lower than 31
  * or if the device does not report rounded corners.
  * @return The calculated corner radius in Dp.
  */

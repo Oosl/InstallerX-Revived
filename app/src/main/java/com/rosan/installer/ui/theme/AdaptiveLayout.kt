@@ -2,6 +2,8 @@
 // Copyright (C) 2025-2026 InstallerX Revived contributors
 package com.rosan.installer.ui.theme
 
+import android.content.Context
+import android.content.res.Configuration
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.platform.LocalDensity
@@ -26,6 +28,22 @@ data class WindowLayoutInfo(
 val LocalWindowLayoutInfo = compositionLocalOf<WindowLayoutInfo> {
     error("WindowLayoutInfo not provided")
 }
+
+/**
+ * Detects if the device is a phone (smallest width < 600dp)
+ */
+val Context.isPhoneDevice: Boolean
+    get() = resources.configuration.smallestScreenWidthDp < 600
+
+/**
+ * Gets the WindowLayoutType for the current configuration
+ */
+val Configuration.windowLayoutType: WindowLayoutType
+    get() = when {
+        screenWidthDp >= 840 -> WindowLayoutType.EXPANDED
+        screenWidthDp >= 600 -> WindowLayoutType.MEDIUM
+        else -> WindowLayoutType.COMPACT
+    }
 
 @Composable
 fun rememberWindowLayoutInfo(): WindowLayoutInfo {

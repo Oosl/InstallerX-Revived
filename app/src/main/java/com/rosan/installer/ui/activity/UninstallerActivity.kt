@@ -2,7 +2,9 @@
 // Copyright (C) 2025-2026 InstallerX Revived contributors
 package com.rosan.installer.ui.activity
 
+import android.annotation.SuppressLint
 import android.content.Intent
+import android.content.pm.ActivityInfo
 import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
@@ -28,6 +30,7 @@ import com.rosan.installer.ui.common.permission.PermissionRequester
 import com.rosan.installer.ui.page.main.installer.InstallerPage
 import com.rosan.installer.ui.page.miuix.installer.MiuixInstallerPage
 import com.rosan.installer.ui.theme.InstallerTheme
+import com.rosan.installer.ui.theme.isPhoneDevice
 import com.rosan.installer.util.toast
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -198,6 +201,12 @@ class UninstallerActivity : ComponentActivity(), KoinComponent {
                     finish()
                 }
                 return@setContent
+            }
+
+            // Force portrait on phones only when UI is actually rendered
+            if (isPhoneDevice) {
+                @SuppressLint("SourceLockedOrientationActivity")
+                requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
             }
 
             InstallerTheme(
