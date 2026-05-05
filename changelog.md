@@ -1,5 +1,5 @@
+- 更新 customize.sh (Oosl)
+- chore(release): update module update.json for 26.04.40485ef [skip ci] (github-actions[bot])
 - auto sync upstream (40485efc) (github-actions[bot])
 - fix: remove DEFAULT category from online intent filter (wxxsfxyzm)
 - fix: improve multi-APK selection logic in InstallChoiceDialog (wxxsfxyzm)
-- feat(ui): force portrait orientation on phones for installer activities (wxxsfxyzm)
-- fix: improve robustness of Xiaomi-specific notification and network cleanup (wxxsfxyzm)
