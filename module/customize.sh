@@ -31,10 +31,6 @@ install_package() {
 
     mkdir -p "$MODPATH$replace_folder"
     cp -rf "$MODPATH/${installer}.apk" "$MODPATH$replace_folder/OppoPackageInstaller.apk"
-
-    REPLACE="
-    $replace_folder
-    "
 }
 
 add_installer() {
@@ -76,7 +72,6 @@ clean_files() {
 }
 
 run_install() {
-    mods_center
     check_support
     add_installer
     clean_files
