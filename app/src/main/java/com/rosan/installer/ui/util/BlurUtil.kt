@@ -2,12 +2,10 @@
 // Copyright (C) 2025-2026 InstallerX Revived contributors
 package com.rosan.installer.ui.util
 
-import android.app.Activity
-import android.content.Context
-import android.content.ContextWrapper
 import android.os.Build
 import android.view.Window
 import android.view.WindowManager
+import androidx.activity.compose.LocalActivity
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -58,13 +56,7 @@ private fun findCurrentWindow(): Window? {
     if (dialogWindow != null) return dialogWindow
 
     // 2. Otherwise, find the Activity window
-    return view.context.findActivity()?.window
-}
-
-private tailrec fun Context.findActivity(): Activity? = when (this) {
-    is Activity -> this
-    is ContextWrapper -> baseContext.findActivity()
-    else -> null
+    return LocalActivity.current?.window
 }
 
 /**

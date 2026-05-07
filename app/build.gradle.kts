@@ -178,6 +178,16 @@ android {
         resources {
             excludes.add("/META-INF/{AL2.0,LGPL2.1}")
         }
+        jniLibs {
+            useLegacyPackaging = true
+            excludes += setOf(
+                "lib/*/libandroidx.graphics.path.so",
+                "lib/*/libdatastore_shared_counter.so"
+            )
+        }
+    }
+    androidResources {
+        generateLocaleConfig = true
     }
 }
 
