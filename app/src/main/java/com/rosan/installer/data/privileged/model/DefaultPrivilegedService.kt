@@ -13,7 +13,6 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.IPackageManager
 import android.content.pm.PackageManager
-import android.content.pm.ParceledListSlice
 import android.content.pm.ResolveInfo
 import android.content.pm.UserInfo
 import android.graphics.Bitmap
@@ -33,7 +32,6 @@ import com.rosan.installer.core.reflection.ReflectionProvider
 import com.rosan.installer.core.reflection.getValue
 import com.rosan.installer.core.reflection.invoke
 import com.rosan.installer.core.reflection.invokeStatic
-import com.rosan.installer.data.privileged.util.InstallIntentFilter
 import com.rosan.installer.data.privileged.util.ShizukuContext
 import com.rosan.installer.data.privileged.util.ShizukuHook
 import com.rosan.installer.data.privileged.util.SystemContext
@@ -57,81 +55,124 @@ class DefaultPrivilegedService(
         private const val TAG = "PrivilegedService"
     }
 
+    enum class WorkingMode {
+        ROOT,       // Process Hook Mode (binderWrapper != null)
+        SHIZUKU,    // Hook Mode (isHookMode == true)
+        SYSTEM,     // System App Mode
+        UserService // Fallback UserService Mode
+    }
+
     private val reflect by inject<ReflectionProvider>()
     private val capabilityProvider by inject<DeviceCapabilityProvider>()
 
+    // Cache the working mode lazily to avoid Koin injection lifecycle issues
+    // with capabilityProvider during class instantiation.
+    private val workingMode: WorkingMode by lazy {
+        when {
+            binderWrapper != null -> WorkingMode.ROOT
+            isHookMode -> WorkingMode.SHIZUKU
+            capabilityProvider.isSystemApp -> WorkingMode.SYSTEM
+            else -> WorkingMode.UserService
+        }
+    }
+
     private val iPackageManager: IPackageManager by lazy {
-        if (binderWrapper != null) {
-            Timber.tag(TAG).d("Getting IPackageManager in Process Hook Mode.")
-            val original = ServiceManager.getService("package")
-            IPackageManager.Stub.asInterface(binderWrapper.invoke(original))
-        } else if (isHookMode) {
-            Timber.tag(TAG).d("Getting IPackageManager in Hook Mode (Directly).")
-            ShizukuHook.hookedPackageManager
-        } else {
-            if (capabilityProvider.isSystemApp) Timber.tag(TAG).d("Getting IPackageManager in System Mode.")
-            else Timber.tag(TAG).d("Getting IPackageManager in UserService Mode.")
-            IPackageManager.Stub.asInterface(ServiceManager.getService("package"))
+        when (workingMode) {
+            WorkingMode.ROOT -> {
+                Timber.tag(TAG).d("Getting IPackageManager in Process Hook Mode.")
+                val original = ServiceManager.getService("package")
+                IPackageManager.Stub.asInterface(binderWrapper!!.invoke(original))
+            }
+
+            WorkingMode.SHIZUKU -> {
+                Timber.tag(TAG).d("Getting IPackageManager in Hook Mode (Directly).")
+                ShizukuHook.hookedPackageManager
+            }
+
+            WorkingMode.SYSTEM, WorkingMode.UserService -> {
+                Timber.tag(TAG).d("Getting IPackageManager in ${workingMode.name} Mode.")
+                IPackageManager.Stub.asInterface(ServiceManager.getService("package"))
+            }
         }
     }
 
     private val iActivityManager: IActivityManager by lazy {
-        if (binderWrapper != null) {
-            Timber.tag(TAG).d("Getting IActivityManager in Process Hook Mode.")
-            val original = ServiceManager.getService(Context.ACTIVITY_SERVICE)
-            IActivityManager.Stub.asInterface(binderWrapper.invoke(original))
-        } else if (isHookMode) {
-            ShizukuHook.hookedActivityManager
-        } else {
-            if (capabilityProvider.isSystemApp) Timber.tag(TAG).d("Getting IActivityManager in System Mode.")
-            else Timber.tag(TAG).d("Getting IActivityManager in UserService Mode.")
-            IActivityManager.Stub.asInterface(ServiceManager.getService(Context.ACTIVITY_SERVICE))
+        when (workingMode) {
+            WorkingMode.ROOT -> {
+                Timber.tag(TAG).d("Getting IActivityManager in Process Hook Mode.")
+                val original = ServiceManager.getService(Context.ACTIVITY_SERVICE)
+                IActivityManager.Stub.asInterface(binderWrapper!!.invoke(original))
+            }
+
+            WorkingMode.SHIZUKU -> {
+                ShizukuHook.hookedActivityManager
+            }
+
+            WorkingMode.SYSTEM, WorkingMode.UserService -> {
+                Timber.tag(TAG).d("Getting IActivityManager in ${workingMode.name} Mode.")
+                IActivityManager.Stub.asInterface(ServiceManager.getService(Context.ACTIVITY_SERVICE))
+            }
         }
     }
 
     private val iUserManager: IUserManager by lazy {
-        if (binderWrapper != null) {
-            Timber.tag(TAG).d("Getting IUserManager in Process Hook Mode.")
-            val original = ServiceManager.getService(Context.USER_SERVICE)
-            IUserManager.Stub.asInterface(binderWrapper.invoke(original))
-        } else if (isHookMode) {
-            Timber.tag(TAG).d("Getting IUserManager in Hook Mode (From ShizukuHook Factory).")
-            ShizukuHook.hookedUserManager
-        } else {
-            if (capabilityProvider.isSystemApp) Timber.tag(TAG).d("Getting IUserManager in System Mode.")
-            else Timber.tag(TAG).d("Getting IUserManager in UserService Mode.")
-            IUserManager.Stub.asInterface(ServiceManager.getService(Context.USER_SERVICE))
+        when (workingMode) {
+            WorkingMode.ROOT -> {
+                Timber.tag(TAG).d("Getting IUserManager in Process Hook Mode.")
+                val original = ServiceManager.getService(Context.USER_SERVICE)
+                IUserManager.Stub.asInterface(binderWrapper!!.invoke(original))
+            }
+
+            WorkingMode.SHIZUKU -> {
+                Timber.tag(TAG).d("Getting IUserManager in Hook Mode (From ShizukuHook Factory).")
+                ShizukuHook.hookedUserManager
+            }
+
+            WorkingMode.SYSTEM, WorkingMode.UserService -> {
+                Timber.tag(TAG).d("Getting IUserManager in ${workingMode.name} Mode.")
+                IUserManager.Stub.asInterface(ServiceManager.getService(Context.USER_SERVICE))
+            }
         }
     }
 
     private val settingsBinder: IBinder? by lazy {
         val original = reflect.resolveSettingsBinder()?.originalBinder
 
-        if (binderWrapper != null) {
-            Timber.tag(TAG).d("Getting Settings Binder in Process Hook Mode.")
-            if (original != null) binderWrapper.invoke(original) else null
-        } else if (isHookMode) {
-            Timber.tag(TAG).d("Getting Settings Binder in Hook Mode (via ShizukuHook).")
-            ShizukuHook.hookedSettingsBinder
-        } else {
-            if (capabilityProvider.isSystemApp) Timber.tag(TAG).d("Getting Settings Binder in System Mode.")
-            else Timber.tag(TAG).d("Getting Settings Binder in UserService Mode.")
-            original
+        when (workingMode) {
+            WorkingMode.ROOT -> {
+                Timber.tag(TAG).d("Getting Settings Binder in Process Hook Mode.")
+                if (original != null) binderWrapper!!.invoke(original) else null
+            }
+
+            WorkingMode.SHIZUKU -> {
+                Timber.tag(TAG).d("Getting Settings Binder in Hook Mode (via ShizukuHook).")
+                ShizukuHook.hookedSettingsBinder
+            }
+
+            WorkingMode.SYSTEM, WorkingMode.UserService -> {
+                Timber.tag(TAG).d("Getting Settings Binder in ${workingMode.name} Mode.")
+                original
+            }
         }
     }
 
     private val iConnectivityManager: IConnectivityManager by lazy {
-        if (binderWrapper != null) {
-            Timber.tag(TAG).d("Getting IConnectivityManager in Process Hook Mode.")
-            val original = ServiceManager.getService(Context.CONNECTIVITY_SERVICE)
-            IConnectivityManager.Stub.asInterface(binderWrapper.invoke(original))
-        } else if (isHookMode) {
-            Timber.tag(TAG).d("Getting IConnectivityManager in Hook Mode (via ShizukuHook).")
-            ShizukuHook.hookedConnectivityManager
-        } else {
-            if (capabilityProvider.isSystemApp) Timber.tag(TAG).d("Getting IConnectivityManager in System Mode.")
-            else Timber.tag(TAG).d("Getting IConnectivityManager in UserService Mode.")
-            IConnectivityManager.Stub.asInterface(ServiceManager.getService(Context.CONNECTIVITY_SERVICE))
+        when (workingMode) {
+            WorkingMode.ROOT -> {
+                Timber.tag(TAG).d("Getting IConnectivityManager in Process Hook Mode.")
+                val original = ServiceManager.getService(Context.CONNECTIVITY_SERVICE)
+                IConnectivityManager.Stub.asInterface(binderWrapper!!.invoke(original))
+            }
+
+            WorkingMode.SHIZUKU -> {
+                Timber.tag(TAG).d("Getting IConnectivityManager in Hook Mode (via ShizukuHook).")
+                ShizukuHook.hookedConnectivityManager
+            }
+
+            WorkingMode.SYSTEM, WorkingMode.UserService -> {
+                Timber.tag(TAG).d("Getting IConnectivityManager in ${workingMode.name} Mode.")
+                IConnectivityManager.Stub.asInterface(ServiceManager.getService(Context.CONNECTIVITY_SERVICE))
+            }
         }
     }
 
@@ -145,25 +186,14 @@ class DefaultPrivilegedService(
         Timber.tag(TAG).d("performDexOpt: $packageName, filter=$compilerFilter, force=$force")
 
         return try {
-            val result = reflect.invoke<Boolean>(
-                iPackageManager,
-                "performDexOptMode",
-                iPackageManager::class.java,
-                arrayOf(
-                    String::class.java,
-                    Boolean::class.javaPrimitiveType!!,
-                    String::class.java,
-                    Boolean::class.javaPrimitiveType!!,
-                    Boolean::class.javaPrimitiveType!!,
-                    String::class.java
-                ),
+            val result = iPackageManager.performDexOptMode(
                 packageName,
-                false,           // checkProfiles
+                false,          // checkProfiles
                 compilerFilter,
                 force,
-                true,            // bootComplete
-                null             // splitName
-            ) ?: false
+                true,           // bootComplete
+                null            // splitName
+            )
 
             Timber.tag(TAG).i("performDexOpt result for $packageName: $result")
             result
@@ -174,65 +204,110 @@ class DefaultPrivilegedService(
     }
 
     override fun setDefaultInstaller(component: ComponentName, enable: Boolean) {
-        Timber.tag(TAG).d("Hook Mode: $isHookMode")
-        val uid = AndroidProcess.myUid()
-        val userId = uid / 100000
+        val userId = AndroidProcess.myUid() / 100000
 
-        val intent = Intent(Intent.ACTION_VIEW)
-            .addCategory(Intent.CATEGORY_DEFAULT)
-            .setDataAndType(
-                "content://storage/emulated/0/test.apk".toUri(),
-                "application/vnd.android.package-archive"
-            )
-        val list = queryIntentActivities(
-            iPackageManager,
-            intent,
-            "application/vnd.android.package-archive",
-            PackageManager.MATCH_DEFAULT_ONLY,
-            userId
+        // Use the cached mode to determine system-level permission (su 1000 in this case)
+        val hasSystemLevelPermission = workingMode == WorkingMode.ROOT
+
+        Timber.tag(TAG).d(
+            "setDefaultInstaller called: component=%s, enable=%b, userId=%d, rootMode=%b",
+            component.flattenToShortString(),
+            enable,
+            userId,
+            hasSystemLevelPermission
         )
-        var bestMatch = 0
-        val names = list.map {
-            val iPackageName = it.activityInfo.packageName
-            val iClassName = it.activityInfo.name
 
-            if (it.match > bestMatch) bestMatch = it.match
+        // Clear our own preferred activities first to reset state
+        Timber.tag(TAG).v("Clearing existing preferred activities for %s", component.packageName)
+        iPackageManager.clearPackagePreferredActivities(component.packageName)
 
-            // clear preferred
-            iPackageManager.clearPackagePreferredActivities(iPackageName)
-            if (uid == 1000) iPackageManager.clearPackagePersistentPreferredActivities(
-                iPackageName,
+        if (hasSystemLevelPermission) {
+            Timber.tag(TAG).v("Clearing persistent preferred activities for %s", component.packageName)
+            iPackageManager.clearPackagePersistentPreferredActivities(component.packageName, userId)
+        }
+
+        if (!enable) {
+            Timber.tag(TAG).i("Enable flag is false. Exiting after clearing own preferred activities.")
+            return
+        }
+
+        // Split IntentFilters
+        val actions = arrayOf(Intent.ACTION_VIEW, @Suppress("Deprecation") Intent.ACTION_INSTALL_PACKAGE)
+
+        for (action in actions) {
+            Timber.tag(TAG).d("Processing intent action: %s", action)
+
+            val intent = Intent(action).apply {
+                addCategory(Intent.CATEGORY_DEFAULT)
+                setDataAndType(
+                    "content://storage/emulated/0/test.apk".toUri(),
+                    "application/vnd.android.package-archive"
+                )
+            }
+
+            val list = queryIntentActivities(
+                iPackageManager,
+                intent,
+                "application/vnd.android.package-archive",
+                PackageManager.MATCH_DEFAULT_ONLY,
                 userId
             )
 
-            ComponentName(iPackageName, iClassName)
-        }.toTypedArray()
+            val names = mutableListOf<ComponentName>()
 
-        if (!enable) return
+            for (resolveInfo in list) {
+                val infoPackageName = resolveInfo.activityInfo.packageName
+                val infoClassName = resolveInfo.activityInfo.name
 
-        iPackageManager.setLastChosenActivity(
-            intent,
-            intent.type,
-            PackageManager.MATCH_DEFAULT_ONLY,
-            InstallIntentFilter,
-            bestMatch,
-            component
-        )
-        addPreferredActivity(
-            iPackageManager,
-            InstallIntentFilter,
-            bestMatch,
-            names,
-            component,
-            userId,
-            true
-        )
-        if (uid == 1000) addPersistentPreferredActivity(
-            iPackageManager,
-            InstallIntentFilter,
-            component,
-            userId
-        )
+                // Dynamically clear preferred activities for other apps
+                if (infoPackageName != component.packageName && infoPackageName != "android") {
+                    // Timber.tag(TAG).v("Clearing preferred activities for competing app: %s", infoPackageName)
+                    iPackageManager.clearPackagePreferredActivities(infoPackageName)
+
+                    // Clear persistent preferred activities for other packages if permitted
+                    if (hasSystemLevelPermission) {
+                        // Timber.tag(TAG).v("Clearing persistent preferred activities for competing app: %s", infoPackageName)
+                        iPackageManager.clearPackagePersistentPreferredActivities(infoPackageName, userId)
+                    }
+                }
+
+                names.add(ComponentName(infoPackageName, infoClassName))
+            }
+
+            Timber.tag(TAG).d("Found %d existing handlers to construct ComponentName array.", names.size)
+
+            val filter = IntentFilter().apply {
+                addAction(action)
+                addCategory(Intent.CATEGORY_DEFAULT)
+                addDataType("application/vnd.android.package-archive")
+            }
+
+            val match = IntentFilter.MATCH_CATEGORY_TYPE or IntentFilter.MATCH_ADJUSTMENT_MASK
+
+            Timber.tag(TAG).d("Adding unique preferred activity for %s", action)
+            addPreferredActivity(
+                iPackageManager,
+                filter,
+                match,
+                names.toTypedArray(),
+                component,
+                userId,
+                true
+            )
+
+            // Restore addPersistentPreferredActivity for Root or System modes
+            if (hasSystemLevelPermission) {
+                Timber.tag(TAG).d("Adding persistent preferred activity for %s", action)
+                addPersistentPreferredActivity(
+                    iPackageManager,
+                    filter,
+                    component,
+                    userId
+                )
+            }
+        }
+
+        Timber.tag(TAG).i("Successfully configured default installer.")
     }
 
     @Throws(RemoteException::class)
@@ -858,44 +933,15 @@ class DefaultPrivilegedService(
         userId: Int,
         removeExisting: Boolean
     ) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            reflect.invoke<Unit>(
-                iPackageManager,
-                "addPreferredActivity",
-                IPackageManager::class.java,
-                arrayOf(
-                    IntentFilter::class.java,
-                    Int::class.javaPrimitiveType!!,
-                    Array<ComponentName>::class.java,
-                    ComponentName::class.java,
-                    Int::class.javaPrimitiveType!!,
-                    Boolean::class.javaPrimitiveType!!
-                ),
-                filter,
-                match,
-                names,
-                name,
-                userId,
-                removeExisting
-            )
-        } else {
-            reflect.invoke<Unit>(
-                iPackageManager,
-                "addPreferredActivity",
-                IPackageManager::class.java,
-                arrayOf(
-                    IntentFilter::class.java,
-                    Int::class.javaPrimitiveType!!,
-                    Array<ComponentName>::class.java,
-                    ComponentName::class.java,
-                    Int::class.javaPrimitiveType!!
-                ),
-                filter,
-                match,
-                names,
-                name,
-                userId
-            )
+        try {
+            // Direct call based on Android version
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                iPackageManager.addPreferredActivity(filter, match, names, name, userId, removeExisting)
+            } else {
+                iPackageManager.addPreferredActivity(filter, match, names, name, userId)
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to add preferred activity")
         }
     }
 
@@ -905,62 +951,31 @@ class DefaultPrivilegedService(
         name: ComponentName,
         userId: Int,
     ) {
-        reflect.invoke<Unit>(
-            iPackageManager,
-            "addPersistentPreferredActivity",
-            IPackageManager::class.java,
-            arrayOf(
-                IntentFilter::class.java,
-                ComponentName::class.java,
-                Int::class.javaPrimitiveType!!
-            ),
-            filter,
-            name,
-            userId,
-        )
+        try {
+            iPackageManager.addPersistentPreferredActivity(filter, name, userId)
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to add persistent preferred activity")
+        }
     }
 
     private fun queryIntentActivities(
         iPackageManager: IPackageManager,
         intent: Intent,
-        resolvedType: String,
+        resolvedType: String?,
         flags: Int,
         userId: Int
     ): List<ResolveInfo> {
-        val result = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            reflect.invoke<ParceledListSlice<ResolveInfo>>(
-                iPackageManager,
-                "queryIntentActivities",
-                IPackageManager::class.java,
-                arrayOf(
-                    Intent::class.java,
-                    String::class.java,
-                    Long::class.javaPrimitiveType!!,
-                    Int::class.javaPrimitiveType!!
-                ),
-                intent,
-                resolvedType,
-                flags.toLong(),
-                userId
-            )
-        } else {
-            reflect.invoke<ParceledListSlice<ResolveInfo>>(
-                iPackageManager,
-                "queryIntentActivities",
-                IPackageManager::class.java,
-                arrayOf(
-                    Intent::class.java,
-                    String::class.java,
-                    Int::class.javaPrimitiveType!!,
-                    Int::class.javaPrimitiveType!!
-                ),
-                intent,
-                resolvedType,
-                flags,
-                userId
-            )
+        return try {
+            val result = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                iPackageManager.queryIntentActivities(intent, resolvedType, flags.toLong(), userId)
+            } else {
+                iPackageManager.queryIntentActivities(intent, resolvedType, flags, userId)
+            }
+            result?.list ?: emptyList()
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to query intent activities")
+            emptyList()
         }
-        return result?.list ?: emptyList()
     }
 
     @Throws(IOException::class, InterruptedException::class)
