@@ -255,7 +255,7 @@ private fun MiuixStatusGrid(
                 Box(
                     modifier = Modifier
                         .matchParentSize()
-                        .offset(38.dp, 40.dp),
+                        .offset(50.dp, 38.dp),
                     contentAlignment = Alignment.BottomEnd
                 ) {
                     Icon(

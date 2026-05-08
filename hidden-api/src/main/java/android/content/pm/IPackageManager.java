@@ -62,18 +62,24 @@ public interface IPackageManager extends IInterface {
     int installExistingPackageAsUser(String packageName, int userId, int installFlags,
                                      int installReason, List<String> whiteListedPermissions) throws RemoteException;
 
+    // For Android T (13) and above: flags is 'long'
+    ParceledListSlice<ResolveInfo> queryIntentActivities(Intent intent,
+                                                         String resolvedType, long flags, int userId) throws RemoteException;
+
+    // For below Android T (13): flags is 'int'
     ParceledListSlice<ResolveInfo> queryIntentActivities(Intent intent,
                                                          String resolvedType, int flags, int userId) throws RemoteException;
 
     void setLastChosenActivity(Intent intent, String resolvedType, int flags,
                                IntentFilter filter, int match, ComponentName activity);
 
-    // not work when api >= Android S(12)
+    // For Android S (12) and above
     void addPreferredActivity(IntentFilter filter, int match,
-                              ComponentName[] set, ComponentName activity, int userId);
+                              ComponentName[] set, ComponentName activity, int userId, boolean removeExisting) throws RemoteException;
 
+    // For below Android S (12)
     void addPreferredActivity(IntentFilter filter, int match,
-                              ComponentName[] set, ComponentName activity, int userId, boolean removeExisting);
+                              ComponentName[] set, ComponentName activity, int userId) throws RemoteException;
 
 
     void clearPackagePreferredActivities(String packageName);
@@ -83,6 +89,9 @@ public interface IPackageManager extends IInterface {
     void clearPackagePersistentPreferredActivities(String packageName, int userId);
 
     void flushPackageRestrictionsAsUser(int userId);
+
+    boolean performDexOptMode(String packageName, boolean checkProfiles, String targetCompilerFilter, boolean force, boolean bootComplete, String splitName)
+            throws RemoteException;
 
     abstract class Stub extends Binder implements IPackageManager {
 
