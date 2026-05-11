@@ -58,10 +58,6 @@ jobs:
 
       - name: Create PR on conflict
         if: steps.check.outputs.diff_count != '0' && steps.merge.outputs.merge_ok == 'false'
-        env:
-          # gh 创建/列出 PR 使用 GITHUB_TOKEN（仓库内 PR 权限由 job permissions 控制）。
-          # git push 仍使用 checkout 时配置的 origin（INSTALLER_X_TOKEN），两者可并存。
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           EXISTING_PR=$(gh pr list --state open --json number,headRefName | jq -r '.[] | select(.headRefName | startswith("upstream-sync/")) | .number' | head -n 1)
           if [ -n "$EXISTING_PR" ]; then
