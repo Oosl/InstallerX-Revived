@@ -58,6 +58,8 @@ jobs:
 
       - name: Create PR on conflict
         if: steps.check.outputs.diff_count != '0' && steps.merge.outputs.merge_ok == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.INSTALLER_X_TOKEN }}
         run: |
           EXISTING_PR=$(gh pr list --state open --json number,headRefName | jq -r '.[] | select(.headRefName | startswith("upstream-sync/")) | .number' | head -n 1)
           if [ -n "$EXISTING_PR" ]; then
