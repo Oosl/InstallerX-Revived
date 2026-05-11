@@ -10,6 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      issues: write
       pull-requests: write
 
     steps:
@@ -60,7 +61,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.INSTALLER_X_TOKEN }}
         run: |
-          EXISTING_PR=$(gh pr list --label "upstream-sync" --state open --json number --jq '.[0].number')
+          EXISTING_PR=$(gh pr list --state open --json number,headRefName --jq -r '.[] | select(.headRefName | startswith("upstream-sync/")) | .number' | head -n 1)
           if [ -n "$EXISTING_PR" ]; then
             echo "Open upstream-sync PR #${EXISTING_PR} already exists, skipping."
             exit 0
@@ -72,11 +73,10 @@ jobs:
 
           gh label create "upstream-sync" --description "Automated upstream sync" --color "1d76db" 2>/dev/null || true
 
-          gh pr create \
+          PR_URL=$(gh pr create \
             --base main \
             --head "$BRANCH_NAME" \
             --title "Upstream Sync - 需手动解决冲突" \
-            --label "upstream-sync" \
             --body "$(cat <<'EOF'
           ## 上游同步
 
@@ -89,4 +89,8 @@ jobs:
 
           或直接在 GitHub 上解决冲突后合并。
           EOF
-          )"
+          )")
+          PR_NUM="${PR_URL##*/}"
+          if [ -n "$PR_NUM" ] && [ "$PR_NUM" != "$PR_URL" ]; then
+            gh pr edit "$PR_NUM" --add-label "upstream-sync" 2>/dev/null || echo "Note: label upstream-sync not available (PR created without label)."
+          fi
