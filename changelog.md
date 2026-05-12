@@ -1,0 +1,5 @@
+- auto sync upstream (7e67784e) (github-actions[bot])
+- i18n: Translations update from Hosted Weblate (#633) (Weblate (bot))
+- refactor: use direct IPackageManager calls and centralize working modes (wxxsfxyzm)
+- fix: adjust icon offset in MiuixHomePage (wxxsfxyzm)
+- fix: correct APatch detection flag and settings padding (wxxsfxyzm)

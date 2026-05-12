@@ -94,7 +94,7 @@ jobs:
         env:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: ./gradlew assembleOnlineUnstableRelease assembleOfflineUnstableRelease
+        run: ./gradlew assembleOnlineUnstableRelease assembleOfflineUnstableRelease -PAPP_ID="${{ vars.APP_ID }}"
 
       # Upload the online variant unzipped APK
       - name: Upload Online APK
