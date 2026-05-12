@@ -1,13 +1,19 @@
-*.iml
-.gradle
-/local.properties
-/.idea
-.DS_Store
-/build
-/captures
-/keystore
-.externalNativeBuild
-.cxx
+# Gradle & Kotlin build directories (anywhere in the project)
+build/
+.gradle/
+.kotlin/
+.cxx/
+.externalNativeBuild/
+/captures/
+
+# Local configuration & Keystore files
 local.properties
 keystore.properties
-/.kotlin/
+keystore/
+*.jks
+*.keystore
+
+# IDE and OS specific files
+.idea/
+*.iml
+.DS_Store

@@ -24,6 +24,7 @@ import com.rosan.installer.R
 import com.rosan.installer.ui.page.main.installer.InstallerStage
 import com.rosan.installer.ui.page.main.installer.InstallerViewAction
 import com.rosan.installer.ui.page.main.installer.InstallerViewModel
+import com.rosan.installer.ui.page.main.installer.components.workingIcon
 import com.rosan.installer.ui.page.main.installer.dialog.DialogButton
 import com.rosan.installer.ui.page.main.installer.dialog.DialogInnerParams
 import com.rosan.installer.ui.page.main.installer.dialog.DialogParams
@@ -47,7 +48,8 @@ fun preparingDialog(
 
     return DialogParams(
         icon = DialogInnerParams(
-            DialogParamsType.IconWorking.id, {}
+            DialogParamsType.IconWorking.id,
+            workingIcon
         ),
         title = DialogInnerParams(
             DialogParamsType.InstallerPreparing.id,

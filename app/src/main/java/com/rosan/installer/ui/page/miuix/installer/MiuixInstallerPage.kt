@@ -32,9 +32,7 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rosan.installer.R
-import com.rosan.installer.domain.engine.exception.ModuleInstallCmdInitException
 import com.rosan.installer.domain.engine.exception.ModuleInstallException
-import com.rosan.installer.domain.engine.exception.ModuleInstallFailedIncompatibleAuthorizerException
 import com.rosan.installer.domain.engine.model.DataType
 import com.rosan.installer.domain.session.repository.InstallerSessionRepository
 import com.rosan.installer.domain.settings.model.RootMode
@@ -568,10 +566,7 @@ fun MiuixInstallerPage(
                         }
 
                         is InstallerStage.InstallFailed -> {
-                            if (error is ModuleInstallFailedIncompatibleAuthorizerException ||
-                                error is ModuleInstallCmdInitException ||
-                                error is ModuleInstallException
-                            )
+                            if (error is ModuleInstallException)
                                 NonInstallFailedContent(
                                     error = error,
                                     onClose = closeSheet

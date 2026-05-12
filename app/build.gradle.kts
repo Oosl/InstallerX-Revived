@@ -1,44 +1,19 @@
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
+import com.mikepenz.aboutlibraries.plugin.DuplicateMode
+import com.mikepenz.aboutlibraries.plugin.DuplicateRule
 import java.util.Properties
 
-// Get git commit hash safely, compatible with configuration cache
-val gitHash: String = try {
-    providers.exec {
-        commandLine("git", "rev-parse", "--short=7", "HEAD")
-    }.standardOutput.asText.get().trim()
-} catch (_: Exception) {
-    "unknown"
-}
-
-// Get the date of the latest commit directly formatted as yy.MM
-val gitDate: String = try {
-    providers.exec {
-        commandLine("git", "log", "-1", "--format=%cd", "--date=format:%y.%m")
-    }.standardOutput.asText.get().trim()
-} catch (_: Exception) {
-    // Fallback to current date if git command fails
-    LocalDate.now().format(DateTimeFormatter.ofPattern("yy.MM"))
-}
-
-val manualVersionName = project.findProperty("VERSION_NAME") as String?
-
-// Combine the git commit date and the short hash
-val dynamicVersionName = gitDate
-val baseVersionName: String = manualVersionName ?: dynamicVersionName
-
 plugins {
-    alias(libs.plugins.agp.app)
+    alias(libs.plugins.installerx.application)
     alias(libs.plugins.ksp)
     alias(libs.plugins.room)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.aboutLibraries)
+    alias(libs.plugins.baselineprofile)
 }
 
 android {
-    compileSdk = 37
-    compileSdkMinor = 0
+    namespace = "com.rosan.installer"
 
     val properties = Properties()
     val keystorePropertiesFile = rootProject.file("keystore.properties")
@@ -50,32 +25,19 @@ android {
         }
     }
     val storeFile = properties.getProperty("storeFile") ?: System.getenv("KEYSTORE_FILE")
-    val storePassword =
-        properties.getProperty("storePassword") ?: System.getenv("KEYSTORE_PASSWORD")
+    val storePassword = properties.getProperty("storePassword") ?: System.getenv("KEYSTORE_PASSWORD")
     val keyAlias = properties.getProperty("keyAlias") ?: System.getenv("KEY_ALIAS")
     val keyPassword = properties.getProperty("keyPassword") ?: System.getenv("KEY_PASSWORD")
-    val hasCustomSigning =
-        storeFile != null && storePassword != null && keyAlias != null && keyPassword != null
+    val hasCustomSigning = storeFile != null && storePassword != null && keyAlias != null && keyPassword != null
 
     defaultConfig {
-        // 你如果根据InstallerX的源码进行打包成apk或其他安装包格式
-        // 请换一个applicationId，不要和官方的任何发布版本产生冲突。
         // If you use InstallerX source code, package it into apk or other installation package format
         // Please change the applicationId to one that does not conflict with any official release.
-        applicationId = (project.findProperty("APP_ID") as String?).takeIf { !it.isNullOrBlank() }
-            ?: "com.rosan.installer.x.revived"
-        namespace = "com.rosan.installer"
-        minSdk = 26
-        targetSdk = 37
-        // Version control:
-        // - versionName is auto-generated as "yy.MM" by default,
-        //   or manually set via the VERSION_NAME Gradle property.
-        // - Unstable and Preview builds automatically append the git commit hash
-        //   (e.g., "25.07.abc1234"), configured in productFlavors.
-        // - Stable builds use the base versionName as-is (e.g., "25.07").
-        // - versionCode must be incremented manually before each Stable release.
-        versionCode = 50
-        versionName = baseVersionName
+        applicationId = project.findProperty("APP_ID") as String? ?: "com.rosan.installer.x.revived"
+
+        // Version control retrieved from build-plugins/BuildConfig.kt
+        versionCode = BuildConfig.VERSION_CODE
+        versionName = project.getBaseVersionName()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -97,37 +59,47 @@ android {
 
     buildTypes {
         getByName("debug") {
-            signingConfig =
-                if (hasCustomSigning) {
-                    println("Applying custom signing to debug build.")
-                    signingConfigs.getByName("releaseCustom")
-                } else {
-                    println("No custom signing info. Debug build will use the default debug keystore.")
-                    signingConfigs.getByName("debug")
-                }
-            isMinifyEnabled = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
+            signingConfig = if (hasCustomSigning) {
+                println("Applying custom signing to debug build.")
+                signingConfigs.getByName("releaseCustom")
+            } else {
+                println("No custom signing info. Debug build will use the default debug keystore.")
+                signingConfigs.getByName("debug")
+            }
+            optimization.enable = false
+        }
+        getByName("release") {
+            signingConfig = if (hasCustomSigning) {
+                println("Applying custom signing to release build.")
+                signingConfigs.getByName("releaseCustom")
+            } else {
+                println("No custom signing info. Release build will use the default debug keystore.")
+                signingConfigs.getByName("debug")
+            }
+            vcsInfo.include = false
+            optimization.enable = true
+        }
+        create("nonMinifiedRelease") {
+            signingConfig = if (hasCustomSigning) {
+                signingConfigs.getByName("releaseCustom")
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
 
-        getByName("release") {
-            signingConfig =
-                if (hasCustomSigning) {
-                    println("Applying custom signing to release build.")
-                    signingConfigs.getByName("releaseCustom")
-                } else {
-                    println("No custom signing info. Release build will use the default debug keystore.")
-                    signingConfigs.getByName("debug")
-                }
-            isShrinkResources = true
-            isMinifyEnabled = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
+        create("benchmarkRelease") {
+            isDebuggable = true
+            signingConfig = if (hasCustomSigning) {
+                signingConfigs.getByName("releaseCustom")
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
+    }
+
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
     }
 
     flavorDimensions.addAll(listOf("connectivity", "level"))
@@ -147,13 +119,13 @@ android {
         create("Unstable") {
             dimension = "level"
             isDefault = true
-            versionNameSuffix = ".$gitHash"
+            versionNameSuffix = ".${project.getGitHash()}"
             buildConfigField("int", "BUILD_LEVEL", "0")
         }
 
         create("Preview") {
             dimension = "level"
-            versionNameSuffix = ".$gitHash"
+            versionNameSuffix = ".${project.getGitHash()}"
             buildConfigField("int", "BUILD_LEVEL", "1")
         }
 
@@ -163,11 +135,6 @@ android {
         }
     }
 
-    compileOptions {
-        targetCompatibility = JavaVersion.VERSION_25
-        sourceCompatibility = JavaVersion.VERSION_25
-    }
-
     buildFeatures {
         buildConfig = true
         compose = true
@@ -175,24 +142,18 @@ android {
     }
 
     packaging {
-        resources {
-            excludes.add("/META-INF/{AL2.0,LGPL2.1}")
-        }
         jniLibs {
-            useLegacyPackaging = true
+            // Module-specific exclusions
             excludes += setOf(
                 "lib/*/libandroidx.graphics.path.so",
                 "lib/*/libdatastore_shared_counter.so"
             )
         }
     }
+
     androidResources {
         generateLocaleConfig = true
     }
-}
-
-kotlin {
-    jvmToolchain(25)
 }
 
 configurations.all {
@@ -202,9 +163,9 @@ configurations.all {
 aboutLibraries {
     library {
         // Enable the duplication mode, allows to merge, or link dependencies which relate
-        duplicationMode = com.mikepenz.aboutlibraries.plugin.DuplicateMode.MERGE
+        duplicationMode = DuplicateMode.MERGE
         // Configure the duplication rule, to match "duplicates" with
-        duplicationRule = com.mikepenz.aboutlibraries.plugin.DuplicateRule.SIMPLE
+        duplicationRule = DuplicateRule.SIMPLE
     }
 }
 
@@ -214,6 +175,8 @@ room3 {
 }
 
 dependencies {
+    implementation(libs.androidx.profileinstaller)
+    "baselineProfile"(project(":baselineprofile"))
     compileOnly(project(":hidden-api"))
     implementation(libs.androidx.core)
     implementation(libs.androidx.biometric)
@@ -229,7 +192,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.navigation3)
 
     implementation(libs.androidx.navigation3.runtime)
-    //implementation(libs.androidx.navigation3.ui)
+    // implementation(libs.androidx.navigation3.ui)
     implementation(libs.androidx.navigationevent) {
         exclude(group = "androidx.navigation", module = "navigationevent-compose")
     }

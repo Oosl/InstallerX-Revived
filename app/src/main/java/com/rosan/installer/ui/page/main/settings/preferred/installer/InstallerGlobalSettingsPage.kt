@@ -140,7 +140,7 @@ fun InstallerGlobalSettingsPage(
                 SegmentedColumn(
                     title = stringResource(R.string.installer_settings_global_installer)
                 ) {
-                    item(visible = uiState.authorizer == Authorizer.None && capabilityProvider.isSystemApp) {
+                    item(animatedVisibility = uiState.authorizer == Authorizer.None && capabilityProvider.isSystemApp) {
                         SwitchWidget(
                             icon = AppIcons.FlashPreferRoot,
                             title = stringResource(R.string.config_always_use_root_in_system),
@@ -150,7 +150,7 @@ fun InstallerGlobalSettingsPage(
                         )
                     }
 
-                    item(visible = uiState.authorizer == Authorizer.Dhizuku) {
+                    item(animatedVisibility = uiState.authorizer == Authorizer.Dhizuku) {
                         IntNumberPickerWidget(
                             icon = AppIcons.Working,
                             title = stringResource(R.string.set_countdown),
@@ -183,7 +183,7 @@ fun InstallerGlobalSettingsPage(
                         )
                     }
 
-                    item(visible = biometricAvailable) {
+                    item(animatedVisibility = biometricAvailable) {
                         DataInstallerBiometricAuthWidget(
                             currentMode = uiState.installerRequireBiometricAuth,
                             onModeChange = {
@@ -273,7 +273,7 @@ fun InstallerGlobalSettingsPage(
                     }
 
                     // Show exempted packages only if UID blacklist is not empty
-                    item(visible = uiState.managedSharedUserIdBlacklist.isNotEmpty()) {
+                    item(animatedVisibility = uiState.managedSharedUserIdBlacklist.isNotEmpty()) {
                         ManagedPackagesWidget(
                             noContentTitle = stringResource(R.string.config_no_managed_shared_user_id_exempted_packages),
                             packages = uiState.managedSharedUserIdExemptedPackages,

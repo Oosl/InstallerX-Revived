@@ -3,7 +3,6 @@
 package com.rosan.installer.data.privileged.util
 
 import com.rosan.installer.IPrivilegedService
-import com.rosan.installer.data.privileged.exception.ShizukuNotWorkException
 import com.rosan.installer.data.privileged.model.DefaultPrivilegedService
 import com.rosan.installer.data.privileged.repository.recyclable.Recyclable
 import com.rosan.installer.data.privileged.repository.recyclable.RecyclerManager
@@ -14,6 +13,8 @@ import com.rosan.installer.data.privileged.repository.recycler.ProcessUserServic
 import com.rosan.installer.data.privileged.repository.recycler.ShizukuHookRecycler
 import com.rosan.installer.data.privileged.repository.recycler.ShizukuUserServiceRecycler
 import com.rosan.installer.di.RecyclerNames
+import com.rosan.installer.domain.privileged.exception.PrivilegedException
+import com.rosan.installer.domain.privileged.model.PrivilegedErrorType
 import com.rosan.installer.domain.settings.model.Authorizer
 import org.koin.core.context.GlobalContext
 import org.koin.core.parameter.parametersOf
@@ -69,14 +70,22 @@ private fun processRecycler(
                 target is IllegalStateException &&
                 target.message?.contains("binder haven't been received") == true
             ) {
-                throw ShizukuNotWorkException("Shizuku service connection lost during privileged action (Reflected).", target)
+                throw PrivilegedException(
+                    errorType = PrivilegedErrorType.SHIZUKU_NOT_WORK,
+                    message = "Shizuku service connection lost during privileged action (Reflected).",
+                    cause = target
+                )
             }
             throw e
         }
 
         if (e is IllegalStateException) {
             if (authorizer == Authorizer.Shizuku && e.message?.contains("binder haven't been received") == true) {
-                throw ShizukuNotWorkException("Shizuku service connection lost during privileged action.", e)
+                throw PrivilegedException(
+                    errorType = PrivilegedErrorType.SHIZUKU_NOT_WORK,
+                    message = "Shizuku service connection lost during privileged action.",
+                    cause = e
+                )
             }
         }
 

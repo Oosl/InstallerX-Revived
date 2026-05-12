@@ -11,10 +11,37 @@ import com.rosan.installer.domain.device.model.Manufacturer
 import com.rosan.installer.util.convertLegacyLanguageCode
 
 object DeviceConfig {
-    val systemVersion: String = if (Build.VERSION.PREVIEW_SDK_INT != 0)
-        "%s Preview (API %s)".format(Build.VERSION.CODENAME, Build.VERSION.SDK_INT)
-    else
-        "%s (API %s)".format(Build.VERSION.RELEASE, Build.VERSION.SDK_INT)
+    /**
+     * Resolves the exact API level string, accounting for minor SDK versions introduced in API 36.
+     *
+     * - For API 35 and below: Returns the standard major integer version (e.g., "35").
+     * - For API 36 and above: Appends the precise minor version (e.g., "36.0", "36.1").
+     */
+    private val exactApiLevel: String
+        get() = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
+            // Extract the minor version using the native modulo operation provided by Android 16+.
+            val minorVersion = Build.getMinorSdkVersion(Build.VERSION.SDK_INT_FULL)
+            "${Build.VERSION.SDK_INT}.$minorVersion"
+        } else {
+            Build.VERSION.SDK_INT.toString()
+        }
+
+    /**
+     * Generates a user-friendly system version string suitable for UI display or logging.
+     * Automatically handles both Developer Preview/Beta builds and stable releases.
+     *
+     * Example outputs:
+     * - Stable Android 15: "15 (API 35)"
+     * - Stable Android 16 (Initial): "16 (API 36.0)"
+     * - Stable Android 16 (QPR Update): "16 (API 36.1)"
+     * - Preview Build: "Cinnamon Bun Preview (API 37.0)"
+     */
+    val systemVersion: String
+        get() = if (Build.VERSION.PREVIEW_SDK_INT != 0) {
+            "%s Preview (API %s)".format(Build.VERSION.CODENAME, exactApiLevel)
+        } else {
+            "%s (API %s)".format(Build.VERSION.RELEASE, exactApiLevel)
+        }
 
     val manufacturer: String = Build.MANUFACTURER.uppercase()
     val brand: String = Build.BRAND.uppercase()

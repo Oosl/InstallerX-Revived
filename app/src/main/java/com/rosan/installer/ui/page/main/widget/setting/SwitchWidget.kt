@@ -77,24 +77,16 @@ fun SwitchWidget(
             modifier = Modifier.clearAndSetSemantics {},
             enabled = enabled,
             checked = checked,
-            thumbContent = if (checked) {
-                {
-                    Icon(
-                        imageVector = Icons.Filled.Check,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(SwitchDefaults.IconSize),
-                    )
-                }
-            } else {
-                {
-                    Icon(
-                        imageVector = Icons.Filled.Close,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.surfaceContainerHighest,
-                        modifier = Modifier.size(SwitchDefaults.IconSize),
-                    )
-                }
+            colors = SwitchDefaults.colors(
+                checkedIconColor = MaterialTheme.colorScheme.primary,
+                uncheckedIconColor = MaterialTheme.colorScheme.surfaceContainerHighest
+            ),
+            thumbContent = {
+                Icon(
+                    imageVector = if (checked) Icons.Filled.Check else Icons.Filled.Close,
+                    contentDescription = null,
+                    modifier = Modifier.size(SwitchDefaults.IconSize)
+                )
             },
             onCheckedChange = { newValue ->
                 handleCheckedChange(newValue)

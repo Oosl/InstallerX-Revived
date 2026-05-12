@@ -131,7 +131,6 @@ fun installChoiceDialog(
     }
 
     return DialogParams(
-        icon = DialogInnerParams(DialogParamsType.IconWorking.id, {}),
         title = DialogInnerParams(DialogParamsType.InstallChoice.id) { Text(sourceType.getSupportTitle()) },
         subtitle = DialogInnerParams(DialogParamsType.InstallChoice.id) {
             sourceType.getSupportSubtitle(selectionMode)?.let { Text(it) }

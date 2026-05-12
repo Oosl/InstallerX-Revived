@@ -102,10 +102,24 @@ fun MiuixDataAuthorizerWidget(
 
     val authorizerNames = authorizers.map { authorizer ->
         when (authorizer) {
-            Authorizer.Global -> stringResource(
-                R.string.config_authorizer_global_desc,
-                stringResource(globalAuthorizer.displayNameRes)
-            )
+            Authorizer.Global -> {
+                // Dynamically resolve the global authorizer's name
+                val globalName = if (globalAuthorizer == Authorizer.None && capabilityProvider.isSystemApp) {
+                    stringResource(R.string.working_status_system_installer)
+                } else {
+                    stringResource(globalAuthorizer.displayNameRes)
+                }
+                stringResource(R.string.config_authorizer_global_desc, globalName)
+            }
+
+            Authorizer.None -> {
+                // Check if it should be displayed as system installer
+                if (capabilityProvider.isSystemApp) {
+                    stringResource(R.string.working_status_system_installer)
+                } else {
+                    stringResource(authorizer.displayNameRes)
+                }
+            }
 
             else -> stringResource(authorizer.displayNameRes)
         }

@@ -57,7 +57,10 @@ annotation class SegmentedColumnDsl
  * Represents the configuration and content of an individual item within a [SegmentedColumn].
  *
  * @property key A unique identifier for the item, utilized for optimized composition and state tracking.
- * @property visible Determines the visibility state of the item. Changes to this state are animated.
+ * @property visible Determines the target visibility state of the item within the layout phase.
+ * Transitions of this state dictate the progress of enter and exit animations. If an item is not
+ * intended to be displayed at any point during its lifecycle, it should not be instantiated
+ * as a [SegmentedItemData] to prevent unnecessary layout measurement overhead.
  * @property customTopPadding Optional custom padding applied to the top of this specific item.
  * @property forceFlatTop If `true`, overrides the default corner rounding and forces the top corner radius to 0.dp.
  * @property forceFlatBottom If `true`, overrides the default corner rounding and forces the bottom corner radius to 0.dp.
@@ -84,7 +87,10 @@ class SegmentedColumnScope {
      * Registers a standard item within the group.
      *
      * @param key A unique identifier for the item. Defaults to the current index.
-     * @param visible The visibility state of the item.
+     * @param animatedVisibility The visibility state of the item. Use this parameter for dynamic
+     * state changes that require enter/exit animations. If the item should remain hidden for its
+     * entire lifecycle, do not use this parameter; instead, omit calling [item] entirely
+     * (e.g., wrap the [item] call in a Kotlin `if` statement) to avoid unnecessary composition overhead.
      * @param topPadding Optional explicit top padding for this item.
      * @param forceFlatTop Disables top corner rounding if `true`.
      * @param forceFlatBottom Disables bottom corner rounding if `true`.
@@ -92,13 +98,13 @@ class SegmentedColumnScope {
      */
     fun item(
         key: Any? = null,
-        visible: Boolean = true,
+        animatedVisibility: Boolean = true,
         topPadding: Dp? = null,
         forceFlatTop: Boolean = false,
         forceFlatBottom: Boolean = false,
         content: @Composable (Shape) -> Unit
     ) {
-        items.add(SegmentedItemData(key ?: items.size, visible, topPadding, forceFlatTop, forceFlatBottom, content))
+        items.add(SegmentedItemData(key ?: items.size, animatedVisibility, topPadding, forceFlatTop, forceFlatBottom, content))
     }
 
     /**
@@ -108,7 +114,9 @@ class SegmentedColumnScope {
      * at the engine level. When expanded, the seam between the two components seamlessly loses its
      * internal rounded corners to appear as a single unified container.
      *
-     * @param visible Whether the entire expandable structural unit should be rendered.
+     * @param animatedVisibility Whether the entire expandable structural unit should be rendered.
+     * Use this parameter only if you need the entire structural unit to animate in/out.
+     * If the unit is permanently hidden, wrap the [expandableItem] call in a Kotlin `if` statement.
      * @param expanded Whether the body content is currently expanded (visible) or collapsed.
      * @param topPadding Optional explicit top padding applied to the header item.
      * @param bottomPadding Spacing applied above the body content, effectively acting as bottom padding for the expanded visual block.
@@ -116,7 +124,7 @@ class SegmentedColumnScope {
      * @param bottomContent The composable representing the expansible body content.
      */
     fun expandableItem(
-        visible: Boolean = true,
+        animatedVisibility: Boolean = true,
         expanded: Boolean,
         topPadding: Dp? = null,
         bottomPadding: Dp = 1.dp,
@@ -126,7 +134,7 @@ class SegmentedColumnScope {
         // Header component: When expanded, forcefully flatten the bottom corner
         // to establish a seamless connection with the expanding body below.
         item(
-            visible = visible,
+            animatedVisibility = animatedVisibility,
             topPadding = topPadding,
             forceFlatBottom = expanded,
             content = topContent
@@ -135,7 +143,7 @@ class SegmentedColumnScope {
         // Body component: Regardless of its visibility trigger, forcefully flatten
         // the top corner to sit flush against the header component above.
         item(
-            visible = visible && expanded,
+            animatedVisibility = animatedVisibility && expanded,
             topPadding = bottomPadding,
             forceFlatTop = true,
             content = bottomContent

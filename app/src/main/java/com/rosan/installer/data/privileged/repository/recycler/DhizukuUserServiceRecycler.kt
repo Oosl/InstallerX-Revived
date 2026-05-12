@@ -12,12 +12,13 @@ import com.rosan.dhizuku.api.Dhizuku
 import com.rosan.dhizuku.api.DhizukuUserServiceArgs
 import com.rosan.installer.IDhizukuUserService
 import com.rosan.installer.IPrivilegedService
-import com.rosan.installer.data.privileged.exception.DhizukuDeadServiceException
 import com.rosan.installer.data.privileged.model.DhizukuPrivilegedService
 import com.rosan.installer.data.privileged.repository.recyclable.Recycler
 import com.rosan.installer.data.privileged.repository.recyclable.UserService
 import com.rosan.installer.data.privileged.util.requireDhizukuPermissionGranted
 import com.rosan.installer.di.init.processModules
+import com.rosan.installer.domain.privileged.exception.PrivilegedException
+import com.rosan.installer.domain.privileged.model.PrivilegedErrorType
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.first
@@ -82,7 +83,13 @@ class DhizukuUserServiceRecycler(
 
                 } catch (e: DeadObjectException) {
                     Timber.tag("onServiceConnected").e(e, "Remote Dhizuku process died during the connection attempt.")
-                    close(DhizukuDeadServiceException("Failed to connect: The remote Dhizuku process has died.", e))
+                    close(
+                        PrivilegedException(
+                            errorType = PrivilegedErrorType.DHIZUKU_DEAD_SERVICE,
+                            message = "Failed to connect: The remote Dhizuku process has died.",
+                            cause = e
+                        )
+                    )
                 } catch (e: Exception) {
                     Timber.tag("onServiceConnected").e(e, "An unexpected error occurred during service connection.")
                     close(IllegalStateException("An unexpected error occurred during service connection.", e))

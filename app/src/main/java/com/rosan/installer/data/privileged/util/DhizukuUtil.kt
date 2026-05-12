@@ -3,7 +3,8 @@ package com.rosan.installer.data.privileged.util
 import android.content.pm.PackageManager
 import com.rosan.dhizuku.api.Dhizuku
 import com.rosan.dhizuku.api.DhizukuRequestPermissionListener
-import com.rosan.installer.data.privileged.exception.DhizukuNotWorkException
+import com.rosan.installer.domain.privileged.exception.PrivilegedException
+import com.rosan.installer.domain.privileged.model.PrivilegedErrorType
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.catch
@@ -23,7 +24,11 @@ suspend fun <T> requireDhizukuPermissionGranted(action: suspend () -> T): T {
         }
         awaitClose()
     }.catch {
-        throw DhizukuNotWorkException(it)
+        throw PrivilegedException(
+            errorType = PrivilegedErrorType.DHIZUKU_NOT_WORK,
+            message = "Dhizuku not work",
+            cause = it
+        )
     }.first()
     return action()
 }

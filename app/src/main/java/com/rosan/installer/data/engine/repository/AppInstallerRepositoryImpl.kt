@@ -9,10 +9,11 @@ import com.rosan.installer.data.engine.executor.appInstaller.NoneAppInstallerRep
 import com.rosan.installer.data.engine.executor.appInstaller.ProcessAppInstallerRepoImpl
 import com.rosan.installer.data.engine.executor.appInstaller.ShizukuAppInstallerRepoImpl
 import com.rosan.installer.data.engine.executor.appInstaller.SystemAppInstallerRepoImpl
-import com.rosan.installer.data.privileged.exception.ShizukuNotWorkException
 import com.rosan.installer.domain.device.provider.DeviceCapabilityProvider
 import com.rosan.installer.domain.engine.model.InstallEntity
 import com.rosan.installer.domain.engine.repository.AppInstallerRepository
+import com.rosan.installer.domain.privileged.exception.PrivilegedException
+import com.rosan.installer.domain.privileged.model.PrivilegedErrorType
 import com.rosan.installer.domain.privileged.provider.PostInstallTaskProvider
 import com.rosan.installer.domain.settings.model.Authorizer
 import com.rosan.installer.domain.settings.model.ConfigModel
@@ -68,7 +69,11 @@ class AppInstallerRepositoryImpl(
         } catch (e: IllegalStateException) {
             // Check if Shizuku service connection is lost
             if (repo is ShizukuAppInstallerRepoImpl && e.message?.contains("binder haven't been received") == true) {
-                throw ShizukuNotWorkException("Shizuku service connection lost during operation.", e)
+                throw PrivilegedException(
+                    errorType = PrivilegedErrorType.SHIZUKU_NOT_WORK,
+                    message = "Shizuku service connection lost during operation.",
+                    cause = e
+                )
             }
             // Throw other exceptions as-is
             throw e

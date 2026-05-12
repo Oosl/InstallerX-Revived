@@ -3,6 +3,7 @@
 package com.rosan.installer.domain.engine.exception
 
 import com.rosan.installer.R
+import com.rosan.installer.core.exception.InstallerException
 
 class AuthenticationFailedException : InstallerException {
     constructor() : super()

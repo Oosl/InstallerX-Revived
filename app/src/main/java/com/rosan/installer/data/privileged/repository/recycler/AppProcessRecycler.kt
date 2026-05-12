@@ -3,10 +3,10 @@
 package com.rosan.installer.data.privileged.repository.recycler
 
 import com.rosan.app_process.AppProcess
-import com.rosan.installer.data.privileged.exception.AppProcessNotWorkException
-import com.rosan.installer.data.privileged.exception.RootNotWorkException
 import com.rosan.installer.data.privileged.repository.recyclable.Recycler
 import com.rosan.installer.data.privileged.util.SHELL_ROOT
+import com.rosan.installer.domain.privileged.exception.PrivilegedException
+import com.rosan.installer.domain.privileged.model.PrivilegedErrorType
 
 class AppProcessRecycler(private val shell: String) : Recycler<AppProcess>() {
 
@@ -29,10 +29,16 @@ class AppProcessRecycler(private val shell: String) : Recycler<AppProcess>() {
             // Strictly check if the user intended to use standard root.
             // Avoid throwing RootNotWorkException if arguments like "su 2000" were passed.
             if (command == SHELL_ROOT && fullCommand == SHELL_ROOT) {
-                throw RootNotWorkException("Cannot access su command")
+                throw PrivilegedException(
+                    errorType = PrivilegedErrorType.ROOT_NOT_WORK,
+                    message = "Cannot access su command"
+                )
             } else {
                 // Throw the exact full command that failed initialization for accurate debugging
-                throw AppProcessNotWorkException("AppProcess init failed for shell: $fullCommand")
+                throw PrivilegedException(
+                    errorType = PrivilegedErrorType.APP_PROCESS_NOT_WORK,
+                    message = "AppProcess init failed for shell: $fullCommand"
+                )
             }
         }
     }

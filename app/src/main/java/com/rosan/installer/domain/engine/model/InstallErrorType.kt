@@ -2,12 +2,13 @@
 // Copyright (C) 2025-2026 InstallerX Revived contributors
 package com.rosan.installer.domain.engine.model
 
+import androidx.annotation.StringRes
 import com.rosan.installer.R
 
 /**
  * Enumeration mapping legacy install error codes to their respective string resources.
  */
-enum class InstallErrorType(val legacyCode: Int, val stringResId: Int) {
+enum class InstallErrorType(val legacyCode: Int, @param:StringRes val stringResId: Int) {
     // --- Legacy Install Error Codes From Package Manager Service ---
     ALREADY_EXISTS(-1, R.string.exception_install_failed_already_exists),
     INVALID_APK(-2, R.string.exception_install_failed_invalid_apk),

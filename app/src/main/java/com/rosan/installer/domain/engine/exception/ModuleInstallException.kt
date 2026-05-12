@@ -2,16 +2,19 @@
 // Copyright (C) 2025-2026 InstallerX Revived contributors
 package com.rosan.installer.domain.engine.exception
 
-import com.rosan.installer.R
+import com.rosan.installer.core.exception.InstallerException
+import com.rosan.installer.domain.engine.model.ModuleInstallErrorType
 
 /**
- * Custom exception for module installation failures.
- *
- * @param message A descriptive error message.
- * @param cause The underlying cause of the failure.
+ * Unified exception for all module installation failures.
  */
-class ModuleInstallException(message: String, cause: Throwable? = null) : InstallerException(message, cause) {
+class ModuleInstallException(
+    val errorType: ModuleInstallErrorType,
+    message: String? = null,
+    cause: Throwable? = null
+) : InstallerException(message, cause) {
+
     override fun getStringResId(): Int {
-        return R.string.exception_module_install_failed
+        return errorType.stringResId
     }
 }

@@ -1,0 +1,6 @@
+# Ignore warnings for internal Android framework classes accessed via reflection or hidden APIs
+-dontwarn android.app.ContextImpl
+-dontwarn android.app.LoadedApk
+
+# Ignore warnings for optional Material Components dependency in MonetCompat
+-dontwarn com.google.android.material.color.DynamicColors

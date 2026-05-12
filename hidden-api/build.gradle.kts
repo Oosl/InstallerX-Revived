@@ -1,21 +1,16 @@
 plugins {
-    alias(libs.plugins.agp.lib)
+    // Applied custom convention plugin instead of raw library plugin
+    alias(libs.plugins.installerx.library)
 }
 
 android {
     namespace = "com.rosan.hidden_api"
-    compileSdk = 37
-    compileSdkMinor = 0
 
     defaultConfig {
-        minSdk = 23
-    }
-
-    compileOptions {
-        targetCompatibility = JavaVersion.VERSION_25
-        sourceCompatibility = JavaVersion.VERSION_25
+        minSdk = BuildConfig.MIN_SDK
     }
 }
 
 dependencies {
+    // Add specific dependencies for hidden api stubs if needed
 }

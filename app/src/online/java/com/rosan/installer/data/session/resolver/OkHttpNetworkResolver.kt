@@ -8,10 +8,9 @@ import android.net.NetworkCapabilities
 import android.net.Uri
 import com.rosan.installer.data.session.util.copyToWithProgress
 import com.rosan.installer.domain.engine.model.DataEntity
-import com.rosan.installer.domain.session.exception.HttpNotAllowedException
-import com.rosan.installer.domain.session.exception.HttpRestrictedForLocalhostException
-import com.rosan.installer.domain.session.exception.ResolveFailedLinkNotValidException
+import com.rosan.installer.domain.session.exception.ResolveException
 import com.rosan.installer.domain.session.model.ProgressEntity
+import com.rosan.installer.domain.session.model.ResolveErrorType
 import com.rosan.installer.domain.session.repository.NetworkResolver
 import com.rosan.installer.domain.settings.model.HttpProfile
 import com.rosan.installer.domain.settings.repository.AppSettingsRepository
@@ -80,8 +79,10 @@ class OkHttpNetworkResolver(
         val supportsRange = preFlight.second
 
         if (!verifyArchiveMagicNumber(client, uri.toString())) {
-            // Throw a custom exception or handle the error
-            throw ResolveFailedLinkNotValidException("The target file is not a valid ZIP/APK archive.")
+            throw ResolveException(
+                errorType = ResolveErrorType.LINK_NOT_VALID,
+                message = "The target file is not a valid ZIP/APK archive."
+            )
         }
 
         val tempFile = File(cacheDirectory, UUID.randomUUID().toString())
@@ -333,10 +334,17 @@ class OkHttpNetworkResolver(
 
         if (scheme == "http") {
             when (profile) {
-                HttpProfile.ALLOW_SECURE -> throw HttpNotAllowedException("Cleartext HTTP not allowed.")
+                HttpProfile.ALLOW_SECURE -> throw ResolveException(
+                    errorType = ResolveErrorType.HTTP_NOT_ALLOWED,
+                    message = "Cleartext HTTP not allowed."
+                )
+
                 HttpProfile.ALLOW_LOCAL -> {
                     if (host != "localhost" && host != "127.0.0.1" && host != "::1") {
-                        throw HttpRestrictedForLocalhostException("Cleartext HTTP allowed only for localhost.")
+                        throw ResolveException(
+                            errorType = ResolveErrorType.HTTP_RESTRICTED_FOR_LOCALHOST,
+                            message = "Cleartext HTTP allowed only for localhost."
+                        )
                     }
                 }
 

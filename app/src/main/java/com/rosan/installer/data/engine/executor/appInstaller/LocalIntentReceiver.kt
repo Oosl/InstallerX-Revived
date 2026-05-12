@@ -9,7 +9,6 @@ import android.content.IntentSender
 import android.os.Bundle
 import android.os.IBinder
 import com.rosan.installer.core.reflection.ReflectionProvider
-
 import kotlinx.coroutines.channels.Channel
 
 class LocalIntentReceiver(private val reflect: ReflectionProvider) {
@@ -31,12 +30,10 @@ class LocalIntentReceiver(private val reflect: ReflectionProvider) {
         }
     }
 
-    fun getIntentSender(): IntentSender =
+    fun getIntentSender() =
         reflect.getDeclaredConstructor(
             IntentSender::class.java, IIntentSender::class.java
         )!!.newInstance(localSender) as IntentSender
 
-    suspend fun getResult(): Intent {
-        return channel.receive()
-    }
+    suspend fun getResult() = channel.receive()
 }

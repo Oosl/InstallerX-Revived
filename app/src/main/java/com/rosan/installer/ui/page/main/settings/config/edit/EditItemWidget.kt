@@ -99,79 +99,100 @@ fun DataDescriptionWidget(state: EditViewState, dispatch: (EditViewAction) -> Un
     )
 }
 
-@Composable
-fun DataAuthorizerWidget(
+fun SegmentedColumnScope.dataAuthorizerWidget(
     state: EditViewState,
     dispatch: (EditViewAction) -> Unit,
 ) {
-    val capabilityProvider = koinInject<DeviceCapabilityProvider>()
-
+    // Read states outside the Composable scope is fine
     val stateAuthorizer = state.data.authorizer
     val globalAuthorizer = state.globalAuthorizer
+    val isCustomExpanded = state.data.authorizerCustomize
 
-    val authorizers = buildList {
-        add(Authorizer.Global)
+    expandableItem(
+        expanded = isCustomExpanded,
+        topContent = {
+            val capabilityProvider = koinInject<DeviceCapabilityProvider>()
 
-        if (capabilityProvider.isSessionInstallSupported) {
-            add(Authorizer.None)
-        }
+            val authorizers = buildList {
+                add(Authorizer.Global)
 
-        addAll(
-            listOf(
-                Authorizer.Root,
-                Authorizer.Shizuku,
-                Authorizer.Dhizuku,
-                Authorizer.Customize,
-            )
-        )
-    }
+                if (capabilityProvider.isSessionInstallSupported) {
+                    add(Authorizer.None)
+                }
 
-    val descriptions = authorizers.map { authorizer ->
-        when (authorizer) {
-            Authorizer.Global -> stringResource(
-                R.string.config_authorizer_global_desc,
-                stringResource(globalAuthorizer.displayNameRes)
-            )
+                addAll(
+                    listOf(
+                        Authorizer.Root,
+                        Authorizer.Shizuku,
+                        Authorizer.Dhizuku,
+                        Authorizer.Customize,
+                    )
+                )
+            }
 
-            else -> stringResource(authorizer.displayNameRes)
-        }
-    }
+            // Map authorizers to their dynamic display names
+            val descriptions = authorizers.map { authorizer ->
+                when (authorizer) {
+                    Authorizer.Global -> {
+                        // Dynamically resolve the global authorizer's name
+                        val globalName = if (globalAuthorizer == Authorizer.None && capabilityProvider.isSystemApp) {
+                            stringResource(R.string.working_status_system_installer)
+                        } else {
+                            stringResource(globalAuthorizer.displayNameRes)
+                        }
+                        stringResource(R.string.config_authorizer_global_desc, globalName)
+                    }
 
-    DropDownMenuWidget(
-        icon = Icons.TwoTone.Memory,
-        title = stringResource(R.string.config_authorizer),
-        description = authorizers
-            .indexOf(stateAuthorizer)
-            .takeIf { it >= 0 }
-            ?.let(descriptions::get),
-        choice = authorizers.indexOf(stateAuthorizer),
-        data = descriptions,
-    ) { index ->
-        authorizers.getOrNull(index)?.let {
-            dispatch(EditViewAction.ChangeDataAuthorizer(it))
-        }
-    }
-}
+                    Authorizer.None -> {
+                        // Check if it should be displayed as system installer
+                        if (capabilityProvider.isSystemApp) {
+                            stringResource(R.string.working_status_system_installer)
+                        } else {
+                            stringResource(authorizer.displayNameRes)
+                        }
+                    }
 
-@Composable
-fun DataCustomizeAuthorizerWidget(state: EditViewState, dispatch: (EditViewAction) -> Unit) {
-    if (!state.data.authorizerCustomize) return
-    val customizeAuthorizer = state.data.customizeAuthorizer
-    TextField(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp, horizontal = 16.dp)
-            .focusable(),
-        leadingIcon = {
-            Icon(imageVector = Icons.TwoTone.Terminal, contentDescription = null)
+                    else -> stringResource(authorizer.displayNameRes)
+                }
+            }
+
+            DropDownMenuWidget(
+                icon = Icons.TwoTone.Memory,
+                title = stringResource(R.string.config_authorizer),
+                description = authorizers
+                    .indexOf(stateAuthorizer)
+                    .takeIf { it >= 0 }
+                    ?.let(descriptions::get),
+                choice = authorizers.indexOf(stateAuthorizer),
+                data = descriptions,
+            ) { index ->
+                authorizers.getOrNull(index)?.let {
+                    dispatch(EditViewAction.ChangeDataAuthorizer(it))
+                }
+            }
         },
-        label = {
-            Text(text = stringResource(R.string.config_customize_authorizer))
-        },
-        value = customizeAuthorizer,
-        onValueChange = { dispatch(EditViewAction.ChangeDataCustomizeAuthorizer(it)) },
-        maxLines = 8,
-        isError = state.data.errorCustomizeAuthorizer
+        bottomContent = { bottomShape ->
+            val customizeAuthorizer = state.data.customizeAuthorizer
+            BaseItemContainer {
+                TextField(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp, horizontal = 16.dp)
+                        .focusable(),
+                    shape = bottomShape,
+                    leadingIcon = {
+                        Icon(imageVector = Icons.TwoTone.Terminal, contentDescription = null)
+                    },
+                    label = {
+                        Text(text = stringResource(R.string.config_customize_authorizer))
+                    },
+                    value = customizeAuthorizer,
+                    onValueChange = { dispatch(EditViewAction.ChangeDataCustomizeAuthorizer(it)) },
+                    maxLines = 8,
+                    isError = state.data.errorCustomizeAuthorizer
+                )
+            }
+        }
     )
 }
 
@@ -263,7 +284,7 @@ fun SegmentedColumnScope.dataPackageSourceWidget(
     val currentSource = state.data.packageSource
 
     expandableItem(
-        visible = visible,
+        animatedVisibility = visible,
         expanded = enableCustomizePackageSource,
         topContent = {
             val description =
@@ -317,7 +338,7 @@ fun SegmentedColumnScope.dataInstallRequesterWidget(
     val isError = stateData.errorInstallRequester
 
     expandableItem(
-        visible = visible,
+        animatedVisibility = visible,
         expanded = enableCustomize,
         topContent = {
             val description =
@@ -561,7 +582,7 @@ fun SegmentedColumnScope.dataManualDexoptWidget(state: EditViewState, dispatch: 
     }
 
     item(
-        visible = expanded,
+        animatedVisibility = expanded,
         topPadding = 1.dp,
         forceFlatTop = true,
         forceFlatBottom = true
@@ -579,7 +600,7 @@ fun SegmentedColumnScope.dataManualDexoptWidget(state: EditViewState, dispatch: 
     val currentMode = state.data.dexoptMode
 
     item(
-        visible = expanded,
+        animatedVisibility = expanded,
         topPadding = 1.dp,
         forceFlatTop = true
     ) {

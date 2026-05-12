@@ -2,9 +2,7 @@
 // Copyright (C) 2023-2026 iamr0s, InstallerX Revived contributors
 package com.rosan.installer.ui.page.main.installer.dialog.inner
 
-import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
@@ -19,14 +17,9 @@ import com.rosan.installer.ui.page.main.installer.dialog.dialogButtons
 fun analysingDialog() = DialogParams(
     icon = DialogInnerParams(
         DialogParamsType.IconWorking.id,
-        {
-            ContainedLoadingIndicator(
-                indicatorColor = MaterialTheme.colorScheme.primary,
-                containerColor = MaterialTheme.colorScheme.surfaceContainer
-            )
-        }
 
-    ), title = DialogInnerParams(
+
+        ), title = DialogInnerParams(
         DialogParamsType.InstallerAnalysing.id,
     ) {
         Text(stringResource(R.string.installer_analysing))

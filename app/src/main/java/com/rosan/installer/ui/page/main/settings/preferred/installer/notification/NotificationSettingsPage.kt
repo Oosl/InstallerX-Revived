@@ -164,7 +164,7 @@ fun NotificationSettingsPage(
                             }
                         )
                     }
-                    item(visible = activeStyle == NotificationStyle.MI_ISLAND) {
+                    item(animatedVisibility = activeStyle == NotificationStyle.MI_ISLAND) {
                         SwitchWidget(
                             icon = AppIcons.Bypass,
                             title = stringResource(id = R.string.lab_mi_island_bypass_restriction),
@@ -175,7 +175,7 @@ fun NotificationSettingsPage(
                             }
                         )
                     }
-                    item(visible = activeStyle == NotificationStyle.MI_ISLAND && uiState.miIslandBypassRestriction) {
+                    item(animatedVisibility = activeStyle == NotificationStyle.MI_ISLAND && uiState.miIslandBypassRestriction) {
                         BaseItemContainer {
                             IntNumberPickerWidget(
                                 icon = AppIcons.StopWatch,
@@ -190,7 +190,7 @@ fun NotificationSettingsPage(
                             )
                         }
                     }
-                    item(visible = activeStyle == NotificationStyle.MI_ISLAND) {
+                    item(animatedVisibility = activeStyle == NotificationStyle.MI_ISLAND) {
                         SwitchWidget(
                             icon = AppIcons.Glow,
                             title = stringResource(id = R.string.lab_mi_island_outer_glow),

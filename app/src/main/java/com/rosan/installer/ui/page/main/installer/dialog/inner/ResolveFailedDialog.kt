@@ -11,7 +11,7 @@ import com.rosan.installer.R
 import com.rosan.installer.ui.page.main.installer.InstallerViewAction
 import com.rosan.installer.ui.page.main.installer.InstallerViewModel
 import com.rosan.installer.ui.page.main.installer.components.ErrorTextBlock
-import com.rosan.installer.ui.page.main.installer.components.pausingIcon
+import com.rosan.installer.ui.page.main.installer.components.failedIcon
 import com.rosan.installer.ui.page.main.installer.dialog.DialogButton
 import com.rosan.installer.ui.page.main.installer.dialog.DialogInnerParams
 import com.rosan.installer.ui.page.main.installer.dialog.DialogParams
@@ -27,7 +27,7 @@ fun resolveFailedDialog(
 
     return DialogParams(
         icon = DialogInnerParams(
-            DialogParamsType.IconPausing.id, pausingIcon
+            DialogParamsType.IconError.id, failedIcon
         ), title = DialogInnerParams(
             DialogParamsType.InstallerResolveFailed.id
         ) {

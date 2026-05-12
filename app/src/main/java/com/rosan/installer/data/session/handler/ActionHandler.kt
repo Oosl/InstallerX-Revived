@@ -11,8 +11,9 @@ import com.rosan.installer.data.session.repository.InstallerSessionRepositoryImp
 import com.rosan.installer.data.session.resolver.ConfigResolver
 import com.rosan.installer.data.session.resolver.SourceResolver
 import com.rosan.installer.domain.device.provider.DeviceCapabilityProvider
-import com.rosan.installer.domain.engine.exception.AnalyseFailedAllFilesUnsupportedException
+import com.rosan.installer.domain.engine.exception.AnalyseException
 import com.rosan.installer.domain.engine.exception.AuthenticationFailedException
+import com.rosan.installer.domain.engine.model.AnalyseErrorType
 import com.rosan.installer.domain.engine.model.AnalyseExtraEntity
 import com.rosan.installer.domain.engine.model.PackageAnalysisResult
 import com.rosan.installer.domain.engine.model.SessionMode
@@ -287,7 +288,10 @@ class ActionHandler(scope: CoroutineScope, session: InstallerSessionRepository) 
         )
 
         if (results.isEmpty()) {
-            throw AnalyseFailedAllFilesUnsupportedException("No valid installation entities found in the provided sources.")
+            throw AnalyseException(
+                errorType = AnalyseErrorType.ALL_FILES_UNSUPPORTED,
+                message = "No valid installation entities found in the provided sources."
+            )
         }
 
         session.analysisResults = results

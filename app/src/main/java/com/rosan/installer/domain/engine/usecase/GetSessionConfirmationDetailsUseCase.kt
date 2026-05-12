@@ -3,7 +3,7 @@
 package com.rosan.installer.domain.engine.usecase
 
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
+import android.os.Build
 import android.os.Bundle
 import com.rosan.installer.data.privileged.util.useUserService
 import com.rosan.installer.domain.device.provider.DeviceCapabilityProvider
@@ -56,13 +56,15 @@ class GetSessionConfirmationDetailsUseCase(
             isOwnershipConflict = bundle.getBoolean("isOwnershipConflict", false)
             sourceAppLabel = bundle.getCharSequence("sourceAppLabel")
 
-            val bytes = bundle.getByteArray("appIcon")
-            if (bytes != null) {
-                try {
-                    icon = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-                } catch (e: Exception) {
-                    Timber.e(e, "Failed to decode icon bitmap")
+            try {
+                icon = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    bundle.getParcelable("appIcon", Bitmap::class.java)
+                } else {
+                    @Suppress("DEPRECATION")
+                    bundle.getParcelable("appIcon") as? Bitmap
                 }
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to extract icon bitmap from bundle")
             }
         } else {
             Timber.w("Service returned null bundle for session $sessionId")

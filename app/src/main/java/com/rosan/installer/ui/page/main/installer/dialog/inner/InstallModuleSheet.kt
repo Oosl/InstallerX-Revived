@@ -56,9 +56,13 @@ fun ModuleInstallSheetContent(
     val lazyListState = rememberLazyListState()
 
     // Auto-scroll to the bottom when new lines are added, provided it's not finished yet
-    LaunchedEffect(outputLines.size) {
-        if (!isFinished && outputLines.isNotEmpty()) {
-            lazyListState.animateScrollToItem(index = outputLines.size - 1)
+    LaunchedEffect(outputLines.size, isFinished) {
+        if (outputLines.isNotEmpty()) {
+            if (!isFinished) {
+                lazyListState.animateScrollToItem(index = outputLines.size - 1)
+            } else {
+                lazyListState.scrollToItem(index = outputLines.size - 1)
+            }
         }
     }
 
@@ -119,13 +123,13 @@ fun ModuleInstallSheetContent(
                 ) {
                     Text(stringResource(R.string.reboot))
                 }
-                if (rootMode == RootMode.KernelSU)
+                /*if (rootMode == RootMode.KernelSU)
                     Button(
                         onClick = onSoftReboot,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(stringResource(R.string.reboot_soft_reboot))
-                    }
+                    }*/
                 Button(
                     onClick = onClose,
                     modifier = Modifier.fillMaxWidth()

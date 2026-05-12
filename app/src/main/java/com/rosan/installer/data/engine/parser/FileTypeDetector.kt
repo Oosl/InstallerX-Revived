@@ -3,7 +3,8 @@
 package com.rosan.installer.data.engine.parser
 
 import android.os.Build
-import com.rosan.installer.domain.engine.exception.AnalyseFailedCorruptedArchiveException
+import com.rosan.installer.domain.engine.exception.AnalyseException
+import com.rosan.installer.domain.engine.model.AnalyseErrorType
 import com.rosan.installer.domain.engine.model.AnalyseExtraEntity
 import com.rosan.installer.domain.engine.model.DataEntity
 import com.rosan.installer.domain.engine.model.DataType
@@ -60,7 +61,11 @@ class FileTypeDetector(
                     // The file contains the ZIP magic number but failed to open.
                     // This typically means the file is truncated or corrupted.
                     Timber.e(e, "Archive is corrupted or truncated: ${fileEntity.path}")
-                    throw AnalyseFailedCorruptedArchiveException("Archive is corrupted or truncated", e)
+                    throw AnalyseException(
+                        errorType = AnalyseErrorType.CORRUPTED_ARCHIVE,
+                        message = "Archive is corrupted or truncated",
+                        cause = e
+                    )
                 } else {
                     // The file does not have the ZIP magic number, so it is not a ZIP file at all.
                     handleNonZipFallback(fileEntity, e)

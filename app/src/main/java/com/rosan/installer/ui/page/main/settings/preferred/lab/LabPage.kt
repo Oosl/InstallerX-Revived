@@ -193,10 +193,10 @@ fun LabPage(
                             }
                         )
                     }
-                    item(visible = uiState.labRootEnableModuleFlash) {
+                    item(animatedVisibility = uiState.labRootEnableModuleFlash) {
                         LabRootImplementationWidget(viewModel)
                     }
-                    item(visible = uiState.labRootEnableModuleFlash) {
+                    item(animatedVisibility = uiState.labRootEnableModuleFlash) {
                         SwitchWidget(
                             icon = AppIcons.Terminal,
                             title = stringResource(R.string.lab_module_flashing_show_art),

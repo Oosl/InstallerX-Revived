@@ -22,8 +22,6 @@ import androidx.compose.material.icons.automirrored.twotone.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.RadioButton
-import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
@@ -48,7 +46,7 @@ import com.rosan.installer.ui.page.main.settings.home.HomePageViewAction
 import com.rosan.installer.ui.page.main.settings.home.HomePageViewModel
 import com.rosan.installer.ui.page.main.widget.card.TitleTipCard
 import com.rosan.installer.ui.page.main.widget.setting.AppBackButton
-import com.rosan.installer.ui.page.main.widget.setting.BaseWidget
+import com.rosan.installer.ui.page.main.widget.setting.RadioButtonWidget
 import com.rosan.installer.ui.page.main.widget.setting.SegmentedColumn
 import com.rosan.installer.ui.page.main.widget.util.OnLifecycleEvent
 import com.rosan.installer.ui.theme.getMaterial3AppBarColor
@@ -124,42 +122,30 @@ fun PrivPage(
                 SegmentedColumn {
                     item {
                         val selected = uiState.globalAuthorizer == Authorizer.None
-                        BaseWidget(
+                        RadioButtonWidget(
                             icon = AppIcons.None,
                             title = if (uiState.isSystemApp) stringResource(R.string.working_status_system_installer) else stringResource(R.string.config_authorizer_none),
                             description = if (uiState.isSystemApp) stringResource(R.string.working_status_system_installer_desc)
                             else stringResource(R.string.working_status_none_authorizer_desc),
                             selected = selected,
                             onClick = { viewModel.dispatch(HomePageViewAction.ChangeAuthorizer(Authorizer.None)) }
-                        ) {
-                            RadioButton(
-                                selected = selected,
-                                onClick = { viewModel.dispatch(HomePageViewAction.ChangeAuthorizer(Authorizer.None)) },
-                                colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary)
-                            )
-                        }
+                        )
                     }
                     item {
                         val isAvailable = uiState.rootMode != RootMode.None
                         val selected = uiState.globalAuthorizer == Authorizer.Root
-                        BaseWidget(
+                        RadioButtonWidget(
                             icon = AppIcons.Root,
                             title = stringResource(R.string.config_authorizer_root),
                             description = if (isAvailable) stringResource(R.string.available) + " (${uiState.rootMode.name})"
                             else stringResource(R.string.unavailable),
                             selected = selected,
                             onClick = { viewModel.dispatch(HomePageViewAction.ChangeAuthorizer(Authorizer.Root)) }
-                        ) {
-                            RadioButton(
-                                selected = selected,
-                                onClick = { viewModel.dispatch(HomePageViewAction.ChangeAuthorizer(Authorizer.Root)) },
-                                colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary)
-                            )
-                        }
+                        )
                     }
                     item {
                         val selected = uiState.globalAuthorizer == Authorizer.Shizuku
-                        BaseWidget(
+                        RadioButtonWidget(
                             icon = ImageVector.vectorResource(R.drawable.ic_shizuku),
                             title = stringResource(R.string.config_authorizer_shizuku),
                             description = when {
@@ -168,20 +154,12 @@ fun PrivPage(
                                 else -> stringResource(R.string.shizuku_not_available)
                             },
                             selected = selected,
-                            onClick = {
-                                viewModel.dispatch(HomePageViewAction.ChangeAuthorizer(Authorizer.Shizuku))
-                            }
-                        ) {
-                            RadioButton(
-                                selected = selected,
-                                onClick = { viewModel.dispatch(HomePageViewAction.ChangeAuthorizer(Authorizer.Shizuku)) },
-                                colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary)
-                            )
-                        }
+                            onClick = { viewModel.dispatch(HomePageViewAction.ChangeAuthorizer(Authorizer.Shizuku)) }
+                        )
                     }
                     item {
                         val selected = uiState.globalAuthorizer == Authorizer.Dhizuku
-                        BaseWidget(
+                        RadioButtonWidget(
                             icon = AppIcons.InstallAllowRestrictedPermissions,
                             title = stringResource(R.string.config_authorizer_dhizuku),
                             description = when {
@@ -191,13 +169,7 @@ fun PrivPage(
                             },
                             selected = selected,
                             onClick = { viewModel.dispatch(HomePageViewAction.ChangeAuthorizer(Authorizer.Dhizuku)) }
-                        ) {
-                            RadioButton(
-                                selected = selected,
-                                onClick = { viewModel.dispatch(HomePageViewAction.ChangeAuthorizer(Authorizer.Dhizuku)) },
-                                colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary)
-                            )
-                        }
+                        )
                     }
                 }
             }

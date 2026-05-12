@@ -1,4 +1,5 @@
 pluginManagement {
+    includeBuild("build-plugins")
     repositories {
         mavenLocal()
         // maven { setUrl("https://maven.aliyun.com/repository/public/") }
@@ -59,3 +60,4 @@ include(
     ":app",
     ":hidden-api"
 )
+include(":baselineprofile")

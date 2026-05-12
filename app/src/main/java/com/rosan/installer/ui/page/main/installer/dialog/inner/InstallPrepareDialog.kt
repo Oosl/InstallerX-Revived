@@ -39,7 +39,7 @@ import com.rosan.installer.ui.icons.AppIcons
 import com.rosan.installer.ui.page.main.installer.InstallerViewAction
 import com.rosan.installer.ui.page.main.installer.InstallerViewModel
 import com.rosan.installer.ui.page.main.installer.components.WarningTextBlock
-import com.rosan.installer.ui.page.main.installer.components.pausingIcon
+import com.rosan.installer.ui.page.main.installer.components.failedIcon
 import com.rosan.installer.ui.page.main.installer.dialog.DialogButton
 import com.rosan.installer.ui.page.main.installer.dialog.DialogInnerParams
 import com.rosan.installer.ui.page.main.installer.dialog.DialogParams
@@ -50,59 +50,67 @@ import com.rosan.installer.ui.page.main.widget.chip.Chip
 import com.rosan.installer.ui.page.main.widget.chip.InstallInfoChipGroup
 import org.koin.compose.koinInject
 
-// Assume pausingIcon is accessible
-
 @Composable
 private fun installPrepareEmptyDialog(
     viewModel: InstallerViewModel
-): DialogParams {
-    return DialogParams(
-        icon = DialogInnerParams(
-            DialogParamsType.IconPausing.id, pausingIcon
-        ), title = DialogInnerParams(
-            DialogParamsType.InstallerPrepare.id,
-        ) {
-            Text(stringResource(R.string.installer_prepare_install))
-        }, text = DialogInnerParams(
-            DialogParamsType.InstallerPrepareEmpty.id
-        ) {
-            Text(stringResource(R.string.installer_prepare_install_empty))
-        }, buttons = dialogButtons(
-            DialogParamsType.ButtonsCancel.id
-        ) {
-            listOf(DialogButton(stringResource(R.string.previous)) {
+) = DialogParams(
+    icon = DialogInnerParams(
+        DialogParamsType.IconError.id, failedIcon
+    ),
+    title = DialogInnerParams(
+        DialogParamsType.InstallerPrepare.id,
+    ) {
+        Text(stringResource(R.string.installer_prepare_install))
+    },
+    text = DialogInnerParams(
+        DialogParamsType.InstallerPrepareEmpty.id
+    ) {
+        Text(stringResource(R.string.installer_prepare_install_empty))
+    },
+    buttons = dialogButtons(
+        DialogParamsType.ButtonsCancel.id
+    ) {
+        listOf(
+            DialogButton(stringResource(R.string.previous)) {
                 viewModel.dispatch(InstallerViewAction.InstallChoice)
-            }, DialogButton(stringResource(R.string.cancel)) {
+            },
+            DialogButton(stringResource(R.string.cancel)) {
                 viewModel.dispatch(InstallerViewAction.Close)
-            })
-        })
-}
+            }
+        )
+    }
+)
 
 @Composable
 private fun installPrepareTooManyDialog(
     viewModel: InstallerViewModel
-): DialogParams {
-    return DialogParams(
-        icon = DialogInnerParams(
-            DialogParamsType.IconPausing.id, pausingIcon
-        ), title = DialogInnerParams(
-            DialogParamsType.InstallerPrepare.id,
-        ) {
-            Text(stringResource(R.string.installer_prepare_install))
-        }, text = DialogInnerParams(
-            DialogParamsType.InstallerPrepareTooMany.id
-        ) {
-            Text(stringResource(R.string.installer_prepare_install_too_many))
-        }, buttons = dialogButtons(
-            DialogParamsType.ButtonsCancel.id
-        ) {
-            listOf(DialogButton(stringResource(R.string.previous)) {
+) = DialogParams(
+    icon = DialogInnerParams(
+        DialogParamsType.IconError.id, failedIcon
+    ),
+    title = DialogInnerParams(
+        DialogParamsType.InstallerPrepare.id,
+    ) {
+        Text(stringResource(R.string.installer_prepare_install))
+    },
+    text = DialogInnerParams(
+        DialogParamsType.InstallerPrepareTooMany.id
+    ) {
+        Text(stringResource(R.string.installer_prepare_install_too_many))
+    },
+    buttons = dialogButtons(
+        DialogParamsType.ButtonsCancel.id
+    ) {
+        listOf(
+            DialogButton(stringResource(R.string.previous)) {
                 viewModel.dispatch(InstallerViewAction.InstallChoice)
-            }, DialogButton(stringResource(R.string.cancel)) {
+            },
+            DialogButton(stringResource(R.string.cancel)) {
                 viewModel.dispatch(InstallerViewAction.Close)
-            })
-        })
-}
+            }
+        )
+    }
+)
 
 @Composable
 fun installPrepareDialog(

@@ -8,7 +8,7 @@ import java.io.FileInputStream
 /**
  * Checks if the given byte array starts with a valid ZIP magic number.
  * Requires an array of at least 4 bytes.
- * * @param header The byte array to check.
+ * @receiver ByteArray to check.
  * @return true if it matches known ZIP signatures, false otherwise.
  */
 fun ByteArray.isZipMagicNumber(): Boolean {
@@ -37,6 +37,7 @@ fun ByteArray.isZipMagicNumber(): Boolean {
 /**
  * Checks if the local file has a valid ZIP magic number.
  *
+ * @receiver File to check.
  * @return true if the file starts with a valid ZIP signature, false otherwise.
  */
 fun File.isZipArchive(): Boolean {

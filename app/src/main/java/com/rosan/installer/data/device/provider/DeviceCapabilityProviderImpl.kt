@@ -218,8 +218,8 @@ class DeviceCapabilityProviderImpl(
         RootMode.None
     }
 
-    private fun checkBinaryViaSu(command: String): Boolean {
-        return try {
+    private fun checkBinaryViaSu(command: String) =
+        try {
             // Execute the specific binary check within the su environment
             val process = ProcessBuilder("su", "-c", command)
                 .redirectErrorStream(true)
@@ -241,7 +241,6 @@ class DeviceCapabilityProviderImpl(
             Timber.d("RootDetection: Execution failed for 'su -c '$command'': ${e.message}")
             false
         }
-    }
 
     private fun calculateSessionInstallSupport(): Boolean {
         val isMi = DeviceConfig.currentManufacturer == Manufacturer.XIAOMI

@@ -2,17 +2,16 @@
 // Copyright (C) 2025-2026 InstallerX Revived contributors
 package com.rosan.installer.domain.session.exception
 
-import android.net.Uri
-import com.rosan.installer.R
-import com.rosan.installer.domain.engine.exception.InstallerException
+import com.rosan.installer.core.exception.InstallerException
+import com.rosan.installer.domain.session.model.ResolveErrorType
 
-data class ResolveException(
-    val action: String?,
-    val uris: List<Uri>,
-) : InstallerException(
-    "action: $action, uri: $uris"
-) {
-    override fun getStringResId(): Int {
-        return R.string.exception_resolve_failed
-    }
+/**
+ * Unified exception for all resolve-phase failures.
+ */
+class ResolveException(
+    val errorType: ResolveErrorType,
+    message: String? = null,
+    cause: Throwable? = null
+) : InstallerException(message, cause) {
+    override fun getStringResId() = errorType.stringResId
 }

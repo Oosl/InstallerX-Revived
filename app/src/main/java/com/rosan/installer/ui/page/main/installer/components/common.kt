@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2023-2026 iamr0s, InstallerX Revived contributors
+@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
+
 package com.rosan.installer.ui.page.main.installer.components
 
 import androidx.compose.animation.AnimatedVisibility
@@ -21,6 +23,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ErrorOutline
+import androidx.compose.material3.ContainedLoadingIndicator
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LocalTextStyle
@@ -44,18 +50,6 @@ import com.rosan.installer.core.env.AppConfig
 import com.rosan.installer.ui.icons.AppIcons
 import com.rosan.installer.util.help
 
-val pausingIcon: @Composable () -> Unit = {
-    Icon(
-        imageVector = AppIcons.Pausing, contentDescription = null
-    )
-}
-
-val workingIcon: @Composable () -> Unit = {
-    Icon(
-        imageVector = AppIcons.Working, contentDescription = null
-    )
-}
-
 val permissionIcon: @Composable () -> Unit = {
     Icon(
         imageVector = AppIcons.Permission,
@@ -63,6 +57,22 @@ val permissionIcon: @Composable () -> Unit = {
         modifier = Modifier.size(32.dp)
     )
 }
+
+val failedIcon: @Composable () -> Unit = {
+    Icon(
+        imageVector = Icons.Rounded.ErrorOutline,
+        contentDescription = null,
+        modifier = Modifier.size(32.dp)
+    )
+}
+
+val workingIcon: @Composable () -> Unit = {
+    ContainedLoadingIndicator(
+        indicatorColor = MaterialTheme.colorScheme.primary,
+        containerColor = MaterialTheme.colorScheme.surfaceContainer
+    )
+}
+
 
 /**
  * A composable that displays an error message in a collapsible block.

@@ -4,9 +4,9 @@ import com.rosan.installer.ICommandOutputListener
 import com.rosan.installer.data.engine.executor.ModuleInstallerUtils
 import com.rosan.installer.data.privileged.util.useUserService
 import com.rosan.installer.domain.device.provider.DeviceCapabilityProvider
-import com.rosan.installer.domain.engine.exception.ModuleInstallCmdInitException
-import com.rosan.installer.domain.engine.exception.ModuleInstallExitCodeNonZeroException
+import com.rosan.installer.domain.engine.exception.ModuleInstallException
 import com.rosan.installer.domain.engine.model.AppEntity
+import com.rosan.installer.domain.engine.model.ModuleInstallErrorType
 import com.rosan.installer.domain.engine.repository.ModuleInstallerRepository
 import com.rosan.installer.domain.settings.model.ConfigModel
 import com.rosan.installer.domain.settings.model.RootMode
@@ -49,7 +49,12 @@ class ShizukuModuleInstallerRepositoryImpl(
                 if (exitCode == 0) {
                     close()
                 } else {
-                    close(ModuleInstallExitCodeNonZeroException("Remote command failed with exit code $exitCode"))
+                    close(
+                        ModuleInstallException(
+                            errorType = ModuleInstallErrorType.EXIT_CODE_NON_ZERO,
+                            message = "Remote command failed with exit code $exitCode"
+                        )
+                    )
                 }
             }
         }
@@ -64,7 +69,13 @@ class ShizukuModuleInstallerRepositoryImpl(
             }
         } catch (e: Exception) {
             Timber.e(e, "Failed to initiate remote module installation.")
-            close(ModuleInstallCmdInitException("Failed to initiate remote command: ${e.message}", e))
+            close(
+                ModuleInstallException(
+                    errorType = ModuleInstallErrorType.CMD_INIT_FAILED,
+                    message = "Failed to initiate remote command: ${e.message}",
+                    cause = e
+                )
+            )
         }
 
         awaitClose {

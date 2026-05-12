@@ -46,7 +46,6 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
-import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -77,6 +76,7 @@ import com.rosan.installer.ui.page.main.widget.dialog.HideLauncherIconWarningDia
 import com.rosan.installer.ui.page.main.widget.setting.AppBackButton
 import com.rosan.installer.ui.page.main.widget.setting.BaseItemContainer
 import com.rosan.installer.ui.page.main.widget.setting.BaseWidget
+import com.rosan.installer.ui.page.main.widget.setting.RadioButtonWidget
 import com.rosan.installer.ui.page.main.widget.setting.SegmentedColumn
 import com.rosan.installer.ui.page.main.widget.setting.SwitchWidget
 import com.rosan.installer.ui.theme.getMaterial3AppBarColor
@@ -239,20 +239,13 @@ fun ThemeSettingsPage(
                                 viewModel.dispatch(ThemeSettingsAction.ChangeUseMiuix(false))
                             }
                         }
-                        BaseWidget(
-                            icon = null,
-                            iconPlaceholder = false, // Force text alignment to the start edge
+                        RadioButtonWidget(
                             title = stringResource(R.string.theme_settings_google_ui),
                             description = stringResource(R.string.theme_settings_google_ui_desc),
+                            iconPlaceholder = false,
                             selected = selected,
                             onClick = onClick
-                        ) {
-                            RadioButton(
-                                selected = selected,
-                                onClick = onClick,
-                                colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary)
-                            )
-                        }
+                        )
                     }
                     // Option 2: MIUIX UI
                     item {
@@ -262,20 +255,13 @@ fun ThemeSettingsPage(
                                 viewModel.dispatch(ThemeSettingsAction.ChangeUseMiuix(true))
                             }
                         }
-                        BaseWidget(
-                            icon = null,
-                            iconPlaceholder = false, // Force text alignment to the start edge
+                        RadioButtonWidget(
                             title = stringResource(R.string.theme_settings_miuix_ui),
                             description = stringResource(R.string.theme_settings_miuix_ui_desc),
+                            iconPlaceholder = false,
                             selected = selected,
                             onClick = onClick
-                        ) {
-                            RadioButton(
-                                selected = selected,
-                                onClick = onClick,
-                                colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary)
-                            )
-                        }
+                        )
                     }
                 }
             }
@@ -340,7 +326,7 @@ fun ThemeSettingsPage(
                         )
                     }
                     // Conditional item for Live Activity
-                    item(visible = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && uiState.showLiveActivity) {
+                    item(animatedVisibility = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && uiState.showLiveActivity) {
                         SwitchWidget(
                             icon = Icons.TwoTone.Colorize,
                             title = stringResource(R.string.theme_settings_live_activity_dynamic_color_follow_icon),
@@ -432,7 +418,7 @@ fun ThemeSettingsPage(
                 ) {
                     item { PredictiveBackAnimationWidget(uiState) { showPredictiveBackAnimationDialog = true } }
                     item(
-                        visible = uiState.predictiveBackAnimation == PredictiveBackAnimation.Scale ||
+                        animatedVisibility = uiState.predictiveBackAnimation == PredictiveBackAnimation.Scale ||
                                 uiState.predictiveBackAnimation == PredictiveBackAnimation.AOSP
                     ) {
                         PredictiveBackAnimationDirectionWidget(uiState) { showPredictiveBackExitDirectionDialog = true }

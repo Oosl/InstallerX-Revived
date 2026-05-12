@@ -2,6 +2,7 @@
 // Copyright (C) 2025-2026 InstallerX Revived contributors
 package com.rosan.installer.domain.engine.exception
 
+import com.rosan.installer.core.exception.InstallerException
 import com.rosan.installer.domain.engine.model.InstallErrorType
 
 /**

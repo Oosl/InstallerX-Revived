@@ -118,6 +118,9 @@ fun EditPage(
 
     val backdrop = rememberMaterial3BlurBackdrop(useBlur)
 
+    val isHigherThanT = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+    val isHigherThanU = Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE
+
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
@@ -195,10 +198,7 @@ fun EditPage(
                     title = stringResource(R.string.config_label_main_settings)
                 ) {
                     item { DataNameWidget(state, dispatch, { DataDescriptionWidget(state, dispatch) }) }
-                    item { DataAuthorizerWidget(state, dispatch) }
-                    item(visible = state.data.authorizerCustomize) {
-                        DataCustomizeAuthorizerWidget(state, dispatch)
-                    }
+                    dataAuthorizerWidget(state, dispatch)
                     item { DataInstallModeWidget(state, dispatch) }
                     if (state.globalInstallerBiometricAuthMode == BiometricAuthMode.FollowConfig)
                         item { DataRequireBiometricAuthWidget(state, dispatch) }
@@ -217,8 +217,8 @@ fun EditPage(
                 ) {
                     dataUserWidget(state, dispatch)
                     dataInstallReasonWidget(state, dispatch)
-                    dataPackageSourceWidget(state, dispatch, visible = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
-                    dataInstallRequesterWidget(state, dispatch, visible = state.isCustomInstallRequesterEnabled)
+                    if (isHigherThanT) dataPackageSourceWidget(state, dispatch)
+                    if (state.isCustomInstallRequesterEnabled) dataInstallRequesterWidget(state, dispatch)
                     dataDeclareInstallerWidget(state, dispatch)
                     dataManualDexoptWidget(state, dispatch)
                     dataAutoDeleteWidget(state, dispatch)
@@ -226,7 +226,6 @@ fun EditPage(
                     item { DisplaySizeWidget(state, dispatch) }
                 }
             }
-
             // --- Group 3: Install Options ---
             item {
                 SegmentedColumn(
@@ -235,13 +234,9 @@ fun EditPage(
                     item { DataForAllUserWidget(state, dispatch) }
                     item { DataAllowTestOnlyWidget(state, dispatch) }
                     item { DataAllowDowngradeWidget(state, dispatch) }
-                    item(visible = Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                        DataBypassLowTargetSdkWidget(state, dispatch)
-                    }
+                    if (isHigherThanU) item { DataBypassLowTargetSdkWidget(state, dispatch) }
                     item { DataAllowAllRequestedPermissionsWidget(state, dispatch) }
-                    item(visible = Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                        DataRequestUpdateOwnershipWidget(state, dispatch)
-                    }
+                    if (isHigherThanU) item { DataRequestUpdateOwnershipWidget(state, dispatch) }
                 }
             }
 

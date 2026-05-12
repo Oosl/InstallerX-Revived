@@ -41,7 +41,6 @@ import com.rosan.installer.domain.device.provider.DeviceCapabilityProvider
 import com.rosan.installer.util.pm.REASON_REMIND_OWNERSHIP
 import org.koin.core.component.inject
 import timber.log.Timber
-import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
 import java.nio.charset.StandardCharsets
@@ -205,7 +204,6 @@ class DefaultPrivilegedService(
 
     override fun setDefaultInstaller(component: ComponentName, enable: Boolean) {
         val userId = AndroidProcess.myUid() / 100000
-
         // Use the cached mode to determine system-level permission (su 1000 in this case)
         val hasSystemLevelPermission = workingMode == WorkingMode.ROOT
 
@@ -217,14 +215,9 @@ class DefaultPrivilegedService(
             hasSystemLevelPermission
         )
 
-        // Clear our own preferred activities first to reset state
-        Timber.tag(TAG).v("Clearing existing preferred activities for %s", component.packageName)
-        iPackageManager.clearPackagePreferredActivities(component.packageName)
-
-        if (hasSystemLevelPermission) {
-            Timber.tag(TAG).v("Clearing persistent preferred activities for %s", component.packageName)
-            iPackageManager.clearPackagePersistentPreferredActivities(component.packageName, userId)
-        }
+        // Reset state for our own package
+        Timber.tag(TAG).v("Resetting preferred state for %s", component.packageName)
+        clearPackageActivities(component.packageName, userId, hasSystemLevelPermission)
 
         if (!enable) {
             Timber.tag(TAG).i("Enable flag is false. Exiting after clearing own preferred activities.")
@@ -261,14 +254,8 @@ class DefaultPrivilegedService(
 
                 // Dynamically clear preferred activities for other apps
                 if (infoPackageName != component.packageName && infoPackageName != "android") {
-                    // Timber.tag(TAG).v("Clearing preferred activities for competing app: %s", infoPackageName)
-                    iPackageManager.clearPackagePreferredActivities(infoPackageName)
-
-                    // Clear persistent preferred activities for other packages if permitted
-                    if (hasSystemLevelPermission) {
-                        // Timber.tag(TAG).v("Clearing persistent preferred activities for competing app: %s", infoPackageName)
-                        iPackageManager.clearPackagePersistentPreferredActivities(infoPackageName, userId)
-                    }
+                    // Use the extracted helper to clear competing apps
+                    clearPackageActivities(infoPackageName, userId, hasSystemLevelPermission)
                 }
 
                 names.add(ComponentName(infoPackageName, infoClassName))
@@ -284,27 +271,18 @@ class DefaultPrivilegedService(
 
             val match = IntentFilter.MATCH_CATEGORY_TYPE or IntentFilter.MATCH_ADJUSTMENT_MASK
 
-            Timber.tag(TAG).d("Adding unique preferred activity for %s", action)
-            addPreferredActivity(
-                iPackageManager,
-                filter,
-                match,
-                names.toTypedArray(),
-                component,
-                userId,
-                true
-            )
+            Timber.tag(TAG).d("Setting up preferred activities for %s", action)
 
-            // Restore addPersistentPreferredActivity for Root or System modes
-            if (hasSystemLevelPermission) {
-                Timber.tag(TAG).d("Adding persistent preferred activity for %s", action)
-                addPersistentPreferredActivity(
-                    iPackageManager,
-                    filter,
-                    component,
-                    userId
-                )
-            }
+            setupPackagePreferredActivities(
+                iPackageManager = iPackageManager,
+                filter = filter,
+                match = match,
+                names = names.toTypedArray(),
+                component = component,
+                userId = userId,
+                removeExisting = true,
+                hasSystemLevelPermission = hasSystemLevelPermission
+            )
         }
 
         Timber.tag(TAG).i("Successfully configured default installer.")
@@ -594,270 +572,170 @@ class DefaultPrivilegedService(
             }
         }
 
-    @SuppressLint("LogNotTimber")
     override fun getSessionDetails(sessionId: Int): Bundle? {
         Timber.tag(TAG).d("getSessionDetails: sessionId=$sessionId")
-        try {
-            val packageInstaller = context.packageManager.packageInstaller
-            val sessionInfo = packageInstaller.getSessionInfo(sessionId)
 
-            if (sessionInfo == null) {
-                Timber.tag(TAG).w("getSessionDetails: sessionInfo is null for id $sessionId")
-                return null
-            }
-
-            var resolvedLabel: CharSequence? = null
-            var resolvedIcon: Bitmap? = null
-            var path: String?
-
-            // ---------------------------------------------------------
-            // STRATEGY 1: Try to get the APK path via reflection
-            // ---------------------------------------------------------
-            path = reflect.getValue<String>(sessionInfo, "resolvedBaseCodePath")
-
-            // ---------------------------------------------------------
-            // STRATEGY 2: If path is null, try "stageDir" (Android 16+ / Staged Sessions)
-            // ---------------------------------------------------------
-            if (path == null) {
-                val stageDir = reflect.getValue<File>(sessionInfo, "stageDir")
-                // Find the first .apk file in the staging directory
-                if (stageDir != null && stageDir.exists() && stageDir.isDirectory) {
-                    path = stageDir.listFiles { _, name -> name.endsWith(".apk") }
-                        ?.firstOrNull()?.absolutePath
-                    Timber.tag(TAG).d("Found APK path via stageDir: $path")
-                }
-            } else {
-                Timber.tag(TAG).d("Reflected resolvedBaseCodePath: $path")
-            }
-
-            // ---------------------------------------------------------
-            // STRATEGY 2.5: Root/Privileged Direct File Access
-            // ---------------------------------------------------------
-            // When running as Root process, access /data/app/ directory directly to find vmdl{sessionId}.tmp
-            // This is the standard location for Android PackageInstallerService temporary files
-            if (path == null) {
-                try {
-                    // Standard Session staging directory structure: /data/app/vmdl{sessionId}.tmp
-                    val sessionDir = File("/data/app/vmdl${sessionId}.tmp")
-
-                    if (sessionDir.exists() && sessionDir.isDirectory) {
-                        Timber.tag(TAG).d("Direct Access: Found session dir at ${sessionDir.absolutePath}")
-
-                        // 1. Get list of all .apk files
-                        val apkFiles = sessionDir.listFiles { _, name ->
-                            name.endsWith(".apk", ignoreCase = true)
-                        }
-
-                        if (!apkFiles.isNullOrEmpty()) {
-                            // 2. Core Logic: Prefer 'base.apk', otherwise take the first one found
-                            // Split APK installations must contain base.apk; Single APK installs usually are base.apk too
-                            val targetApk = apkFiles.find { it.name == "base.apk" } ?: apkFiles.first()
-
-                            path = targetApk.absolutePath
-                            Timber.tag(TAG).d("Direct Access: Found APK path: $path (Selected from ${apkFiles.size} files)")
-                        } else {
-                            Timber.tag(TAG).w("Direct Access: Session dir exists but contains no APKs")
-                        }
-                    } else {
-                        // Rare cases or older versions might be in /data/local/tmp (mainly ADB push)
-                        // Or /data/app/vmdl{sessionId}.tmp does not exist (Session hasn't written data yet)
-                        Timber.tag(TAG).d("Direct Access: Session dir not found at standard path.")
-                    }
-                } catch (e: Exception) {
-                    // Only happens if process lacks file read permissions (e.g. SELinux denial)
-                    Timber.tag(TAG).e(e, "Failed to perform direct file search")
-                }
-            }
-
-            // ---------------------------------------------------------
-            // Parse APK from path (if found)
-            // ---------------------------------------------------------
-            if (!path.isNullOrEmpty()) {
-                Timber.tag(TAG).d("Loading info from APK path: $path")
-                try {
-                    val pm = context.packageManager
-                    val pkgInfo = pm.getPackageArchiveInfo(
-                        path,
-                        PackageManager.GET_PERMISSIONS
-                    )
-                    val appInfo = pkgInfo?.applicationInfo
-                    if (appInfo != null) {
-                        appInfo.publicSourceDir = path
-                        appInfo.sourceDir = path
-
-                        // Load Label
-                        try {
-                            resolvedLabel = appInfo.loadLabel(pm)
-                        } catch (e: Exception) {
-                            Timber.tag(TAG).e(e, "Failed to load label from APK")
-                        }
-
-                        // Load Icon
-                        try {
-                            val drawable = appInfo.loadIcon(pm)
-                            resolvedIcon = if (drawable is BitmapDrawable) {
-                                drawable.bitmap
-                            } else {
-                                val width = if (drawable.intrinsicWidth > 0) drawable.intrinsicWidth else 1
-                                val height = if (drawable.intrinsicHeight > 0) drawable.intrinsicHeight else 1
-                                drawable.toBitmap(width, height, Bitmap.Config.ARGB_8888)
-                            }
-                        } catch (e: Exception) {
-                            Timber.tag(TAG).e(e, "Failed to load icon from APK")
-                        }
-                    }
-                } catch (e: Exception) {
-                    Timber.tag(TAG).e(e, "Failed to parse APK from path")
-                }
-            }
-
-            // ---------------------------------------------------------
-            // STRATEGY 3: Fallback to Installed App Info (Crucial for Updates)
-            // ---------------------------------------------------------
-            // If we still don't have a label or icon, check if the app is already installed.
-            // This fixes "N/A" when updating an app where the new APK path is hidden.
-            if (resolvedLabel == null || resolvedIcon == null) {
-                try {
-                    val pm = context.packageManager
-                    val appPackageName = sessionInfo.appPackageName
-
-                    if (appPackageName != null) {
-                        val installedInfo = pm.getApplicationInfo(appPackageName, 0)
-
-                        if (resolvedLabel == null) {
-                            resolvedLabel = installedInfo.loadLabel(pm)
-                            Timber.tag(TAG).d("Fallback: Loaded label from installed app")
-                        }
-
-                        if (resolvedIcon == null) {
-                            val drawable = installedInfo.loadIcon(pm)
-                            resolvedIcon = if (drawable is BitmapDrawable) {
-                                drawable.bitmap
-                            } else {
-                                val width = if (drawable.intrinsicWidth > 0) drawable.intrinsicWidth else 1
-                                val height = if (drawable.intrinsicHeight > 0) drawable.intrinsicHeight else 1
-                                drawable.toBitmap(width, height, Bitmap.Config.ARGB_8888)
-                            }
-                            Timber.tag(TAG).d("Fallback: Loaded icon from installed app")
-                        }
-                    }
-                } catch (_: PackageManager.NameNotFoundException) {
-                    Timber.tag(TAG).d("App not installed, cannot use fallback info.")
-                } catch (e: Exception) {
-                    Timber.tag(TAG).e(e, "Failed to load info from installed app fallback")
-                }
-            }
-
-            val packageName = sessionInfo.appPackageName ?: ""
-            var isUpdate = false
-            var isOwnershipConflict = false
-            var sourceAppLabel: CharSequence? = null
-
-            try {
-                if (packageName.isNotEmpty()) {
-                    // 1. Check if this is an update (overlaying an existing installation)
-                    try {
-                        context.packageManager.getPackageInfo(packageName, 0)
-                        isUpdate = true
-                    } catch (e: PackageManager.NameNotFoundException) {
-                        isUpdate = false
-                    }
-
-                    // 2. Check for Android 14+ Update Ownership Conflict (using reflection for hidden API)
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                        try {
-                            // Reflectively call int getPendingUserActionReason()
-                            val pendingReason = reflect.invoke<Int>(
-                                sessionInfo,
-                                "getPendingUserActionReason",
-                                sessionInfo::class.java,
-                                emptyArray() // No arguments
-                            ) ?: 0
-
-                            if (pendingReason == REASON_REMIND_OWNERSHIP) {
-                                isOwnershipConflict = true
-                            }
-                        } catch (e: Exception) {
-                            Timber.tag(TAG).w(e, "Failed to reflect getPendingUserActionReason, falling back to inference.")
-
-                            // Fallback Strategy: If reflection fails, and the target app has an updateOwner
-                            // that is not us, and we are in the ACTION_CONFIRM_INSTALL interception flow,
-                            // it is highly likely an ownership conflict.
-                            val sourceInfo = context.packageManager.getInstallSourceInfo(packageName)
-                            val ownerPkg = sourceInfo.updateOwnerPackageName
-                            if (!ownerPkg.isNullOrEmpty() && ownerPkg != context.packageName) {
-                                isOwnershipConflict = true
-                            }
-                        }
-                    }
-
-                    // 3. Determine the appropriate source app label (Owner > Initiator)
-                    try {
-                        if (isOwnershipConflict) {
-                            // Priority 1: It's a conflict. Fetch the label of the app that currently owns the update rights.
-                            val sourceInfo = context.packageManager.getInstallSourceInfo(packageName)
-                            val ownerPkg = sourceInfo.updateOwnerPackageName
-                            if (!ownerPkg.isNullOrEmpty()) {
-                                val ownerAppInfo = context.packageManager.getApplicationInfo(ownerPkg, PackageManager.ApplicationInfoFlags.of(0))
-                                sourceAppLabel = context.packageManager.getApplicationLabel(ownerAppInfo)
-                                Timber.tag(TAG).d("Ownership conflict with: $sourceAppLabel")
-                            }
-                        } else {
-                            // Priority 2: Not a conflict. Try to fetch the label of the app that initiated the installation.
-                            val installerPackageName = sessionInfo.installerPackageName
-                            if (!installerPackageName.isNullOrEmpty()) {
-                                val appInfo = context.packageManager.getApplicationInfo(installerPackageName, 0)
-                                sourceAppLabel = context.packageManager.getApplicationLabel(appInfo)
-                                Timber.tag(TAG).d("External installation request initiated by: $sourceAppLabel")
-                            }
-                        }
-                    } catch (e: Exception) {
-                        Timber.tag(TAG).e(e, "Failed to resolve sourceAppLabel")
-                    }
-                }
-            } catch (e: Exception) {
-                Timber.tag(TAG).e(e, "Error extracting extended session metadata")
-            }
-
-            // ---------------------------------------------------------
-            // Final Data Preparation
-            // ---------------------------------------------------------
-            val finalLabel = resolvedLabel ?: sessionInfo.appLabel ?: "N/A"
-            val finalIcon = resolvedIcon ?: sessionInfo.appIcon
-
-            Timber.tag(TAG).d("Final Data -> Label: '$finalLabel', Has Icon: ${finalIcon != null}")
-
-            val bundle = Bundle()
-            bundle.putCharSequence("appLabel", finalLabel)
-            bundle.putString("packageName", packageName)
-            bundle.putBoolean("isUpdate", isUpdate)
-            bundle.putBoolean("isOwnershipConflict", isOwnershipConflict)
-
-            // Inject the generic source label
-            if (sourceAppLabel != null) {
-                bundle.putCharSequence("sourceAppLabel", sourceAppLabel)
-            }
-
-            if (finalIcon != null) {
-                try {
-                    val stream = ByteArrayOutputStream()
-                    finalIcon.compress(Bitmap.CompressFormat.PNG, 100, stream)
-                    val iconBytes = stream.toByteArray()
-
-                    if (iconBytes.size > 500 * 1024) {
-                        Timber.tag(TAG).w("WARNING: Icon size is large (${iconBytes.size} bytes).")
-                    }
-                    bundle.putByteArray("appIcon", iconBytes)
-                } catch (e: Exception) {
-                    Timber.tag(TAG).e(e, "Failed to compress icon")
-                }
-            }
-
-            return bundle
-
-        } catch (e: Exception) {
-            Timber.tag(TAG).e(e, "getSessionDetails CRITICAL FAILURE")
+        val packageInstaller = context.packageManager.packageInstaller
+        val sessionInfo = packageInstaller.getSessionInfo(sessionId) ?: run {
+            Timber.tag(TAG).w("getSessionDetails: sessionInfo is null for id $sessionId")
             return null
+        }
+
+        var resolvedLabel: CharSequence? = null
+        var resolvedIcon: Bitmap? = null
+        var path: String?
+
+        // ---------------------------------------------------------
+        // STRATEGY 1 & 2: Reflection for APK Path
+        // ---------------------------------------------------------
+        path = reflect.getValue<String>(sessionInfo, "resolvedBaseCodePath")
+
+        if (path == null) {
+            val stageDir = reflect.getValue<File>(sessionInfo, "stageDir")
+            if (stageDir != null && stageDir.exists() && stageDir.isDirectory) {
+                path = stageDir.listFiles { _, name -> name.endsWith(".apk") }
+                    ?.firstOrNull()?.absolutePath
+                Timber.tag(TAG).d("Found APK path via stageDir: $path")
+            }
+        }
+
+        // ---------------------------------------------------------
+        // STRATEGY 2.5: Root/Privileged Direct File Access
+        // ---------------------------------------------------------
+        if (path == null) {
+            val sessionDir = File("/data/app/vmdl${sessionId}.tmp")
+            if (sessionDir.exists() && sessionDir.isDirectory) {
+                val apkFiles = sessionDir.listFiles { _, name -> name.endsWith(".apk", true) }
+                if (!apkFiles.isNullOrEmpty()) {
+                    val targetApk = apkFiles.find { it.name == "base.apk" } ?: apkFiles.first()
+                    path = targetApk.absolutePath
+                    Timber.tag(TAG).d("Direct Access: Found APK path: $path")
+                }
+            }
+        }
+
+        // ---------------------------------------------------------
+        // Parse APK from path (if found)
+        // ---------------------------------------------------------
+        if (!path.isNullOrEmpty()) {
+            runCatching {
+                val pm = context.packageManager
+                val pkgInfo = pm.getPackageArchiveInfo(path, PackageManager.GET_META_DATA)
+                pkgInfo?.applicationInfo?.let { appInfo ->
+                    appInfo.publicSourceDir = path
+                    appInfo.sourceDir = path
+
+                    resolvedLabel = appInfo.loadLabel(pm)
+
+                    val drawable = appInfo.loadIcon(pm)
+                    resolvedIcon = if (drawable is BitmapDrawable) {
+                        drawable.bitmap
+                    } else {
+                        val width = drawable.intrinsicWidth.takeIf { it > 0 } ?: 1
+                        val height = drawable.intrinsicHeight.takeIf { it > 0 } ?: 1
+                        drawable.toBitmap(width, height, Bitmap.Config.ARGB_8888)
+                    }
+                }
+            }.onFailure { e ->
+                Timber.tag(TAG).e(e, "Failed to parse APK from path: $path")
+            }
+        }
+
+        val packageName = sessionInfo.appPackageName ?: ""
+
+        // Try to get the exact target User ID for this session, fallback to current process user
+        val targetUserId = runCatching {
+            sessionInfo.user.hashCode() // On modern Android, userHandle.hashCode() == userId
+        }.getOrDefault(AndroidProcess.myUid() / 100000)
+
+        // ---------------------------------------------------------
+        // STRATEGY 3: Fallback to Installed App Info (Crucial for Updates)
+        // ---------------------------------------------------------
+        if ((resolvedLabel == null || resolvedIcon == null) && packageName.isNotEmpty()) {
+            runCatching {
+                // [Optimized] Use our hidden iPackageManager to respect the correct userId
+                val appInfo = iPackageManager.getApplicationInfo(packageName, 0, targetUserId)
+                val pm = context.packageManager
+
+                if (resolvedLabel == null) resolvedLabel = appInfo.loadLabel(pm)
+                if (resolvedIcon == null) {
+                    val drawable = appInfo.loadIcon(pm)
+                    resolvedIcon = if (drawable is BitmapDrawable) {
+                        drawable.bitmap
+                    } else {
+                        val width = drawable.intrinsicWidth.takeIf { it > 0 } ?: 1
+                        val height = drawable.intrinsicHeight.takeIf { it > 0 } ?: 1
+                        drawable.toBitmap(width, height, Bitmap.Config.ARGB_8888)
+                    }
+                }
+                Timber.tag(TAG).d("Fallback: Loaded missing info from installed app")
+            }
+        }
+
+        var isUpdate = false
+        var isOwnershipConflict = false
+        var sourceAppLabel: CharSequence? = null
+
+        if (packageName.isNotEmpty()) {
+            // 1. Check if this is an update using iPackageManager and specific userId
+            isUpdate = runCatching {
+                iPackageManager.getPackageInfo(packageName, 0, targetUserId) != null
+            }.getOrDefault(false)
+
+            // 2. Check for Android 14+ Update Ownership Conflict
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                runCatching {
+                    val pendingReason = reflect.invoke<Int>(
+                        sessionInfo, "getPendingUserActionReason",
+                        sessionInfo::class.java, emptyArray()
+                    ) ?: 0
+                    isOwnershipConflict = (pendingReason == REASON_REMIND_OWNERSHIP)
+                }.onFailure {
+                    // Fallback inference
+                    runCatching {
+                        val ownerPkg = context.packageManager.getInstallSourceInfo(packageName).updateOwnerPackageName
+                        if (!ownerPkg.isNullOrEmpty() && ownerPkg != context.packageName) {
+                            isOwnershipConflict = true
+                        }
+                    }
+                }
+            }
+
+            // 3. Determine the appropriate source app label
+            runCatching {
+                val pm = context.packageManager
+                val targetPkgToResolve = if (isOwnershipConflict) {
+                    pm.getInstallSourceInfo(packageName).updateOwnerPackageName
+                } else {
+                    sessionInfo.installerPackageName
+                }
+
+                if (!targetPkgToResolve.isNullOrEmpty()) {
+                    val appInfo = pm.getApplicationInfo(targetPkgToResolve, 0) // No need for flags if 0
+                    sourceAppLabel = pm.getApplicationLabel(appInfo)
+                    Timber.tag(TAG).d("Source app label resolved: $sourceAppLabel (Conflict: $isOwnershipConflict)")
+                }
+            }
+        }
+
+        // ---------------------------------------------------------
+        // Final Data Preparation
+        // ---------------------------------------------------------
+        val finalLabel = resolvedLabel ?: sessionInfo.appLabel ?: "N/A"
+        Timber.tag(TAG).d("Final Data -> Label: '$finalLabel', Has Icon: ${resolvedIcon != null}")
+
+        return Bundle().apply {
+            putCharSequence("appLabel", finalLabel)
+            putString("packageName", packageName)
+            putBoolean("isUpdate", isUpdate)
+            putBoolean("isOwnershipConflict", isOwnershipConflict)
+
+            sourceAppLabel?.let { putCharSequence("sourceAppLabel", it) }
+
+            // Pass Bitmap directly.
+            // Binder will automatically transfer pixel data via Ashmem (Shared Memory),
+            // completely avoiding the 1MB Binder Transaction Limit. No compression needed!
+            resolvedIcon?.let { putParcelable("appIcon", it) }
         }
     }
 
@@ -924,37 +802,73 @@ class DefaultPrivilegedService(
         }
     }
 
-    private fun addPreferredActivity(
+    /**
+     * Clears both preferred and persistent preferred activities for a specific package.
+     * Includes error handling to prevent crashes on restricted environments.
+     */
+    private fun clearPackageActivities(
+        packageName: String,
+        userId: Int,
+        hasSystemLevelPermission: Boolean
+    ) {
+        // 1. Clear standard preferred activities (Always try)
+        try {
+            Timber.tag(TAG).d("Clearing standard preferred activities for $packageName")
+            iPackageManager.clearPackagePreferredActivities(packageName)
+        } catch (e: Exception) {
+            Timber.tag(TAG).w(e, "Failed to clear preferred activities for $packageName")
+        }
+
+        // 2. Clear persistent preferred activities (Only if in Root mode)
+        if (hasSystemLevelPermission) {
+            try {
+                Timber.tag(TAG).d("Clearing persistent preferred activities for $packageName")
+                iPackageManager.clearPackagePersistentPreferredActivities(packageName, userId)
+            } catch (e: SecurityException) {
+                // Specific log for the "only be run by the system" issue
+                Timber.tag(TAG).e(e, "SecurityException: System restricted clearing persistent preferred for $packageName")
+            } catch (e: Exception) {
+                Timber.tag(TAG).w(e, "Failed to clear persistent preferred activities for $packageName")
+            }
+        }
+    }
+
+    /**
+     * Sets both standard and persistent preferred activities for the target component.
+     * Includes fallback mechanisms and error boundaries for restricted environments.
+     */
+    private fun setupPackagePreferredActivities(
         iPackageManager: IPackageManager,
         filter: IntentFilter,
         match: Int,
         names: Array<ComponentName>,
-        name: ComponentName,
+        component: ComponentName,
         userId: Int,
-        removeExisting: Boolean
+        removeExisting: Boolean,
+        hasSystemLevelPermission: Boolean
     ) {
+        // 1. Add standard preferred activity
         try {
-            // Direct call based on Android version
+            Timber.tag(TAG).d("Adding preferred activity for %s", component.packageName)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                iPackageManager.addPreferredActivity(filter, match, names, name, userId, removeExisting)
+                iPackageManager.addPreferredActivity(filter, match, names, component, userId, removeExisting)
             } else {
-                iPackageManager.addPreferredActivity(filter, match, names, name, userId)
+                iPackageManager.addPreferredActivity(filter, match, names, component, userId)
             }
         } catch (e: Exception) {
-            Timber.e(e, "Failed to add preferred activity")
+            Timber.e(e, "Failed to add preferred activity for %s", component.packageName)
         }
-    }
 
-    private fun addPersistentPreferredActivity(
-        iPackageManager: IPackageManager,
-        filter: IntentFilter,
-        name: ComponentName,
-        userId: Int,
-    ) {
-        try {
-            iPackageManager.addPersistentPreferredActivity(filter, name, userId)
-        } catch (e: Exception) {
-            Timber.e(e, "Failed to add persistent preferred activity")
+        // 2. Add persistent preferred activity (Only if in Root mode)
+        if (hasSystemLevelPermission) {
+            Timber.tag(TAG).d("Adding persistent preferred activity for %s", component.packageName)
+            try {
+                iPackageManager.addPersistentPreferredActivity(filter, component, userId)
+            } catch (e: SecurityException) {
+                Timber.e(e, "SecurityException: System restricted adding persistent preferred for %s", component.packageName)
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to add persistent preferred activity for %s", component.packageName)
+            }
         }
     }
 
@@ -964,18 +878,16 @@ class DefaultPrivilegedService(
         resolvedType: String?,
         flags: Int,
         userId: Int
-    ): List<ResolveInfo> {
-        return try {
-            val result = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                iPackageManager.queryIntentActivities(intent, resolvedType, flags.toLong(), userId)
-            } else {
-                iPackageManager.queryIntentActivities(intent, resolvedType, flags, userId)
-            }
-            result?.list ?: emptyList()
-        } catch (e: Exception) {
-            Timber.e(e, "Failed to query intent activities")
-            emptyList()
+    ): List<ResolveInfo> = try {
+        val result = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            iPackageManager.queryIntentActivities(intent, resolvedType, flags.toLong(), userId)
+        } else {
+            iPackageManager.queryIntentActivities(intent, resolvedType, flags, userId)
         }
+        result?.list ?: emptyList()
+    } catch (e: Exception) {
+        Timber.e(e, "Failed to query intent activities")
+        emptyList()
     }
 
     @Throws(IOException::class, InterruptedException::class)

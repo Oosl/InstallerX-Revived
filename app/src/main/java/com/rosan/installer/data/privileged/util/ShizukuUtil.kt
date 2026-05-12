@@ -17,7 +17,8 @@ import com.rosan.installer.BuildConfig
 import com.rosan.installer.core.reflection.ReflectionProvider
 import com.rosan.installer.core.reflection.getStaticValue
 import com.rosan.installer.core.reflection.getValue
-import com.rosan.installer.data.privileged.exception.ShizukuNotWorkException
+import com.rosan.installer.domain.privileged.exception.PrivilegedException
+import com.rosan.installer.domain.privileged.model.PrivilegedErrorType
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.catch
@@ -38,7 +39,12 @@ suspend fun <T> requireShizukuPermissionGranted(action: suspend () -> T): T {
             if (Shizuku.pingBinder()) {
                 send(Unit)
             } else {
-                close(ShizukuNotWorkException("Shizuku service is not running (ping failed)."))
+                close(
+                    PrivilegedException(
+                        errorType = PrivilegedErrorType.SHIZUKU_NOT_WORK,
+                        message = "Shizuku service is not running (ping failed)."
+                    )
+                )
             }
             awaitClose()
         } else {
@@ -55,7 +61,10 @@ suspend fun <T> requireShizukuPermissionGranted(action: suspend () -> T): T {
             awaitClose { Shizuku.removeRequestPermissionResultListener(listener) }
         }
     }.catch {
-        throw ShizukuNotWorkException(it)
+        throw PrivilegedException(
+            errorType = PrivilegedErrorType.SHIZUKU_NOT_WORK,
+            cause = it
+        )
     }.first()
 
     return action()

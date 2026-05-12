@@ -192,7 +192,7 @@ fun AboutPage(
                                 onCheckedChange = { viewModel.dispatch(AboutAction.SetEnableFileLogging(it)) }
                             )
                         }
-                        item(visible = uiState.enableFileLogging) {
+                        item(animatedVisibility = uiState.enableFileLogging) {
                             ExportLogsWidget(viewModel)
                         }
                     }

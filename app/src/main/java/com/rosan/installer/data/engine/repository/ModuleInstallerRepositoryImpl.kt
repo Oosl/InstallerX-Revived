@@ -4,11 +4,13 @@ package com.rosan.installer.data.engine.repository
 
 import com.rosan.installer.data.engine.executor.moduleInstaller.LocalModuleInstallerRepositoryImpl
 import com.rosan.installer.data.engine.executor.moduleInstaller.ShizukuModuleInstallerRepositoryImpl
-import com.rosan.installer.data.privileged.exception.ShizukuNotWorkException
 import com.rosan.installer.domain.device.provider.DeviceCapabilityProvider
-import com.rosan.installer.domain.engine.exception.ModuleInstallFailedIncompatibleAuthorizerException
+import com.rosan.installer.domain.engine.exception.ModuleInstallException
 import com.rosan.installer.domain.engine.model.AppEntity
+import com.rosan.installer.domain.engine.model.ModuleInstallErrorType
 import com.rosan.installer.domain.engine.repository.ModuleInstallerRepository
+import com.rosan.installer.domain.privileged.exception.PrivilegedException
+import com.rosan.installer.domain.privileged.model.PrivilegedErrorType
 import com.rosan.installer.domain.settings.model.Authorizer
 import com.rosan.installer.domain.settings.model.ConfigModel
 import com.rosan.installer.domain.settings.model.RootMode
@@ -44,8 +46,9 @@ class ModuleInstallerRepositoryImpl(
         // 2. Handle unsupported authorizers immediately
         if (repo == null) {
             return flow {
-                throw ModuleInstallFailedIncompatibleAuthorizerException(
-                    "Module installation is not supported with the '${config.authorizer.name}' authorizer."
+                throw ModuleInstallException(
+                    errorType = ModuleInstallErrorType.INCOMPATIBLE_AUTHORIZER,
+                    message = "Module installation is not supported with the '${config.authorizer.name}' authorizer."
                 )
             }
         }
@@ -57,7 +60,13 @@ class ModuleInstallerRepositoryImpl(
             // Catch immediate configuration errors
             if (repo is ShizukuModuleInstallerRepositoryImpl && e.message?.contains("binder") == true
             ) {
-                flow { throw ShizukuNotWorkException("Shizuku service connection lost.", e) }
+                flow {
+                    throw PrivilegedException(
+                        errorType = PrivilegedErrorType.SHIZUKU_NOT_WORK,
+                        message = "Shizuku service connection lost.",
+                        cause = e
+                    )
+                }
             } else {
                 throw e
             }
