@@ -8,14 +8,16 @@ on:
 jobs:
   sync:
     runs-on: ubuntu-latest
+    concurrency:
+      group: sync-upstream-${{ github.repository }}
+      cancel-in-progress: false
     permissions:
       contents: write
-      issues: write
       pull-requests: write
 
     steps:
       - name: Checkout fork
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: main
           fetch-depth: 0
@@ -44,6 +46,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
+          git fetch origin main
+          git reset --hard origin/main
+
           UPSTREAM_SHA=$(git rev-parse --short upstream/main)
           if git merge upstream/main --no-edit -m "auto sync upstream (${UPSTREAM_SHA})"; then
             echo "merge_ok=true" >> $GITHUB_OUTPUT
@@ -56,41 +61,37 @@ jobs:
         if: steps.check.outputs.diff_count != '0' && steps.merge.outputs.merge_ok == 'true'
         run: git push origin main
 
-      - name: Create PR on conflict
+      - name: Open PR for upstream merge conflicts
         if: steps.check.outputs.diff_count != '0' && steps.merge.outputs.merge_ok == 'false'
-        env:
-          GH_TOKEN: ${{ secrets.INSTALLER_X_TOKEN }}
         run: |
-          EXISTING_PR=$(gh pr list --state open --json number,headRefName | jq -r '.[] | select(.headRefName | startswith("upstream-sync/")) | .number' | head -n 1)
-          if [ -n "$EXISTING_PR" ]; then
-            echo "Open upstream-sync PR #${EXISTING_PR} already exists, skipping."
-            exit 0
-          fi
+          git checkout main
+          git fetch origin main
+          git reset --hard origin/main
+          git fetch upstream main
+          git reset --hard upstream/main
 
-          BRANCH_NAME="upstream-sync/$(date +%Y%m%d)"
-          git checkout -b "$BRANCH_NAME" upstream/main
-          git push origin "$BRANCH_NAME"
+      - name: Create Pull Request
+        id: cpr
+        if: steps.check.outputs.diff_count != '0' && steps.merge.outputs.merge_ok == 'false'
+        uses: peter-evans/create-pull-request@v8
+        with:
+          # PR 用默认 token；推分支用 PAT（与 checkout 一致），避免分支保护只认 PAT 时推送失败。
+          token: ${{ github.token }}
+          branch-token: ${{ secrets.INSTALLER_X_TOKEN }}
+          branch: upstream-sync/conflicts
+          base: main
+          title: "Upstream Sync - 需手动解决冲突"
+          commit-message: |
+            chore: upstream snapshot for conflict resolution PR
 
-          gh label create "upstream-sync" --description "Automated upstream sync" --color "1d76db" 2>/dev/null || true
+            Sync head matches wxxsfxyzm/InstallerX-Revived main at workflow run.
+          body: |
+            ## 上游同步
 
-          PR_URL=$(gh pr create \
-            --base main \
-            --head "$BRANCH_NAME" \
-            --title "Upstream Sync - 需手动解决冲突" \
-            --body "$(cat <<'EOF'
-          ## 上游同步
+            自动合并上游 `wxxsfxyzm/InstallerX-Revived` 的 `main` 到本仓库 `main` 时出现冲突，已打开本 PR 供手动合并。
 
-          自动合并上游 `wxxsfxyzm/InstallerX-Revived` 的 main 分支时发现冲突，需要手动解决。
+            **操作方式：**
+            1. 在本地 checkout 本 PR 分支，或直接在 GitHub 上解决冲突
+            2. 解决冲突后合并本 PR 到 `main`
 
-          **操作方式：**
-          1. 在本地 checkout 此分支
-          2. 解决冲突后 push
-          3. 合并此 PR
-
-          或直接在 GitHub 上解决冲突后合并。
-          EOF
-          )")
-          PR_NUM="${PR_URL##*/}"
-          if [ -n "$PR_NUM" ] && [ "$PR_NUM" != "$PR_URL" ]; then
-            gh pr edit "$PR_NUM" --add-label "upstream-sync" 2>/dev/null || echo "Note: label upstream-sync not available (PR created without label)."
-          fi
+            由 [create-pull-request](https://github.com/peter-evans/create-pull-request) 创建/更新；同一分支名会复用同一条 PR。
