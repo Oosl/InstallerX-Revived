@@ -13,7 +13,19 @@ keystore/
 *.jks
 *.keystore
 
-# IDE and OS specific files
-.idea/
+# IntelliJ / Android Studio
+.idea/*
+!.idea/.gitignore
+!.idea/codeStyles/
+!.idea/codeStyles/**
+!.idea/inspectionProfiles/
+!.idea/inspectionProfiles/**
+!.idea/icon.svg
+!.idea/runConfigurations/
+!.idea/runConfigurations/**
+!.idea/vcs.xml
+!.idea/fileTemplates/
+!.idea/fileTemplates/**
+
 *.iml
 .DS_Store

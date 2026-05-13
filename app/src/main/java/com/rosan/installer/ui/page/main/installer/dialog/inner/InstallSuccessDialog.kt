@@ -56,7 +56,7 @@ fun installSuccessDialog(
     val effectivePrimaryEntity = selectedEntities?.filterIsInstance<AppEntity.BaseEntity>()?.firstOrNull()
         ?: selectedEntities?.filterIsInstance<AppEntity.ModuleEntity>()?.firstOrNull()
 
-    val isXposedModule = if (effectivePrimaryEntity is AppEntity.BaseEntity) effectivePrimaryEntity.isXposedModule else false
+    val isXposedModule = settings.detectXposedModule && if (effectivePrimaryEntity is AppEntity.BaseEntity) effectivePrimaryEntity.isXposedModule else false
 
     val baseParams = installInfoDialog(
         viewModel = viewModel,
@@ -83,54 +83,58 @@ fun installSuccessDialog(
             }
 
             buildList {
-                if (isXposedModule && config.isPrivileged(deviceCapabilityProvider)) {
-                    add(DialogButton(stringResource(R.string.open_lsposed)) {
-                        coroutineScope.launch(Dispatchers.IO) {
-                            val success = openLSPosedUseCase(config)
-                            if (success) {
-                                withContext(Dispatchers.Main) {
-                                    viewModel.dispatch(InstallerViewAction.Close)
-                                }
-                            }
-                        }
-                    })
-                }
-
                 if (launchIntent != null) {
-                    add(DialogButton(stringResource(R.string.open)) {
-                        coroutineScope.launch(Dispatchers.IO) {
-                            val result = openAppUseCase(
-                                config = config,
-                                launchIntent = launchIntent
-                            )
+                    add(
+                        DialogButton(stringResource(R.string.open)) {
+                            coroutineScope.launch(Dispatchers.IO) {
+                                val result = openAppUseCase(
+                                    config = config,
+                                    launchIntent = launchIntent
+                                )
 
-                            when (result) {
-                                is OpenAppUseCase.Result.SuccessPrivileged -> {
-                                    withContext(Dispatchers.Main) {
-                                        viewModel.dispatch(InstallerViewAction.Close)
+                                when (result) {
+                                    is OpenAppUseCase.Result.SuccessPrivileged -> {
+                                        withContext(Dispatchers.Main) {
+                                            viewModel.dispatch(InstallerViewAction.Close)
+                                        }
+                                    }
+
+                                    is OpenAppUseCase.Result.FallbackRequired -> {
+                                        withContext(Dispatchers.Main) {
+                                            context.startActivity(launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+
+                                            if (config.authorizer == Authorizer.Dhizuku) {
+                                                delay(settings.autoCloseCountDown * 1000L)
+                                            } else {
+                                                delay(PRIVILEGED_START_TIMEOUT_MS)
+                                            }
+                                            viewModel.dispatch(InstallerViewAction.Close)
+                                        }
                                     }
                                 }
-
-                                is OpenAppUseCase.Result.FallbackRequired -> {
+                            }
+                        }
+                    )
+                }
+                if (isXposedModule && settings.quickOpenLSPosed && config.isPrivileged(deviceCapabilityProvider)) {
+                    add(
+                        DialogButton(stringResource(R.string.open_lsposed)) {
+                            coroutineScope.launch(Dispatchers.IO) {
+                                val success = openLSPosedUseCase(config)
+                                if (success) {
                                     withContext(Dispatchers.Main) {
-                                        context.startActivity(launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-
-                                        if (config.authorizer == Authorizer.Dhizuku) {
-                                            delay(settings.autoCloseCountDown * 1000L)
-                                        } else {
-                                            delay(PRIVILEGED_START_TIMEOUT_MS)
-                                        }
                                         viewModel.dispatch(InstallerViewAction.Close)
                                     }
                                 }
                             }
                         }
-                    })
+                    )
                 }
-
-                add(DialogButton(stringResource(R.string.finish)) {
-                    viewModel.dispatch(InstallerViewAction.Close)
-                })
+                add(
+                    DialogButton(stringResource(R.string.finish)) {
+                        viewModel.dispatch(InstallerViewAction.Close)
+                    }
+                )
             }
         }
     )

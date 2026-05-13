@@ -212,6 +212,35 @@ fun MiuixInstallerGlobalSettingsPage(
                 }
             }
 
+            item { SmallTitle(stringResource(R.string.installer_settings_xposed_detection)) }
+            item {
+                Card(
+                    modifier = Modifier
+                        .padding(horizontal = 12.dp)
+                        .padding(bottom = 12.dp)
+                ) {
+                    MiuixSwitchWidget(
+                        title = stringResource(R.string.config_detect_xposed_module),
+                        description = stringResource(R.string.config_detect_xposed_module_desc),
+                        checked = uiState.detectXposedModule,
+                        onCheckedChange = { viewModel.dispatch(InstallerSettingsAction.ChangeDetectXposedModule(it)) }
+                    )
+
+                    AnimatedVisibility(
+                        visible = uiState.detectXposedModule,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically()
+                    ) {
+                        MiuixSwitchWidget(
+                            title = stringResource(R.string.config_quick_open_lsposed),
+                            description = stringResource(R.string.config_quick_open_lsposed_desc),
+                            checked = uiState.quickOpenLSPosed,
+                            onCheckedChange = { viewModel.dispatch(InstallerSettingsAction.ChangeQuickOpenLSPosed(it)) }
+                        )
+                    }
+                }
+            }
+
             if (DeviceConfig.currentManufacturer == Manufacturer.OPPO || DeviceConfig.currentManufacturer == Manufacturer.ONEPLUS) {
                 item { SmallTitle(stringResource(R.string.installer_oppo_related)) }
                 item {

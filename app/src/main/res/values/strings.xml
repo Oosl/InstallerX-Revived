@@ -160,6 +160,11 @@
     <string name="uninstaller_settings">Uninstaller Settings</string>
     <string name="uninstaller_settings_desc">Change the global settings of the uninstaller</string>
     <string name="installer_settings_global_installer">Global</string>
+    <string name="installer_settings_xposed_detection">Xposed Detection</string>
+    <string name="config_detect_xposed_module">Detect Xposed modules</string>
+    <string name="config_detect_xposed_module_desc">Detect and show Xposed module info during installation</string>
+    <string name="config_quick_open_lsposed">Quickly open LSPosed</string>
+    <string name="config_quick_open_lsposed_desc">Show \"Open LSPosed\" button after installing Xposed module</string>
     <string name="installer_settings_require_biometric_auth">Require Biometric Auth to Install</string>
     <string name="installer_settings_require_biometric_auth_desc">Require biometric auth when installing packages</string>
     <string name="installer_biometric_auth_mode_disable">Disable Biometric Auth</string>

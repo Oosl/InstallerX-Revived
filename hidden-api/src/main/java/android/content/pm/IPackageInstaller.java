@@ -9,7 +9,9 @@ import android.os.RemoteException;
 public interface IPackageInstaller extends IInterface {
     void uninstall(VersionedPackage versionedPackage, String callerPackageName, int flags, IntentSender statusReceiver, int userId) throws RemoteException;
 
-    void abandonSession(int sessionId);
+    void abandonSession(int sessionId) throws RemoteException;
+
+    void setPermissionsResult(int sessionId, boolean accepted) throws RemoteException;
 
     abstract class Stub extends Binder implements IPackageInstaller {
         public static IPackageInstaller asInterface(IBinder obj) {

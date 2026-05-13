@@ -92,6 +92,15 @@ interface AppIconRepository {
     ): Int?
 
     /**
+     * Extracts the Material 3 seed color directly from an existing [Bitmap].
+     *
+     * @param bitmap The bitmap to extract color from, or null.
+     * @return The dominant seed color as an ARGB int, or null if [bitmap]
+     *         is null or extraction fails.
+     */
+    suspend fun extractColorFromBitmap(bitmap: Bitmap?): Int?
+
+    /**
      * Extracts the Material 3 seed color directly from an existing [Drawable].
      *
      * Useful in flows where the icon is already available (e.g., uninstall

@@ -719,7 +719,7 @@ fun DataBypassLowTargetSdkWidget(state: EditViewState, dispatch: (EditViewAction
 @Composable
 fun DataAllowSigMismatchWidget(state: EditViewState, dispatch: (EditViewAction) -> Unit) {
     SwitchWidget(
-        icon = AppIcons.InstallAllowRestrictedPermissions,
+        icon = AppIcons.InstallAllowSigMismatch,
         title = stringResource(id = R.string.config_allow_sig_mismatch),
         description = stringResource(id = R.string.config_allow_sig_mismatch_desc),
         checked = state.data.allowSigMismatch,
@@ -730,7 +730,7 @@ fun DataAllowSigMismatchWidget(state: EditViewState, dispatch: (EditViewAction) 
 @Composable
 fun DataAllowSigUnknownWidget(state: EditViewState, dispatch: (EditViewAction) -> Unit) {
     SwitchWidget(
-        icon = AppIcons.InstallAllowRestrictedPermissions,
+        icon = AppIcons.InstallAllowSigUnknown,
         title = stringResource(id = R.string.config_allow_sig_unknown),
         description = stringResource(id = R.string.config_allow_sig_unknown_desc),
         checked = state.data.allowSigUnknown,

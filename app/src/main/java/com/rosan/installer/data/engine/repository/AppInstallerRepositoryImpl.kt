@@ -67,16 +67,23 @@ class AppInstallerRepositoryImpl(
         try {
             return action(repo)
         } catch (e: IllegalStateException) {
-            // Check if Shizuku service connection is lost
-            if (repo is ShizukuAppInstallerRepoImpl && e.message?.contains("binder haven't been received") == true) {
-                throw PrivilegedException(
-                    errorType = PrivilegedErrorType.SHIZUKU_NOT_WORK,
-                    message = "Shizuku service connection lost during operation.",
-                    cause = e
-                )
+            throw when (repo) {
+                is ShizukuAppInstallerRepoImpl if e.message?.contains("binder haven't been received") == true ->
+                    PrivilegedException(
+                        errorType = PrivilegedErrorType.SHIZUKU_NOT_WORK,
+                        message = "Shizuku service connection lost during operation.",
+                        cause = e
+                    )
+
+                is DhizukuAppInstallerRepoImpl if e.message?.contains("KoinApplication has not been started") == true ->
+                    PrivilegedException(
+                        errorType = PrivilegedErrorType.DHIZUKU_NOT_WORK,
+                        message = "Dhizuku service connection lost during operation.",
+                        cause = e
+                    )
+
+                else -> e
             }
-            // Throw other exceptions as-is
-            throw e
         }
     }
 

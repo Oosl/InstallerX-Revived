@@ -34,8 +34,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.twotone.Archive
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -214,7 +212,7 @@ fun installInfoDialog(
                         ) {
                             if (isModule)
                                 Icon(
-                                    imageVector = Icons.TwoTone.Archive,
+                                    imageVector = AppIcons.Xposed,
                                     contentDescription = null,
                                     modifier = Modifier.padding(4.dp)
                                 )

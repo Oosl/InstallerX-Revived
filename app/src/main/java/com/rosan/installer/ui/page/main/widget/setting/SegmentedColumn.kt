@@ -189,12 +189,14 @@ fun SegmentedColumn(
         val floatSpring = spring<Float>(dampingRatio = bouncyDamping, stiffness = bouncyStiffness)
         val dpSpring = spring<Dp>(dampingRatio = bouncyDamping, stiffness = bouncyStiffness)
 
-        val progresses = allItems.map { item ->
-            animateFloatAsState(
-                targetValue = if (item.visible) 1f else 0f,
-                animationSpec = floatSpring,
-                label = "progress"
-            )
+        val progresses = allItems.mapIndexed { index, item ->
+            key(item.key ?: index) {
+                animateFloatAsState(
+                    targetValue = if (item.visible) 1f else 0f,
+                    animationSpec = floatSpring,
+                    label = "progress"
+                )
+            }
         }
 
         val firstVisibleIndex = allItems.indexOfFirst { it.visible }

@@ -30,6 +30,7 @@ sealed class InstallerStage {
     data class InstallConfirm(
         val appLabel: CharSequence,
         val appIcon: Bitmap?,
+        val packageName: String,
         val sessionId: Int,
         val isSelfSession: Boolean,
         val isOwnershipConflict: Boolean,

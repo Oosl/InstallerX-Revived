@@ -6,8 +6,6 @@ import com.rosan.installer.R
 import com.rosan.installer.domain.engine.model.state.DomainInstallState
 import com.rosan.installer.domain.engine.model.state.InstallActionType
 import com.rosan.installer.domain.engine.model.state.InstallNotice
-import com.rosan.installer.ui.page.main.installer.dialog.inner.InstallNoticeResources
-import com.rosan.installer.ui.page.main.installer.dialog.inner.InstallStateResult
 import com.rosan.installer.ui.page.main.widget.chip.NoticeModel
 
 class InstallStateUiMapper(
@@ -31,9 +29,8 @@ class InstallStateUiMapper(
         return InstallStateResult(noticesUiModels.toMutableList(), buttonTextId)
     }
 
-    // 💡 方法名改为 mapNotice
-    private fun mapNotice(notice: InstallNotice): NoticeModel {
-        return when (notice) {
+    private fun mapNotice(notice: InstallNotice) =
+        when (notice) {
             is InstallNotice.Downgrade -> NoticeModel(
                 shortLabel = resources.tagDowngrade,
                 fullDescription = resources.textDowngrade,
@@ -93,5 +90,4 @@ class InstallStateUiMapper(
                 )
             }
         }
-    }
 }

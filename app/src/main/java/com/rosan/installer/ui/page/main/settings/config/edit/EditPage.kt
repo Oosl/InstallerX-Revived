@@ -118,8 +118,8 @@ fun EditPage(
 
     val backdrop = rememberMaterial3BlurBackdrop(useBlur)
 
-    val isHigherThanT = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
-    val isHigherThanU = Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE
+    val isAtLeastTiramisu = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+    val isAtLeastUpsideDownCake = Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE
 
     Scaffold(
         modifier = Modifier
@@ -217,7 +217,7 @@ fun EditPage(
                 ) {
                     dataUserWidget(state, dispatch)
                     dataInstallReasonWidget(state, dispatch)
-                    if (isHigherThanT) dataPackageSourceWidget(state, dispatch)
+                    if (isAtLeastTiramisu) dataPackageSourceWidget(state, dispatch)
                     if (state.isCustomInstallRequesterEnabled) dataInstallRequesterWidget(state, dispatch)
                     dataDeclareInstallerWidget(state, dispatch)
                     dataManualDexoptWidget(state, dispatch)
@@ -236,9 +236,9 @@ fun EditPage(
                     item { DataAllowDowngradeWidget(state, dispatch) }
                     item { DataAllowSigMismatchWidget(state, dispatch) }
                     item { DataAllowSigUnknownWidget(state, dispatch) }
-                    if (isHigherThanU) item { DataBypassLowTargetSdkWidget(state, dispatch) }
+                    if (isAtLeastUpsideDownCake) item { DataBypassLowTargetSdkWidget(state, dispatch) }
                     item { DataAllowAllRequestedPermissionsWidget(state, dispatch) }
-                    if (isHigherThanU) item { DataRequestUpdateOwnershipWidget(state, dispatch) }
+                    if (isAtLeastUpsideDownCake) item { DataRequestUpdateOwnershipWidget(state, dispatch) }
                 }
             }
 

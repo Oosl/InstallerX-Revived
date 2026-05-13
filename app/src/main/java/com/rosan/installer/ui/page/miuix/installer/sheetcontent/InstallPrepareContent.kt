@@ -56,7 +56,7 @@ import com.rosan.installer.domain.settings.model.Authorizer
 import com.rosan.installer.ui.icons.AppIcons
 import com.rosan.installer.ui.page.main.installer.InstallerViewAction
 import com.rosan.installer.ui.page.main.installer.InstallerViewModel
-import com.rosan.installer.ui.page.main.installer.dialog.inner.InstallNoticeResources
+import com.rosan.installer.ui.page.main.installer.mapper.InstallNoticeResources
 import com.rosan.installer.ui.page.main.installer.mapper.InstallStateUiMapper
 import com.rosan.installer.ui.page.miuix.installer.components.AdaptiveInfoRow
 import com.rosan.installer.ui.page.miuix.installer.components.AppInfoSlot
@@ -209,7 +209,8 @@ fun InstallPrepareContent(
             isSplitUpdateMode = isSplitUpdateMode,
             containerType = containerType,
             systemArch = DeviceConfig.currentArchitecture,
-            systemSdkInt = Build.VERSION.SDK_INT
+            systemSdkInt = Build.VERSION.SDK_INT,
+            detectXposedModule = settings.detectXposedModule
         )
 
         // 2. Map to UI state

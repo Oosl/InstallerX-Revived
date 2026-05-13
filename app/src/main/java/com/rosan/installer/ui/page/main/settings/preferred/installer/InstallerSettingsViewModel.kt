@@ -36,6 +36,8 @@ class InstallerSettingsViewModel(
             dhizukuAutoCloseCountDown = prefs.dhizukuAutoCloseCountDown,
             installerRequireBiometricAuth = prefs.installerRequireBiometricAuth,
             showOPPOSpecial = prefs.showOPPOSpecial,
+            detectXposedModule = prefs.detectXposedModule,
+            quickOpenLSPosed = prefs.quickOpenLSPosed,
             managedInstallerPackages = prefs.managedInstallerPackages,
             managedBlacklistPackages = prefs.managedBlacklistPackages,
             managedSharedUserIdBlacklist = prefs.managedSharedUserIdBlacklist,
@@ -73,6 +75,20 @@ class InstallerSettingsViewModel(
                 updateSetting(
                     BooleanSetting.DialogShowOppoSpecial,
                     action.show
+                )
+            }
+
+            is InstallerSettingsAction.ChangeDetectXposedModule -> viewModelScope.launch {
+                updateSetting(
+                    BooleanSetting.DetectXposedModule,
+                    action.detect
+                )
+            }
+
+            is InstallerSettingsAction.ChangeQuickOpenLSPosed -> viewModelScope.launch {
+                updateSetting(
+                    BooleanSetting.QuickOpenLSPosed,
+                    action.open
                 )
             }
 

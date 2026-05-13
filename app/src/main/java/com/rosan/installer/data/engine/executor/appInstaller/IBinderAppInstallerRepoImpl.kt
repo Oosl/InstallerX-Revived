@@ -129,14 +129,7 @@ abstract class IBinderAppInstallerRepoImpl(
         try {
             Timber.d("Approving session $sessionId (granted: $granted) via Binder wrapper")
 
-            reflect.invokeMethod(
-                iPackageInstaller,
-                "setPermissionsResult",
-                IPackageInstaller::class.java,
-                arrayOf(Int::class.java, Boolean::class.java),
-                sessionId,
-                granted
-            )
+            iPackageInstaller.setPermissionsResult(sessionId, granted)
         } catch (e: Exception) {
             Timber.e(e, "Failed to approve session via Binder")
 

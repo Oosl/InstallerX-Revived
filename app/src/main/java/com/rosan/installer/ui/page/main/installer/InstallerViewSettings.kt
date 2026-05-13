@@ -15,6 +15,8 @@ data class InstallerViewSettings(
     val autoSilentInstall: Boolean = false,
     val enableModuleInstall: Boolean = false,
     val useDynColorFollowPkgIcon: Boolean = false,
+    val detectXposedModule: Boolean = true,
+    val quickOpenLSPosed: Boolean = true,
     // Lab
     val labTapIconToShare: Boolean = false,
     val labShowFilePath: Boolean = false,

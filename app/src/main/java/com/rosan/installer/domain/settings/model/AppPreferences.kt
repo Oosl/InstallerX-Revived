@@ -35,6 +35,8 @@ data class AppPreferences(
     val preferSystemIcon: Boolean,
     val showLauncherIcon: Boolean,
     val userSetLSPosedActive: Boolean,
+    val detectXposedModule: Boolean,
+    val quickOpenLSPosed: Boolean,
     val managedInstallerPackages: List<NamedPackage>,
     val managedBlacklistPackages: List<NamedPackage>,
     val managedSharedUserIdBlacklist: List<SharedUid>,

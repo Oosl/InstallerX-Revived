@@ -200,6 +200,18 @@ class AppIconRepositoryImpl(
         return iconBitmap?.extractSeedColor()
     }
 
+    override suspend fun extractColorFromBitmap(bitmap: Bitmap?): Int? {
+        if (bitmap == null) return null
+        return try {
+            bitmap.extractSeedColor()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to extract color from bitmap")
+            null
+        }
+    }
+
     override suspend fun extractColorFromDrawable(drawable: Drawable?): Int? {
         if (drawable == null) return null
         return try {

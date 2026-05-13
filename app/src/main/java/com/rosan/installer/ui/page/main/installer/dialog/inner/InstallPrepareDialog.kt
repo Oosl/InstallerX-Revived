@@ -45,6 +45,7 @@ import com.rosan.installer.ui.page.main.installer.dialog.DialogInnerParams
 import com.rosan.installer.ui.page.main.installer.dialog.DialogParams
 import com.rosan.installer.ui.page.main.installer.dialog.DialogParamsType
 import com.rosan.installer.ui.page.main.installer.dialog.dialogButtons
+import com.rosan.installer.ui.page.main.installer.mapper.InstallNoticeResources
 import com.rosan.installer.ui.page.main.installer.mapper.InstallStateUiMapper
 import com.rosan.installer.ui.page.main.widget.chip.Chip
 import com.rosan.installer.ui.page.main.widget.chip.InstallInfoChipGroup
@@ -230,7 +231,8 @@ fun installPrepareDialog(
             isSplitUpdateMode = isSplitUpdateMode,
             containerType = containerType,
             systemArch = DeviceConfig.currentArchitecture,
-            systemSdkInt = Build.VERSION.SDK_INT
+            systemSdkInt = Build.VERSION.SDK_INT,
+            detectXposedModule = settings.detectXposedModule
         )
 
         // 2. Map to UI state

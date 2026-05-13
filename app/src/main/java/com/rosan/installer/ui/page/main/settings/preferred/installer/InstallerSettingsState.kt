@@ -14,6 +14,8 @@ data class InstallerSettingsState(
     val dhizukuAutoCloseCountDown: Int = 5,
     val installerRequireBiometricAuth: BiometricAuthMode = BiometricAuthMode.FollowConfig,
     val showOPPOSpecial: Boolean = false,
+    val detectXposedModule: Boolean = true,
+    val quickOpenLSPosed: Boolean = true,
     val managedInstallerPackages: List<NamedPackage> = emptyList(),
     val managedBlacklistPackages: List<NamedPackage> = emptyList(),
     val managedSharedUserIdBlacklist: List<SharedUid> = emptyList(),

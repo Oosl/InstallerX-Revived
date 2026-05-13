@@ -2,6 +2,7 @@
 // Copyright (C) 2025-2026 InstallerX Revived contributors
 package com.rosan.installer.domain.engine.usecase
 
+import android.graphics.Bitmap
 import com.rosan.installer.domain.engine.model.AppEntity
 import com.rosan.installer.domain.engine.repository.AppIconRepository
 import kotlinx.coroutines.CancellationException
@@ -33,6 +34,20 @@ class GetAppIconColorUseCase(
     } catch (e: Exception) {
         if (e is CancellationException) throw e
         Timber.e(e, "Failed to extract color for package: $packageName")
+        null
+    }
+
+    /**
+     * Extracts a seed color directly from an icon bitmap.
+     * @return An ARGB color integer, or null if extraction fails.
+     */
+    suspend operator fun invoke(
+        bitmap: Bitmap?
+    ): Int? = try {
+        appIconRepo.extractColorFromBitmap(bitmap)
+    } catch (e: Exception) {
+        if (e is CancellationException) throw e
+        Timber.e(e, "Failed to extract color from bitmap")
         null
     }
 }

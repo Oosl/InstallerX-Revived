@@ -1,7 +1,6 @@
 pluginManagement {
     includeBuild("build-plugins")
     repositories {
-        mavenLocal()
         // maven { setUrl("https://maven.aliyun.com/repository/public/") }
         // maven { setUrl("https://repo.huaweicloud.com/repository/maven/") }
         gradlePluginPortal()
@@ -9,6 +8,7 @@ pluginManagement {
         mavenCentral()
         maven { setUrl("https://jitpack.io") }
         // maven { setUrl("https://maven.scijava.org/content/repositories/public/") }
+        mavenLocal()
     }
 }
 plugins {
@@ -18,7 +18,6 @@ plugins {
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
-        mavenLocal()
         // maven { setUrl("https://maven.aliyun.com/repository/public/") }
         // maven { setUrl("https://repo.huaweicloud.com/repository/maven/") }
         google()
@@ -43,15 +42,24 @@ dependencyResolutionManagement {
         // to work with RepositoriesMode.FAIL_ON_PROJECT_REPOS.
         maven {
             url = uri("https://maven.pkg.github.com/compose-miuix-ui/miuix")
-            credentials {
-                username = providers.gradleProperty("gpr.user")
-                    .orElse(System.getenv("GITHUB_ACTOR"))
-                    .get()
-                password = providers.gradleProperty("gpr.key")
-                    .orElse(System.getenv("GITHUB_TOKEN"))
-                    .get()
+
+            val gprUser = providers.gradleProperty("gpr.user")
+                .orElse(providers.environmentVariable("GITHUB_ACTOR"))
+
+            val gprKey = providers.gradleProperty("gpr.key")
+                .orElse(providers.environmentVariable("GITHUB_TOKEN"))
+
+            if (gprUser.isPresent && gprKey.isPresent) {
+                maven {
+                    url = uri("https://maven.pkg.github.com/compose-miuix-ui/miuix")
+                    credentials {
+                        username = gprUser.get()
+                        password = gprKey.get()
+                    }
+                }
             }
         }
+        mavenLocal()
     }
 }
 

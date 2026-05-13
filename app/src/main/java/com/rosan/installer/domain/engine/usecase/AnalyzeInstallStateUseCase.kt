@@ -26,7 +26,8 @@ class AnalyzeInstallStateUseCase {
         isSplitUpdateMode: Boolean,
         containerType: DataType?,
         systemArch: Architecture,
-        systemSdkInt: Int
+        systemSdkInt: Int,
+        detectXposedModule: Boolean = true
     ): DomainInstallState {
         val oldInfo = currentPackage.installedAppInfo
         val notices = mutableListOf<InstallNotice>()
@@ -102,15 +103,17 @@ class AnalyzeInstallStateUseCase {
         }
 
         // 6. Check Xposed Module Info
-        val xposedInfo = (primaryEntity as? AppEntity.BaseEntity)?.xposedInfo
-        if (xposedInfo != null) {
-            notices.add(
-                InstallNotice.Xposed(
-                    minApi = xposedInfo.minApi,
-                    targetApi = xposedInfo.targetApi,
-                    description = xposedInfo.description
+        if (detectXposedModule) {
+            val xposedInfo = (primaryEntity as? AppEntity.BaseEntity)?.xposedInfo
+            if (xposedInfo != null) {
+                notices.add(
+                    InstallNotice.Xposed(
+                        minApi = xposedInfo.minApi,
+                        targetApi = xposedInfo.targetApi,
+                        description = xposedInfo.description
+                    )
                 )
-            )
+            }
         }
 
         return DomainInstallState(actionType, notices)

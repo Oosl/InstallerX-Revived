@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2025-2026 InstallerX Revived contributors
 package com.rosan.installer.ui.icons
 
 import androidx.compose.material.icons.Icons
@@ -56,6 +58,9 @@ import androidx.compose.material.icons.twotone.Favorite
 import androidx.compose.material.icons.twotone.FavoriteBorder
 import androidx.compose.material.icons.twotone.FindInPage
 import androidx.compose.material.icons.twotone.Flare
+import androidx.compose.material.icons.twotone.GppBad
+import androidx.compose.material.icons.twotone.GppMaybe
+import androidx.compose.material.icons.twotone.Healing
 import androidx.compose.material.icons.twotone.History
 import androidx.compose.material.icons.twotone.HourglassDisabled
 import androidx.compose.material.icons.twotone.HourglassEmpty
@@ -89,12 +94,12 @@ import androidx.compose.material.icons.twotone.VerifiedUser
 import androidx.compose.material.icons.twotone.Widgets
 
 /**
- * 将图标统一管理在一个对象中
+ * Manages all icons in a single object
  */
 object AppIcons {
-    // 这里使用 Material Icons 作为示例
-    // 你需要添加 'androidx.compose.material:material-icons-extended' 依赖来使用所有图标
-    // 或者替换成你自己的图标资源
+    // Material Icons are used here as an example
+    // You need to add the 'androidx.compose.material:material-icons-extended' dependency to use all icons
+    // Or replace them with your own icon resources
     val Android = Icons.TwoTone.Android
     val Info = Icons.TwoTone.Info
     val Add = Icons.TwoTone.Add
@@ -125,21 +130,21 @@ object AppIcons {
     val OpenSourceLicense = Icons.TwoTone.Copyright
     val Blur = Icons.TwoTone.BlurOn
 
-    // --- 导航图标集合 ---
+    // --- Navigation icons set ---
     val RoomPreferences = Icons.TwoTone.RoomPreferences
     val SettingsSuggest = Icons.TwoTone.SettingsSuggest
     val ArrowBack = Icons.AutoMirrored.TwoTone.ArrowBack
-    // --- 导航图标结束 ---
+    // --- Navigation icons end ---
 
-    // --- 授权器图标集合 ---
+    // --- Authorizer icons set ---
     val None = Icons.Outlined.DoNotDisturbOn
     val Root = Icons.Outlined.Tag
-    val Shizuku = null // Shizuku 图标
-    val Dhizuku = null // Dhizuku 图标
+    val Shizuku = null // Shizuku icon
+    val Dhizuku = null // Dhizuku icon
     val Customize = Icons.Outlined.Settings
-    // --- 授权器图标结束 ---
+    // --- Authorizer icons end ---
 
-    // --- 安装方式图标集合 ---
+    // --- Installation mode icons set ---
     val Dialog = Icons.Outlined.WebAsset
     val AutoDialog = Icons.Outlined.SmartDisplay
     val Notification = Icons.Outlined.Notifications
@@ -148,12 +153,14 @@ object AppIcons {
 
     // val Ignore = Icons.Outlined.NotInterested
     val Timer = Icons.TwoTone.Timer
-    // --- 安装方式图标结束 ---
+    // --- Installation mode icons end ---
 
-    // --- 设置图标集合 ---
+    // --- Settings icons set ---
     val Authorizer = Icons.TwoTone.Memory
     val SingleLineSettingIcon = Icons.TwoTone.Compress
     val MultiLineSettingIcon = Icons.TwoTone.Expand
+    val Xposed = Icons.TwoTone.Extension
+    val LSPosed = Icons.TwoTone.Healing
     val DisableAdbVerify = Icons.TwoTone.Security
     val InstallMode = Icons.TwoTone.Downloading
     val BatteryOptimization = Icons.TwoTone.BatterySaver
@@ -172,9 +179,9 @@ object AppIcons {
     val Glow = Icons.TwoTone.Flare
     val PredictiveBack = Icons.TwoTone.Animation
     val PredictiveBackDirection = Icons.TwoTone.SwapHoriz
-    // --- 设置图标结束 ---
+    // --- Settings icons end ---
 
-    // --- Profile pkg 图标集合 ---
+    // --- Profile pkg icons set ---
     val Toast = Icons.TwoTone.CallToAction
     val InstallUser = Icons.TwoTone.AccountCircle
     val InstallPackageSource = Icons.TwoTone.Source
@@ -184,41 +191,43 @@ object AppIcons {
     val InstallForAllUsers = Icons.TwoTone.People
     val InstallAllowDowngrade = Icons.AutoMirrored.TwoTone.TrendingDown
     val InstallBypassLowTargetSdk = Icons.TwoTone.SecurityUpdateWarning
+    val InstallAllowSigMismatch = Icons.TwoTone.GppBad
+    val InstallAllowSigUnknown = Icons.TwoTone.GppMaybe
     val InstallAllowRestrictedPermissions = Icons.TwoTone.AdminPanelSettings
     val InstallAllowAllRequestedPermissions = Icons.TwoTone.LibraryAddCheck
     val InstallRequestUpdateOwnership = Icons.TwoTone.VerifiedUser
 
     val InstallSplitChooseAll = Icons.AutoMirrored.TwoTone.PlaylistAdd
     val InstallApkChooseAll = Icons.AutoMirrored.Outlined.PlaylistAddCheck
-    // --- 结束 ---
+    // --- End ---
 
-    // --- 箭头图标集合 ---
-    // 实心三角小箭头
+    // --- Arrow icons set ---
+    // Solid triangle small arrow
     val ArrowDropDownFilled = Icons.TwoTone.ArrowDropDown
     val ArrowRight = Icons.AutoMirrored.TwoTone.ArrowRight
 
-    // DropDown用的箭头
+    // Arrow for DropDown
     val ArrowDropDown = Icons.TwoTone.KeyboardArrowDown
     // Not needed since rotation animation is handled in the UI
     // val ArrowDropUp = Icons.TwoTone.KeyboardArrowUp
 
     val ArrowUp = Icons.TwoTone.ArrowUpward
     val ArrowIndicator = Icons.AutoMirrored.Rounded.ArrowForward
-    // --- 箭头结束 ---
+    // --- Arrow end ---
 
-    // --- 沙漏图标集合 ---
+    // --- Hourglass icons set ---
     val Pausing = Icons.TwoTone.HourglassDisabled
     val Working = Icons.TwoTone.HourglassEmpty
-    // --- 沙漏图标结束 ---
+    // --- Hourglass icons end ---
 
-    // --- 菜单图标集合 ---
+    // --- Menu icons set ---
     val Menu = Icons.Filled.Menu
     val MenuOpen = Icons.AutoMirrored.TwoTone.MenuOpen
-    // --- 菜单图标结束 ---
+    // --- Menu icons end ---
 
-    // --- 权限图标集合 ---
+    // --- Permission icons set ---
     val Permission = Icons.TwoTone.PermDeviceInformation
-    // --- 权限图标结束 ---
+    // --- Permission icons end ---
 
     // Lab Icons
     val InstallRequester = Icons.AutoMirrored.TwoTone.FactCheck

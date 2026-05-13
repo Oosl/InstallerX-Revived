@@ -41,7 +41,8 @@ import com.rosan.installer.ui.theme.CornerRadius
  * @param iconPlaceholder If true, maintains a consistent leading space even when [icon] is null.
  * @param title The primary headline text of the widget.
  * @param description Optional supporting text displayed below the title.
- * @param descriptionColor The color applied to the [description] text.
+ * @param descriptionColor Optional color applied to the [description] text.
+ * If null, an adaptive color derived from the resolved content color is used.
  * @param enabled Controls the enabled state of the widget and its interactivity.
  * @param isError If true, applies the error color to the description text.
  * @param selected If true, highlights the widget with a primary container background.
@@ -59,7 +60,7 @@ fun BaseWidget(
     iconPlaceholder: Boolean = true,
     title: String,
     description: String? = null,
-    descriptionColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+    descriptionColor: Color? = null,
     enabled: Boolean = true,
     isError: Boolean = false,
     selected: Boolean = false,
@@ -100,8 +101,8 @@ fun BaseWidget(
 
     val finalDescriptionColor = when {
         isError -> MaterialTheme.colorScheme.error
-        descriptionColor == MaterialTheme.colorScheme.onSurfaceVariant -> baseContentColor.copy(alpha = 0.7f)
-        else -> descriptionColor
+        descriptionColor != null -> descriptionColor
+        else -> baseContentColor.copy(alpha = 0.7f)
     }
 
     val colors = ListItemDefaults.colors(

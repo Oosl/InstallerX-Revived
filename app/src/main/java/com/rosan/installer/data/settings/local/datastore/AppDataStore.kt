@@ -99,6 +99,10 @@ class AppDataStore(
             booleanPreferencesKey("show_oppo_special")
         val DIALOG_AUTO_SILENT_INSTALL =
             booleanPreferencesKey("auto_silent_install")
+        val DETECT_XPOSED_MODULE =
+            booleanPreferencesKey("detect_xposed_module")
+        val QUICK_OPEN_LSPOSED =
+            booleanPreferencesKey("quick_open_lsposed")
 
         // Customize Installer
         val MANAGED_INSTALLER_PACKAGES_LIST =

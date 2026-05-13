@@ -194,7 +194,34 @@ fun InstallerGlobalSettingsPage(
                 }
             }
 
-            // --- Group 2: OPPO Related ---
+            // --- Group 2: Xposed Detection ---
+            item {
+                SegmentedColumn(
+                    title = stringResource(R.string.installer_settings_xposed_detection)
+                ) {
+                    item {
+                        SwitchWidget(
+                            icon = AppIcons.Xposed,
+                            title = stringResource(R.string.config_detect_xposed_module),
+                            description = stringResource(R.string.config_detect_xposed_module_desc),
+                            checked = uiState.detectXposedModule,
+                            onCheckedChange = { viewModel.dispatch(InstallerSettingsAction.ChangeDetectXposedModule(it)) }
+                        )
+                    }
+
+                    item(animatedVisibility = uiState.detectXposedModule) {
+                        SwitchWidget(
+                            icon = AppIcons.LSPosed,
+                            title = stringResource(R.string.config_quick_open_lsposed),
+                            description = stringResource(R.string.config_quick_open_lsposed_desc),
+                            checked = uiState.quickOpenLSPosed,
+                            onCheckedChange = { viewModel.dispatch(InstallerSettingsAction.ChangeQuickOpenLSPosed(it)) }
+                        )
+                    }
+                }
+            }
+
+            // --- Group 3: OPPO Related ---
             if (DeviceConfig.currentManufacturer == Manufacturer.OPPO || DeviceConfig.currentManufacturer == Manufacturer.ONEPLUS) {
                 item {
                     SegmentedColumn(

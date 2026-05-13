@@ -83,6 +83,8 @@ class AppSettingsRepositoryImpl(
             preferSystemIcon = prefs[AppDataStore.PREFER_SYSTEM_ICON_FOR_INSTALL] ?: false,
             showLauncherIcon = prefs[AppDataStore.SHOW_LAUNCHER_ICON] ?: true,
             userSetLSPosedActive = prefs[AppDataStore.USER_SET_LSPOSED_ACTIVE] ?: false,
+            detectXposedModule = prefs[AppDataStore.DETECT_XPOSED_MODULE] ?: true,
+            quickOpenLSPosed = prefs[AppDataStore.QUICK_OPEN_LSPOSED] ?: true,
 
             // Lists require synchronous parsing functions from AppDataStore
             managedInstallerPackages = appDataStore.parseNamedPackageList(
@@ -256,6 +258,8 @@ class AppSettingsRepositoryImpl(
             BooleanSetting.LabShowFilePath -> AppDataStore.LAB_SHOW_FILE_PATH
             BooleanSetting.LabShowInstallInitiator -> AppDataStore.LAB_SHOW_INSTALL_INITIATOR
             BooleanSetting.LabInstallWithoutUserAction -> AppDataStore.LAB_INSTALL_WITHOUT_USER_ACTION
+            BooleanSetting.DetectXposedModule -> AppDataStore.DETECT_XPOSED_MODULE
+            BooleanSetting.QuickOpenLSPosed -> AppDataStore.QUICK_OPEN_LSPOSED
             BooleanSetting.EnableFileLogging -> AppDataStore.ENABLE_FILE_LOGGING
         }
 

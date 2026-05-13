@@ -58,7 +58,7 @@ fun InstallSuccessContent(
     val openAppUseCase: OpenAppUseCase = koinInject()
     val openLSPosedUseCase: OpenLSPosedUseCase = koinInject()
 
-    val isXposedModule = if (appInfo.primaryEntity is AppEntity.BaseEntity) appInfo.primaryEntity.isXposedModule else false
+    val isXposedModule = uiState.viewSettings.detectXposedModule && if (appInfo.primaryEntity is AppEntity.BaseEntity) appInfo.primaryEntity.isXposedModule else false
 
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -78,7 +78,7 @@ fun InstallSuccessContent(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        if (isXposedModule && config.isPrivileged(capabilityProvider)) {
+        if (isXposedModule && uiState.viewSettings.quickOpenLSPosed && config.isPrivileged(capabilityProvider)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
