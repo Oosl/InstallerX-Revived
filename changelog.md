@@ -1,5 +1,5 @@
+- auto sync upstream (54ff770a) (github-actions[bot])
+- feat: add per-profile policy toggles for signature mismatch and unknown signature (#641) (4h9fbZ)
+- chore(release): update module update.json for 26.05.ea6feca [skip ci] (github-actions[bot])
 -  sync upstream (a7af928) (Oosl)
 - [ci] use peter-evans/create-pull-request@v8 to create pr (oosl)
-- fixed pr create failed  by use personal token[skid preview] (oosl)
-- fixed pr create failed  by use personal token[skid preview] (oosl)
-- fixed pr create failed  by use default token[skid preview] (oosl)
