@@ -2,6 +2,7 @@
 // Copyright (C) 2023-2026 iamr0s, InstallerX Revived contributors
 package com.rosan.installer.ui.page.main.widget.setting
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Spacer
@@ -17,6 +18,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -64,10 +66,13 @@ fun BaseWidget(
     onClick: (() -> Unit)? = null,
     clickHaptic: HapticFeedbackType? = HapticFeedbackType.VirtualKey,
     foreContent: @Composable BoxScope.() -> Unit = {},
-    content: @Composable BoxScope.() -> Unit = {},
+    content: @Composable BoxScope.(interactionSource: MutableInteractionSource) -> Unit = {}
 ) {
     val haptic = LocalHapticFeedback.current
     val alpha = if (enabled) 1f else 0.38f
+
+    // Shared MutableInteractionSource for the widget
+    val interactionSource = remember { MutableInteractionSource() }
 
     // Determine if the widget is meant to be interacted with.
     val isClickable = onClick != null
@@ -172,9 +177,10 @@ fun BaseWidget(
                 modifier = Modifier.alpha(alpha),
                 contentAlignment = Alignment.Center
             ) {
-                content()
+                content(interactionSource)
             }
-        }
+        },
+        interactionSource = interactionSource
     ) {
         // Headline content wrapper with dynamic vertical margins
         Box(

@@ -72,11 +72,12 @@ fun SwitchWidget(
         onClick = rowClickAction,
         clickHaptic = null,
         description = description
-    ) {
+    ) { interactionSource ->
         Switch(
             modifier = Modifier.clearAndSetSemantics {},
             enabled = enabled,
             checked = checked,
+            interactionSource = interactionSource,
             colors = SwitchDefaults.colors(
                 checkedIconColor = MaterialTheme.colorScheme.primary,
                 uncheckedIconColor = MaterialTheme.colorScheme.surfaceContainerHighest
@@ -88,9 +89,8 @@ fun SwitchWidget(
                     modifier = Modifier.size(SwitchDefaults.IconSize)
                 )
             },
-            onCheckedChange = { newValue ->
-                handleCheckedChange(newValue)
-            }
+            // Pass null to disable internal touch handling and let BaseWidget calculate the exact ripple coordinates
+            onCheckedChange = null
         )
     }
 }

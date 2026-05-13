@@ -10,7 +10,5 @@ class AuthenticationFailedException : InstallerException {
 
     constructor(message: String?) : super(message)
 
-    override fun getStringResId(): Int {
-        return R.string.exception_authentication_failed
-    }
+    override fun getStringResId() = R.string.exception_authentication_failed
 }

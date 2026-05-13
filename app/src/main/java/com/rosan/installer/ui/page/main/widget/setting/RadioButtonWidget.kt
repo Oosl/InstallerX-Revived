@@ -8,6 +8,11 @@ import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 
 // A dedicated widget for radio button settings items
 @Composable
@@ -22,7 +27,11 @@ fun RadioButtonWidget(
     onClick: () -> Unit
 ) {
     BaseWidget(
-        modifier = modifier,
+        // Merge semantics and define role/state for screen readers
+        modifier = modifier.semantics(mergeDescendants = true) {
+            role = Role.RadioButton
+            this.selected = selected
+        },
         icon = icon,
         iconPlaceholder = iconPlaceholder,
         title = title,
@@ -30,17 +39,21 @@ fun RadioButtonWidget(
         selected = selected,
         enabled = enabled,
         onClick = onClick
-    ) {
+    ) { interactionSource -> // Receive the shared interactionSource
         RadioButton(
             selected = selected,
             // The click event is already handled by BaseWidget's ListItem,
             // passing null here avoids double-triggering ripples
             onClick = null,
+            // Clear child semantics to avoid double reading by TalkBack
+            modifier = Modifier.clearAndSetSemantics {},
             enabled = enabled,
             // Inherit the dynamic content color provided by BaseWidget
             colors = RadioButtonDefaults.colors(
                 selectedColor = LocalContentColor.current
-            )
+            ),
+            // Bind the shared interactionSource for synchronized visual feedback
+            interactionSource = interactionSource
         )
     }
 }
