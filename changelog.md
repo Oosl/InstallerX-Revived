@@ -1,5 +1,5 @@
+- auto sync upstream (106452de) (github-actions[bot])
+- ci: fix preview ci (wxxsfxyzm)
+- chore(release): update module update.json for 26.05.281d504 [skip ci] (github-actions[bot])
 - auto sync upstream (281d5049) (github-actions[bot])
 - feat: support direct bitmap color extraction in installer flow (wxxsfxyzm)
-- Translated using Weblate (Spanish) (Hosted Weblate)
-- refactor: use direct IPackageInstaller calls for session approval (wxxsfxyzm)
-- feat: add retry suggestion for Dhizuku errors, close #625 (wxxsfxyzm)
