@@ -136,7 +136,7 @@ fun AboutPage(
                         .padding(horizontal = 16.dp)
                         .padding(top = 8.dp, bottom = 12.dp)
                 ) {
-                    StatusWidget(viewModel)
+                    StatusWidget(viewModel, useBlur)
                 }
             }
             item {

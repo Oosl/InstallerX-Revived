@@ -2,9 +2,6 @@
 // Copyright (C) 2025-2026 InstallerX Revived contributors
 package com.rosan.installer.ui.page.miuix.settings
 
-// -------------------------------------------------------------
-// 【关键修改】使用别名导入两套不同的 Backdrop 以避免冲突
-// -------------------------------------------------------------
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
@@ -42,14 +39,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rosan.installer.R
 import com.rosan.installer.ui.icons.AppIcons
+import com.rosan.installer.ui.library.FloatingBottomBar
+import com.rosan.installer.ui.library.FloatingBottomBarItem
 import com.rosan.installer.ui.navigation.LocalNavigator
 import com.rosan.installer.ui.navigation.MainPagerState
 import com.rosan.installer.ui.navigation.Route
 import com.rosan.installer.ui.page.miuix.settings.config.all.MiuixAllPage
 import com.rosan.installer.ui.page.miuix.settings.home.MiuixHomePage
 import com.rosan.installer.ui.page.miuix.settings.preferred.MiuixPreferredPage
-import com.rosan.installer.ui.page.miuix.widgets.FloatingBottomBar
-import com.rosan.installer.ui.page.miuix.widgets.FloatingBottomBarItem
 import top.yukonga.miuix.kmp.basic.FloatingActionButton
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.NavigationBar
@@ -65,8 +62,6 @@ import top.yukonga.miuix.kmp.blur.BlendColorEntry
 import top.yukonga.miuix.kmp.blur.BlurColors
 import top.yukonga.miuix.kmp.blur.textureBlur
 import top.yukonga.miuix.kmp.theme.MiuixTheme
-import com.kyant.backdrop.backdrops.LayerBackdrop as KyantLayerBackdrop
-import com.kyant.backdrop.backdrops.layerBackdrop as kyantLayerBackdrop
 import top.yukonga.miuix.kmp.blur.LayerBackdrop as MiuixLayerBackdrop
 import top.yukonga.miuix.kmp.blur.layerBackdrop as miuixLayerBackdrop
 
@@ -78,7 +73,7 @@ private fun SettingsFloatingBottomBar(
     mainPagerState: MainPagerState,
     navigationItems: List<NavigationItem>,
     useFloatingBottomBarBlur: Boolean,
-    floatingBackdrop: KyantLayerBackdrop
+    floatingBackdrop: MiuixLayerBackdrop
 ) {
     Box(
         modifier = Modifier.fillMaxWidth()
@@ -141,7 +136,7 @@ fun SettingsCompactLayout(
     snackbarHostState: SnackbarHostState,
     useFloatingBottomBar: Boolean,
     useFloatingBottomBarBlur: Boolean,
-    floatingBackdrop: KyantLayerBackdrop?,
+    floatingBackdrop: MiuixLayerBackdrop?,
     miuixBackdrop: MiuixLayerBackdrop?
 ) {
     val navigator = LocalNavigator.current
@@ -244,7 +239,7 @@ fun SettingsWideScreenLayout(
     snackbarHostState: SnackbarHostState,
     useFloatingBottomBar: Boolean,
     useFloatingBottomBarBlur: Boolean,
-    floatingBackdrop: KyantLayerBackdrop?,
+    floatingBackdrop: MiuixLayerBackdrop?,
     miuixBackdrop: MiuixLayerBackdrop?
 ) {
     if (useFloatingBottomBar) {
@@ -335,7 +330,7 @@ private fun SettingsWideContent(
     snackbarHostState: SnackbarHostState,
     useFloatingBottomBar: Boolean,
     useFloatingBottomBarBlur: Boolean,
-    floatingBackdrop: KyantLayerBackdrop?,
+    floatingBackdrop: MiuixLayerBackdrop?,
     miuixBackdrop: MiuixLayerBackdrop?
 ) {
     val navigator = LocalNavigator.current
@@ -397,7 +392,7 @@ private fun SettingsPagerContent(
     snackbarHostState: SnackbarHostState,
     outerPadding: PaddingValues,
     useFloatingBottomBar: Boolean,
-    floatingBackdrop: KyantLayerBackdrop?,
+    floatingBackdrop: MiuixLayerBackdrop?,
     miuixBackdrop: MiuixLayerBackdrop?
 ) {
     HorizontalPager(
@@ -406,7 +401,7 @@ private fun SettingsPagerContent(
         overscrollEffect = null,
         beyondViewportPageCount = 1,
         modifier = modifier
-            .then(if (useFloatingBottomBar && floatingBackdrop != null) Modifier.kyantLayerBackdrop(floatingBackdrop) else Modifier)
+            .then(if (useFloatingBottomBar && floatingBackdrop != null) Modifier.miuixLayerBackdrop(floatingBackdrop) else Modifier)
             .then(if (!useFloatingBottomBar && miuixBackdrop != null) Modifier.miuixLayerBackdrop(miuixBackdrop) else Modifier)
     ) { page ->
         val useBlur = floatingBackdrop != null && miuixBackdrop != null

@@ -80,7 +80,6 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.kyant.shapes.RoundedRectangle
 import com.rosan.installer.BuildConfig
 import com.rosan.installer.R
 import com.rosan.installer.core.env.AppConfig
@@ -135,13 +134,13 @@ import top.yukonga.miuix.kmp.blur.layerBackdrop
 import top.yukonga.miuix.kmp.blur.rememberLayerBackdrop
 import top.yukonga.miuix.kmp.blur.textureBlur
 import top.yukonga.miuix.kmp.interfaces.ExperimentalScrollBarApi
-import top.yukonga.miuix.kmp.overlay.OverlayBottomSheet
-import top.yukonga.miuix.kmp.overlay.OverlayListPopup
 import top.yukonga.miuix.kmp.theme.LocalDismissState
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.overScrollVertical
 import top.yukonga.miuix.kmp.utils.scrollEndHaptic
+import top.yukonga.miuix.kmp.window.WindowBottomSheet
 import top.yukonga.miuix.kmp.window.WindowDialog
+import top.yukonga.miuix.kmp.window.WindowListPopup
 import androidx.compose.ui.graphics.BlendMode as ComposeBlendMode
 
 // Unified entry point
@@ -639,7 +638,7 @@ private fun AboutContentBody(
                         .requiredSize(160.dp)
                         .textureBlur(
                             backdrop = backdrop,
-                            shape = RoundedRectangle(16.dp),
+                            shape = RoundedCornerShape(16.dp),
                             blurRadius = 200f,
                             noiseCoefficient = BlurDefaults.NoiseCoefficient,
                             colors = BlurColors(blendColors = logoBlend),
@@ -735,7 +734,9 @@ private fun AboutContentBody(
                         }
                         .pointerInput(Unit) {
                             detectTapGestures {
-                                showTextureSet = true
+                                if (AppConfig.LEVEL != Level.STABLE) {
+                                    showTextureSet = true
+                                }
                             }
                         }
                         .onGloballyPositioned { coordinates ->
@@ -860,222 +861,224 @@ private fun AboutContentBody(
     }
 
     // Dev mode texture settings bottom sheet
-    OverlayBottomSheet(
-        show = showTextureSet,
-        title = "Texture Set",
-        onDismissRequest = {
-            showTextureSet = false
-        },
-        insideMargin = DpSize(0.dp, 0.dp),
-    ) {
-        LazyColumn {
-            item {
-                val effectVariantOptions = listOf("OS2", "OS3")
-                val selectedIndex = if (isOs3Effect) 1 else 0
-                var isDropdownExpanded by remember { mutableStateOf(false) }
-                var isHoldDown by remember { mutableStateOf(false) }
-                val hapticFeedback = LocalHapticFeedback.current
+    if (AppConfig.LEVEL != Level.STABLE) {
+        WindowBottomSheet(
+            show = showTextureSet,
+            title = "Texture Set",
+            onDismissRequest = {
+                showTextureSet = false
+            },
+            insideMargin = DpSize(0.dp, 0.dp),
+        ) {
+            LazyColumn {
+                item {
+                    val effectVariantOptions = listOf("OS2", "OS3")
+                    val selectedIndex = if (isOs3Effect) 1 else 0
+                    var isDropdownExpanded by remember { mutableStateOf(false) }
+                    var isHoldDown by remember { mutableStateOf(false) }
+                    val hapticFeedback = LocalHapticFeedback.current
 
-                BasicComponent(
-                    title = "Effect Variant",
-                    insideMargin = PaddingValues(16.dp, 0.dp, 16.dp, 0.dp),
-                    onClick = {
-                        isDropdownExpanded = !isDropdownExpanded
-                        if (isDropdownExpanded) {
-                            isHoldDown = true
-                            hapticFeedback.performHapticFeedback(HapticFeedbackType.ContextClick)
-                        }
-                    },
-                    holdDownState = isHoldDown,
-                    endActions = {
-                        Text(
-                            text = effectVariantOptions[selectedIndex],
-                            modifier = Modifier
-                                .padding(end = 8.dp)
-                                .align(Alignment.CenterVertically),
-                            fontSize = MiuixTheme.textStyles.body2.fontSize,
-                            color = MiuixTheme.colorScheme.onSurfaceVariantActions,
-                            textAlign = TextAlign.End,
-                        )
+                    BasicComponent(
+                        title = "Effect Variant",
+                        insideMargin = PaddingValues(16.dp, 0.dp, 16.dp, 0.dp),
+                        onClick = {
+                            isDropdownExpanded = !isDropdownExpanded
+                            if (isDropdownExpanded) {
+                                isHoldDown = true
+                                hapticFeedback.performHapticFeedback(HapticFeedbackType.ContextClick)
+                            }
+                        },
+                        holdDownState = isHoldDown,
+                        endActions = {
+                            Text(
+                                text = effectVariantOptions[selectedIndex],
+                                modifier = Modifier
+                                    .padding(end = 8.dp)
+                                    .align(Alignment.CenterVertically),
+                                fontSize = MiuixTheme.textStyles.body2.fontSize,
+                                color = MiuixTheme.colorScheme.onSurfaceVariantActions,
+                                textAlign = TextAlign.End,
+                            )
 
-                        DropdownArrowEndAction(
-                            actionColor = MiuixTheme.colorScheme.onSurfaceVariantActions,
-                        )
+                            DropdownArrowEndAction(
+                                actionColor = MiuixTheme.colorScheme.onSurfaceVariantActions,
+                            )
 
-                        OverlayListPopup(
-                            show = isDropdownExpanded,
-                            alignment = PopupPositionProvider.Align.End,
-                            onDismissRequest = { isDropdownExpanded = false },
-                            onDismissFinished = { isHoldDown = false },
-                        ) {
-                            val dismiss = LocalDismissState.current
-                            ListPopupColumn {
-                                effectVariantOptions.forEachIndexed { index, text ->
-                                    key(index) {
-                                        DropdownImpl(
-                                            text = text,
-                                            optionSize = effectVariantOptions.size,
-                                            isSelected = selectedIndex == index,
-                                            dropdownColors = DropdownDefaults.dropdownColors(),
-                                            index = index,
-                                            onSelectedIndexChange = { selectedIdx ->
-                                                hapticFeedback.performHapticFeedback(HapticFeedbackType.Confirm)
-                                                isOs3Effect = (selectedIdx == 1)
-                                                dismiss?.invoke()
-                                            },
-                                        )
+                            WindowListPopup(
+                                show = isDropdownExpanded,
+                                alignment = PopupPositionProvider.Align.End,
+                                onDismissRequest = { isDropdownExpanded = false },
+                                onDismissFinished = { isHoldDown = false },
+                            ) {
+                                val dismiss = LocalDismissState.current
+                                ListPopupColumn {
+                                    effectVariantOptions.forEachIndexed { index, text ->
+                                        key(index) {
+                                            DropdownImpl(
+                                                text = text,
+                                                optionSize = effectVariantOptions.size,
+                                                isSelected = selectedIndex == index,
+                                                dropdownColors = DropdownDefaults.dropdownColors(),
+                                                index = index,
+                                                onSelectedIndexChange = { selectedIdx ->
+                                                    hapticFeedback.performHapticFeedback(HapticFeedbackType.Confirm)
+                                                    isOs3Effect = (selectedIdx == 1)
+                                                    dismiss?.invoke()
+                                                },
+                                            )
+                                        }
                                     }
                                 }
                             }
-                        }
-                    },
-                )
-            }
-            item {
-                BasicComponent(
-                    title = "Effect Background Enabled",
-                    endActions = {
-                        Switch(
-                            effectBackground.value,
-                            {
-                                effectBackground.value = it
-                            },
-                        )
-                    },
-                    insideMargin = PaddingValues(16.dp, 16.dp, 16.dp, 0.dp),
-                )
-            }
-            item {
-                BasicComponent(
-                    title = "Dynamic Background Enabled",
-                    endActions = {
-                        Switch(
-                            dynamicBackground.value,
-                            {
-                                dynamicBackground.value = it
-                            },
-                        )
-                    },
-                    insideMargin = PaddingValues(16.dp, 16.dp, 16.dp, 0.dp),
-                )
-            }
-            item {
-                BasicComponent(
-                    title = "Blur Enable",
-                    endActions = {
-                        Switch(
-                            blurEnable,
-                            {
-                                blurEnable = it
-                            },
-                        )
-                    },
-                    insideMargin = PaddingValues(16.dp, 16.dp, 16.dp, 0.dp),
-                )
-            }
-            item {
-                // Blur radius setting
-                BasicComponent(
-                    title = "Blur Radius",
-                    endActions = { ValueText("${blurRadius.toInt()}") },
-                    bottomAction = {
-                        Slider(
-                            value = blurRadius / 200f,
-                            onValueChange = { blurRadius = it * 200f },
-                        )
-                    },
-                    insideMargin = PaddingValues(16.dp, 16.dp, 16.dp, 0.dp),
-                )
-            }
-            item {
-                // Noise setting
-                BasicComponent(
-                    title = "Noise",
-                    endActions = { ValueText("${(noiseCoefficient * 10000).toInt() / 10000f}") },
-                    bottomAction = {
-                        Slider(
-                            value = noiseCoefficient / 0.1f,
-                            onValueChange = { noiseCoefficient = it * 0.1f },
-                        )
-                    },
-                    insideMargin = PaddingValues(16.dp, 16.dp, 16.dp, 0.dp),
-                )
-            }
-            item {
-                // Brightness setting
-                BasicComponent(
-                    title = "Brightness",
-                    endActions = { ValueText("${(brightness * 100).toInt() / 100f}") },
-                    bottomAction = {
-                        Slider(
-                            value = (brightness + 1f) / 2f,
-                            onValueChange = { brightness = it * 2f - 1f },
-                        )
-                    },
-                    insideMargin = PaddingValues(16.dp, 16.dp, 16.dp, 0.dp),
-                )
-            }
-            item {
-                // Contrast setting
-                BasicComponent(
-                    title = "Contrast",
-                    endActions = { ValueText("${(contrast * 100).toInt() / 100f}") },
-                    bottomAction = {
-                        Slider(
-                            value = contrast / 3f,
-                            onValueChange = { contrast = it * 3f },
-                        )
-                    },
-                    insideMargin = PaddingValues(16.dp, 16.dp, 16.dp, 0.dp),
-                )
-            }
-            item {
-                // Saturation setting
-                BasicComponent(
-                    title = "Saturation",
-                    endActions = { ValueText("${(saturation * 100).toInt() / 100f}") },
-                    bottomAction = {
-                        Slider(
-                            value = saturation / 3f,
-                            onValueChange = { saturation = it * 3f },
-                        )
-                    },
-                    insideMargin = PaddingValues(16.dp, 16.dp, 16.dp, 0.dp),
-                )
-            }
-            item {
-                // Blend mode setting
-                val currentConfigName = configEntries.getOrNull(blendModeIndex)?.key ?: "Default"
-                val modeId = blendConfigs[currentConfigName]
-                BasicComponent(
-                    title = "Blend Mode",
-                    endActions = {
-                        ValueText(currentConfigName + if (modeId != null) " ($modeId)" else "")
-                    },
-                    bottomAction = {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        ) {
-                            TextButton(
-                                text = "Prev",
-                                onClick = {
-                                    blendModeIndex = (blendModeIndex - 1 + blendConfigs.size) % blendConfigs.size
+                        },
+                    )
+                }
+                item {
+                    BasicComponent(
+                        title = "Effect Background Enabled",
+                        endActions = {
+                            Switch(
+                                effectBackground.value,
+                                {
+                                    effectBackground.value = it
                                 },
-                                modifier = Modifier.weight(1f),
                             )
-                            TextButton(
-                                text = "Next",
-                                onClick = {
-                                    blendModeIndex = (blendModeIndex + 1) % blendConfigs.size
+                        },
+                        insideMargin = PaddingValues(16.dp, 16.dp, 16.dp, 0.dp),
+                    )
+                }
+                item {
+                    BasicComponent(
+                        title = "Dynamic Background Enabled",
+                        endActions = {
+                            Switch(
+                                dynamicBackground.value,
+                                {
+                                    dynamicBackground.value = it
                                 },
-                                modifier = Modifier.weight(1f),
                             )
-                        }
-                    },
-                )
+                        },
+                        insideMargin = PaddingValues(16.dp, 16.dp, 16.dp, 0.dp),
+                    )
+                }
+                item {
+                    BasicComponent(
+                        title = "Blur Enable",
+                        endActions = {
+                            Switch(
+                                blurEnable,
+                                {
+                                    blurEnable = it
+                                },
+                            )
+                        },
+                        insideMargin = PaddingValues(16.dp, 16.dp, 16.dp, 0.dp),
+                    )
+                }
+                item {
+                    // Blur radius setting
+                    BasicComponent(
+                        title = "Blur Radius",
+                        endActions = { ValueText("${blurRadius.toInt()}") },
+                        bottomAction = {
+                            Slider(
+                                value = blurRadius / 200f,
+                                onValueChange = { blurRadius = it * 200f },
+                            )
+                        },
+                        insideMargin = PaddingValues(16.dp, 16.dp, 16.dp, 0.dp),
+                    )
+                }
+                item {
+                    // Noise setting
+                    BasicComponent(
+                        title = "Noise",
+                        endActions = { ValueText("${(noiseCoefficient * 10000).toInt() / 10000f}") },
+                        bottomAction = {
+                            Slider(
+                                value = noiseCoefficient / 0.1f,
+                                onValueChange = { noiseCoefficient = it * 0.1f },
+                            )
+                        },
+                        insideMargin = PaddingValues(16.dp, 16.dp, 16.dp, 0.dp),
+                    )
+                }
+                item {
+                    // Brightness setting
+                    BasicComponent(
+                        title = "Brightness",
+                        endActions = { ValueText("${(brightness * 100).toInt() / 100f}") },
+                        bottomAction = {
+                            Slider(
+                                value = (brightness + 1f) / 2f,
+                                onValueChange = { brightness = it * 2f - 1f },
+                            )
+                        },
+                        insideMargin = PaddingValues(16.dp, 16.dp, 16.dp, 0.dp),
+                    )
+                }
+                item {
+                    // Contrast setting
+                    BasicComponent(
+                        title = "Contrast",
+                        endActions = { ValueText("${(contrast * 100).toInt() / 100f}") },
+                        bottomAction = {
+                            Slider(
+                                value = contrast / 3f,
+                                onValueChange = { contrast = it * 3f },
+                            )
+                        },
+                        insideMargin = PaddingValues(16.dp, 16.dp, 16.dp, 0.dp),
+                    )
+                }
+                item {
+                    // Saturation setting
+                    BasicComponent(
+                        title = "Saturation",
+                        endActions = { ValueText("${(saturation * 100).toInt() / 100f}") },
+                        bottomAction = {
+                            Slider(
+                                value = saturation / 3f,
+                                onValueChange = { saturation = it * 3f },
+                            )
+                        },
+                        insideMargin = PaddingValues(16.dp, 16.dp, 16.dp, 0.dp),
+                    )
+                }
+                item {
+                    // Blend mode setting
+                    val currentConfigName = configEntries.getOrNull(blendModeIndex)?.key ?: "Default"
+                    val modeId = blendConfigs[currentConfigName]
+                    BasicComponent(
+                        title = "Blend Mode",
+                        endActions = {
+                            ValueText(currentConfigName + if (modeId != null) " ($modeId)" else "")
+                        },
+                        bottomAction = {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            ) {
+                                TextButton(
+                                    text = "Prev",
+                                    onClick = {
+                                        blendModeIndex = (blendModeIndex - 1 + blendConfigs.size) % blendConfigs.size
+                                    },
+                                    modifier = Modifier.weight(1f),
+                                )
+                                TextButton(
+                                    text = "Next",
+                                    onClick = {
+                                        blendModeIndex = (blendModeIndex + 1) % blendConfigs.size
+                                    },
+                                    modifier = Modifier.weight(1f),
+                                )
+                            }
+                        },
+                    )
+                }
+                item { Spacer(modifier = Modifier.height(WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding())) }
             }
-            item { Spacer(modifier = Modifier.height(WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding())) }
         }
     }
 }

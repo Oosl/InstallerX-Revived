@@ -7,12 +7,18 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
@@ -39,13 +45,19 @@ import androidx.compose.material3.WideNavigationRailItem
 import androidx.compose.material3.WideNavigationRailValue
 import androidx.compose.material3.rememberWideNavigationRailState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.rosan.installer.ui.icons.AppIcons
+import com.rosan.installer.ui.library.FloatingBottomBar
+import com.rosan.installer.ui.library.FloatingBottomBarItem
 import com.rosan.installer.ui.navigation.MainPagerState
 import com.rosan.installer.ui.navigation.NavigationTab
 import com.rosan.installer.ui.page.main.settings.config.all.AllPage
@@ -55,6 +67,7 @@ import com.rosan.installer.ui.theme.installerMaterial3BlurEffect
 import kotlinx.coroutines.launch
 import top.yukonga.miuix.kmp.blur.LayerBackdrop
 import top.yukonga.miuix.kmp.blur.layerBackdrop
+import top.yukonga.miuix.kmp.blur.rememberLayerBackdrop
 
 /**
  * Compact Screen Layout (Portrait/Phone)
@@ -66,6 +79,7 @@ fun Material3SettingsCompactLayout(
     mainPagerState: MainPagerState,
     tabs: List<NavigationTab>,
     useBlur: Boolean,
+    useFloatingBottomBar: Boolean,
     backdrop: LayerBackdrop?,
     isMedium: Boolean
 ) {
@@ -75,17 +89,27 @@ fun Material3SettingsCompactLayout(
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
+        contentWindowInsets = WindowInsets(),
         bottomBar = {
-            RowNavigation(
-                modifier = Modifier.installerMaterial3BlurEffect(backdrop),
-                windowInsets = navigationWindowInsets,
-                tabs = tabs,
-                currentPage = mainPagerState.pagerState.targetPage,
-                onPageChanged = { mainPagerState.animateToPage(it) },
-                configCount = configCount,
-                containerColor = if (useBlur) Color.Transparent else BottomAppBarDefaults.containerColor,
-                isMedium = isMedium
-            )
+            if (useFloatingBottomBar) {
+                Material3FloatingBottomBar(
+                    mainPagerState = mainPagerState,
+                    tabs = tabs,
+                    configCount = configCount,
+                    backdrop = backdrop
+                )
+            } else {
+                RowNavigation(
+                    modifier = Modifier.installerMaterial3BlurEffect(backdrop),
+                    windowInsets = navigationWindowInsets,
+                    tabs = tabs,
+                    currentPage = mainPagerState.pagerState.targetPage,
+                    onPageChanged = { mainPagerState.animateToPage(it) },
+                    configCount = configCount,
+                    containerColor = if (useBlur) Color.Transparent else BottomAppBarDefaults.containerColor,
+                    isMedium = isMedium
+                )
+            }
         }
     ) { paddingValues ->
         Material3SettingsPagerContent(
@@ -110,32 +134,129 @@ fun Material3SettingsWideScreenLayout(
     mainPagerState: MainPagerState,
     tabs: List<NavigationTab>,
     useBlur: Boolean,
+    useFloatingBottomBar: Boolean,
     backdrop: LayerBackdrop?
 ) {
     val navigationWindowInsets = WindowInsets.safeDrawing.only(
         WindowInsetsSides.Vertical + WindowInsetsSides.Start
     )
 
-    Row(modifier = Modifier.fillMaxSize()) {
-        ColumnNavigation(
-            windowInsets = navigationWindowInsets,
-            tabs = tabs,
-            currentPage = mainPagerState.pagerState.targetPage,
-            onPageChanged = { mainPagerState.animateToPage(it) }
-        )
+    if (useFloatingBottomBar) {
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            contentWindowInsets = WindowInsets(),
+            bottomBar = {
+                Material3FloatingBottomBar(
+                    mainPagerState = mainPagerState,
+                    tabs = tabs,
+                    configCount = configCount,
+                    backdrop = backdrop
+                )
+            }
+        ) { paddingValues ->
+            Material3SettingsPagerContent(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .then(backdrop?.let { Modifier.layerBackdrop(backdrop) } ?: Modifier),
+                configCount = configCount,
+                mainPagerState = mainPagerState,
+                tabs = tabs,
+                useBlur = useBlur,
+                outerPadding = paddingValues
+            )
+        }
+    } else {
+        Row(modifier = Modifier.fillMaxSize()) {
+            ColumnNavigation(
+                windowInsets = navigationWindowInsets,
+                tabs = tabs,
+                currentPage = mainPagerState.pagerState.targetPage,
+                onPageChanged = { mainPagerState.animateToPage(it) }
+            )
 
-        Material3SettingsPagerContent(
+            Material3SettingsPagerContent(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxSize()
+                    .then(backdrop?.let { Modifier.layerBackdrop(backdrop) } ?: Modifier),
+                configCount = configCount,
+                mainPagerState = mainPagerState,
+                tabs = tabs,
+                useBlur = useBlur,
+                outerPadding = PaddingValues(0.dp), // Rail navigation doesn't overlay bottom content
+                windowInsetsSides = WindowInsetsSides.Vertical + WindowInsetsSides.End
+            )
+        }
+    }
+}
+
+@Composable
+private fun Material3FloatingBottomBar(
+    mainPagerState: MainPagerState,
+    tabs: List<NavigationTab>,
+    configCount: Int,
+    backdrop: LayerBackdrop?
+) {
+    val fallbackBackdrop = rememberLayerBackdrop()
+    val floatingBackdrop = backdrop ?: fallbackBackdrop
+
+    Box(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        FloatingBottomBar(
             modifier = Modifier
-                .weight(1f)
-                .fillMaxSize()
-                .then(backdrop?.let { Modifier.layerBackdrop(backdrop) } ?: Modifier),
-            configCount = configCount,
-            mainPagerState = mainPagerState,
-            tabs = tabs,
-            useBlur = useBlur,
-            outerPadding = PaddingValues(0.dp), // Rail navigation doesn't overlay bottom content
-            windowInsetsSides = WindowInsetsSides.Vertical + WindowInsetsSides.End
-        )
+                .align(Alignment.BottomCenter)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = {},
+                )
+                .padding(
+                    bottom = 12.dp + WindowInsets.navigationBars.asPaddingValues()
+                        .calculateBottomPadding()
+                ),
+            selectedIndex = { mainPagerState.pagerState.targetPage },
+            onSelected = { index ->
+                mainPagerState.animateToPage(index)
+            },
+            backdrop = floatingBackdrop,
+            tabsCount = tabs.size,
+            isBlurEnabled = false,
+            baseContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+            indicatorColor = MaterialTheme.colorScheme.primary
+        ) {
+            tabs.forEachIndexed { index, tab ->
+                FloatingBottomBarItem(
+                    onClick = {
+                        mainPagerState.animateToPage(index)
+                    },
+                    modifier = Modifier.defaultMinSize(minWidth = 76.dp)
+                ) {
+                    val showBadge = index == 1 && configCount > 1
+
+                    BadgedBox(
+                        badge = {
+                            ConfigBadge(showBadge = showBadge, configCount = configCount)
+                        }
+                    ) {
+                        Icon(
+                            imageVector = tab.icon,
+                            contentDescription = tab.label,
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                    Text(
+                        text = tab.label,
+                        fontSize = 11.sp,
+                        lineHeight = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Visible
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -187,7 +308,7 @@ private fun Material3SettingsPagerContent(
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun RowNavigation(
+private fun RowNavigation(
     modifier: Modifier = Modifier,
     windowInsets: WindowInsets,
     tabs: List<NavigationTab>,
@@ -233,7 +354,7 @@ fun RowNavigation(
 }
 
 @Composable
-fun ColumnNavigation(
+private fun ColumnNavigation(
     windowInsets: WindowInsets,
     tabs: List<NavigationTab>,
     currentPage: Int,

@@ -24,11 +24,13 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -67,7 +69,7 @@ import com.rosan.installer.ui.page.main.settings.preferred.lab.LabSettingsViewMo
 import com.rosan.installer.ui.page.main.settings.preferred.uninstaller.UninstallerSettingsAction
 import com.rosan.installer.ui.page.main.settings.preferred.uninstaller.UninstallerSettingsViewModel
 import com.rosan.installer.ui.page.main.widget.setting.BaseWidget
-import com.rosan.installer.ui.page.main.widget.setting.DraggableManagedList
+import com.rosan.installer.ui.page.main.widget.setting.DraggableList
 import com.rosan.installer.ui.page.main.widget.setting.DropDownMenuWidget
 import com.rosan.installer.ui.page.main.widget.setting.SwitchWidget
 import com.rosan.installer.util.hasFlag
@@ -336,9 +338,10 @@ fun ManagedPackagesWidget(
     onRemovePackage: (NamedPackage) -> Unit,
     onMovePackage: (fromIndex: Int, toIndex: Int) -> Unit
 ) {
+    var deleteTarget by remember { mutableStateOf<NamedPackage?>(null) }
     var showAddDialog by remember { mutableStateOf(false) }
 
-    DraggableManagedList(
+    DraggableList(
         modifier = modifier,
         items = packages,
         itemKey = { it.packageName },
@@ -346,8 +349,16 @@ fun ManagedPackagesWidget(
         itemDescription = { it.packageName },
         leadingIcon = AppIcons.Android,
         onMove = onMovePackage,
-        onRemove = onRemovePackage,
         noContentTitle = noContentTitle,
+        trailingContent = { item ->
+            IconButton(onClick = { deleteTarget = item }) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = stringResource(R.string.delete),
+                    tint = MaterialTheme.colorScheme.error
+                )
+            }
+        },
         bottomBarContent = {
             Row(
                 modifier = Modifier
@@ -384,6 +395,17 @@ fun ManagedPackagesWidget(
             }
         )
     }
+
+    deleteTarget?.let { item ->
+        DeleteNamedPackageConfirmationDialog(
+            item = item,
+            onDismiss = { deleteTarget = null },
+            onConfirm = {
+                onRemovePackage(item)
+                deleteTarget = null
+            }
+        )
+    }
 }
 
 @Composable
@@ -395,9 +417,10 @@ fun ManagedUidsWidget(
     onRemoveUid: (SharedUid) -> Unit,
     onMoveUid: (fromIndex: Int, toIndex: Int) -> Unit
 ) {
+    var deleteTarget by remember { mutableStateOf<SharedUid?>(null) }
     var showAddDialog by remember { mutableStateOf(false) }
 
-    DraggableManagedList(
+    DraggableList(
         modifier = modifier,
         items = uids,
         itemKey = { it.uidValue },
@@ -405,8 +428,16 @@ fun ManagedUidsWidget(
         itemDescription = { "UID: ${it.uidValue}" },
         leadingIcon = AppIcons.BugReport,
         onMove = onMoveUid,
-        onRemove = onRemoveUid,
         noContentTitle = noContentTitle,
+        trailingContent = { item ->
+            IconButton(onClick = { deleteTarget = item }) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = stringResource(R.string.delete),
+                    tint = MaterialTheme.colorScheme.error
+                )
+            }
+        },
         bottomBarContent = {
             Row(
                 modifier = Modifier
@@ -429,6 +460,17 @@ fun ManagedUidsWidget(
             onConfirm = { uid ->
                 onAddUid(uid)
                 showAddDialog = false
+            }
+        )
+    }
+
+    deleteTarget?.let { item ->
+        DeleteSharedUidConfirmationDialog(
+            item = item,
+            onDismiss = { deleteTarget = null },
+            onConfirm = {
+                onRemoveUid(item)
+                deleteTarget = null
             }
         )
     }

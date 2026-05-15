@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2023-2026 iamr0s, InstallerX Revived contributors
 package com.rosan.installer.ui.page.main.widget.card
 
 import androidx.compose.foundation.Image
@@ -8,7 +10,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -21,6 +22,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -29,12 +31,12 @@ import com.rosan.installer.core.env.AppConfig
 import com.rosan.installer.domain.device.model.Level
 import com.rosan.installer.ui.page.main.settings.preferred.about.AboutViewModel
 
-/**
- * @author iamr0s
- */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun StatusWidget(viewModel: AboutViewModel) {
+fun StatusWidget(
+    viewModel: AboutViewModel,
+    useBlur: Boolean = false
+) {
     val uiState by viewModel.state.collectAsStateWithLifecycle()
 
     val containerColor = when (AppConfig.LEVEL) {
@@ -67,10 +69,9 @@ fun StatusWidget(viewModel: AboutViewModel) {
     )
 
     CardWidget(
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = containerColor,
-            contentColor = onContainerColor
-        ),
+        containerColor = containerColor,
+        contentColor = onContainerColor,
+        useBlur = useBlur,
         icon = {
             if (uiState.appIcon != null) {
                 Image(
@@ -111,12 +112,11 @@ fun StatusWidget(viewModel: AboutViewModel) {
     )
 }
 
-/**
- * @author iamr0s
- */
 @Composable
 private fun CardWidget(
-    colors: CardColors = CardDefaults.elevatedCardColors(),
+    containerColor: Color,
+    contentColor: Color,
+    useBlur: Boolean = false,
     onClick: (() -> Unit)? = null,
     icon: (@Composable () -> Unit)? = null,
     title: (@Composable () -> Unit)? = null,
@@ -124,37 +124,68 @@ private fun CardWidget(
     buttons: (@Composable () -> Unit)? = null
 ) {
     ElevatedCard(
-        colors = colors
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = if (useBlur) {
+                containerColor.copy(alpha = 0.15f)
+            } else {
+                containerColor
+            },
+            contentColor = contentColor
+        ),
+        // Disable elevation when semi-transparent to prevent shadow core rendering
+        elevation = if (useBlur) {
+            CardDefaults.elevatedCardElevation(
+                defaultElevation = 0.dp,
+                pressedElevation = 0.dp,
+                focusedElevation = 0.dp,
+                hoveredElevation = 0.dp,
+                draggedElevation = 0.dp
+            )
+        } else {
+            CardDefaults.elevatedCardElevation()
+        }
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable(enabled = onClick != null, onClick = onClick ?: {})
-                .padding(vertical = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+        Box(
+            modifier = Modifier.fillMaxWidth()
         ) {
-            if (icon != null) {
-                CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.secondary) {
-                    Box(modifier = Modifier.align(Alignment.CenterHorizontally)) {
-                        icon()
+            // Apply fluid background in the lower layer
+            AnimatedFluidBackground(
+                baseColor = containerColor,
+                enabled = useBlur,
+                modifier = Modifier.matchParentSize()
+            )
+
+            // Original content logic
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(enabled = onClick != null, onClick = onClick ?: {})
+                    .padding(vertical = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                if (icon != null) {
+                    CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.secondary) {
+                        Box(modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                            icon()
+                        }
                     }
                 }
-            }
-            if (title != null) {
-                ProvideTextStyle(value = MaterialTheme.typography.titleLarge) {
-                    Box(modifier = Modifier.align(Alignment.CenterHorizontally)) {
-                        title()
+                if (title != null) {
+                    ProvideTextStyle(value = MaterialTheme.typography.titleLarge) {
+                        Box(modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                            title()
+                        }
                     }
                 }
-            }
-            if (content != null) {
-                Box {
-                    content()
+                if (content != null) {
+                    Box {
+                        content()
+                    }
                 }
-            }
-            if (buttons != null) {
-                Box {
-                    buttons()
+                if (buttons != null) {
+                    Box {
+                        buttons()
+                    }
                 }
             }
         }

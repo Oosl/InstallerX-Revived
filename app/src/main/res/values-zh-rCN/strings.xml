@@ -827,9 +827,9 @@
     <string name="dialog_settings">对话框设置</string>
     <string name="dialog_settings_desc">自定义对话框的外观和行为</string>
     <string name="priv_page_what_is_this_title">这是什么？</string>
-    <string name="priv_page_what_is_this_desc">本板块会检测设备上所有授权方式的可用性。请选择一种作为应用的全局授权，用于执行需要提权的操作。应用显示的功能会根据你的选择而变化。</string>
+    <string name="priv_page_what_is_this_desc">本板块会检测设备上所有可供本应用使用的授权方式，并允许你选择一种作为全局授权，用于执行需要提权的操作。这里仅检测其可用性；所需权限会在应用实际使用时再申请。应用显示的功能会根据你的选择而变化。</string>
     <string name="priv_page_notice_title">与安装配置的区别</string>
-    <string name="priv_page_notice_desc">在安装配置中，你可以自由选择授权器（跟随全局设置或独立自定义）。因此，本板块会为你检测所有授权方式的可用性。</string>
+    <string name="priv_page_notice_desc">这里的设置用于决定本应用自身执行提权操作时使用的授权方式。安装配置中的授权器则用于安装应用，并且可以选择跟随全局设置或单独自定义。</string>
     <string name="home_device_info_title">设备信息</string>
     <string name="home_device_info_model">机型</string>
     <string name="home_device_info_system">系统</string>

@@ -849,9 +849,9 @@
     <string name="dialog_settings">Dialog Settings</string>
     <string name="dialog_settings_desc">Customize the appearance and behavior of installation dialog</string>
     <string name="priv_page_what_is_this_title">What is this?</string>
-    <string name="priv_page_what_is_this_desc">This section detects all available authorization methods on your device. Please select one for the app to use for privileged operations. The features displayed in the app will change based on your selection.</string>
+    <string name="priv_page_what_is_this_desc">This section detects all authorization methods available for this app and lets you choose the default one used for privileged operations. It only checks availability here; any required permission will be requested when the app actually needs to use it.</string>
     <string name="priv_page_notice_title">Difference from installation profiles</string>
-    <string name="priv_page_notice_desc">In installation profiles, you can override this global setting and choose a specific authorizer. Therefore, this section detects the availability of all authorization methods for you.</string>
+    <string name="priv_page_notice_desc">This setting controls the authorizer used by the app itself for privileged operations. Installation profiles control the authorizer used when installing apps, and can override this global setting for that purpose.</string>
     <string name="home_device_info_title">Device Information</string>
     <string name="home_device_info_model">Model</string>
     <string name="home_device_info_system">System</string>

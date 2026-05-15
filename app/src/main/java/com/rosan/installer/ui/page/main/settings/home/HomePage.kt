@@ -3,6 +3,7 @@
 package com.rosan.installer.ui.page.main.settings.home
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -49,6 +50,7 @@ import com.rosan.installer.domain.settings.model.RootMode
 import com.rosan.installer.ui.navigation.LocalNavigator
 import com.rosan.installer.ui.navigation.Navigator
 import com.rosan.installer.ui.navigation.Route
+import com.rosan.installer.ui.page.main.widget.card.AnimatedFluidBackground
 import com.rosan.installer.ui.page.main.widget.setting.BaseWidget
 import com.rosan.installer.ui.page.main.widget.setting.SegmentedColumn
 import com.rosan.installer.ui.page.main.widget.util.OnLifecycleEvent
@@ -125,6 +127,7 @@ fun HomePage(
                 InstallerStatusCard(
                     isActive = uiState.isDefaultInstaller,
                     isSystemApp = uiState.isSystemApp,
+                    useBlur = useBlur,
                     onClick = { navigator.push(Route.DefaultInstaller) }
                 )
             }
@@ -156,7 +159,7 @@ fun HomePage(
             item {
                 SegmentedColumn(
                     title = stringResource(R.string.home_device_info_title),
-                    contentPadding = PaddingValues(top = 16.dp)
+                    contentPadding = PaddingValues(top = 16.dp, bottom = 8.dp)
                 ) {
                     item {
                         BaseWidget(
@@ -255,9 +258,10 @@ private fun StatCard(
 }
 
 @Composable
-fun InstallerStatusCard(
+private fun InstallerStatusCard(
     isActive: Boolean,
     isSystemApp: Boolean = false,
+    useBlur: Boolean = false,
     onClick: () -> Unit = {}
 ) {
     val displayAsActive = isActive || isSystemApp
@@ -276,6 +280,7 @@ fun InstallerStatusCard(
 
     val icon = if (displayAsActive) Icons.TwoTone.TaskAlt else Icons.TwoTone.Warning
     val contentDescRes = if (displayAsActive) R.string.activate else R.string.inactivate
+
     val titleRes = when {
         isSystemApp -> R.string.working_status_system_installer
         isActive -> R.string.working_status_default_installer
@@ -291,34 +296,62 @@ fun InstallerStatusCard(
     ElevatedCard(
         onClick = onClick,
         colors = CardDefaults.cardColors(
-            containerColor = containerColor
+            containerColor = if (useBlur && displayAsActive) {
+                containerColor.copy(alpha = 0.15f)
+            } else {
+                containerColor
+            }
         ),
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = stringResource(contentDescRes),
-                tint = contentColor,
-                modifier = Modifier
-                    .size(28.dp)
-                    .padding(horizontal = 4.dp),
+        elevation = if (useBlur) {
+            CardDefaults.elevatedCardElevation(
+                defaultElevation = 0.dp,
+                pressedElevation = 0.dp,
+                focusedElevation = 0.dp,
+                hoveredElevation = 0.dp,
+                draggedElevation = 0.dp
             )
-            Column(Modifier.padding(start = 20.dp)) {
-                Text(
-                    text = stringResource(titleRes),
-                    style = MaterialTheme.typography.titleMediumEmphasized,
-                    color = contentColor,
+        } else {
+            CardDefaults.elevatedCardElevation()
+        }
+    ) {
+        Box(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            AnimatedFluidBackground(
+                baseColor = containerColor,
+                enabled = useBlur && displayAsActive,
+                modifier = Modifier.matchParentSize()
+            )
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = stringResource(contentDescRes),
+                    tint = contentColor,
+                    modifier = Modifier
+                        .size(28.dp)
+                        .padding(horizontal = 4.dp),
                 )
-                Text(
-                    text = stringResource(descRes),
-                    style = MaterialTheme.typography.bodySmallEmphasized,
-                    color = contentColor,
-                )
+
+                Column(
+                    modifier = Modifier.padding(start = 20.dp)
+                ) {
+                    Text(
+                        text = stringResource(titleRes),
+                        style = MaterialTheme.typography.titleMediumEmphasized,
+                        color = contentColor,
+                    )
+                    Text(
+                        text = stringResource(descRes),
+                        style = MaterialTheme.typography.bodySmallEmphasized,
+                        color = contentColor,
+                    )
+                }
             }
         }
     }

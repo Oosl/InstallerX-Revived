@@ -14,17 +14,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SegmentedListItem
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -46,37 +42,40 @@ import androidx.compose.ui.zIndex
 import com.rosan.installer.R
 
 /**
- * A generic draggable list widget using [SegmentedListItem].
- * Handles drag-and-drop reordering logic and consistent styling.
+ * A draggable list widget that supports item reordering.
+ *
+ * When the list is empty, an empty-state [BaseWidget] is shown.
+ * When the list contains a single item, it is rendered as a [BaseWidget].
+ * When the list contains multiple items, they are rendered as segmented list items
+ * and can be reordered by long-press dragging.
  *
  * @param T The type of items in the list.
  * @param modifier The modifier to be applied to the list.
  * @param items The list of items to display.
- * @param itemKey A function to provide a unique key for each item.
- * @param itemName A function to get the display name of an item.
- * @param itemDescription A function to get the display description of an item.
- * @param leadingIcon The icon to display at the start of each item.
+ * @param itemKey A function that provides a unique key for each item.
+ * @param itemName A function that returns the display name of an item.
+ * @param itemDescription A function that returns the display description of an item.
+ * @param leadingIcon The icon displayed at the start of each item.
  * @param onMove Callback invoked when an item is moved to a new position.
- * @param onRemove Callback invoked when an item is removed.
- * @param noContentTitle Title to show when the list is empty.
- * @param noContentDescription Description to show when the list is empty.
- * @param bottomBarContent Content to display below the list (e.g., an "Add" button).
+ * @param noContentTitle Title shown when the list is empty.
+ * @param noContentDescription Optional description shown when the list is empty.
+ * @param trailingContent Optional content displayed at the end of each item.
+ * @param bottomBarContent Optional content displayed below the list.
  */
 @Composable
-fun <T> DraggableManagedList(
+fun <T> DraggableList(
     modifier: Modifier = Modifier,
     items: List<T>,
     itemKey: (T) -> Any,
     itemName: (T) -> String,
     itemDescription: (T) -> String,
-    leadingIcon: ImageVector,
+    leadingIcon: ImageVector? = null,
     onMove: (from: Int, to: Int) -> Unit,
-    onRemove: (T) -> Unit,
     noContentTitle: String,
-    noContentDescription: String = stringResource(R.string.config_add_one_to_get_started),
-    bottomBarContent: @Composable () -> Unit = {}
+    noContentDescription: String? = stringResource(R.string.config_add_one_to_get_started),
+    trailingContent: (@Composable (item: T) -> Unit)? = null,
+    bottomBarContent: (@Composable () -> Unit)? = null
 ) {
-    var showDeleteConfirmation by remember { mutableStateOf<T?>(null) }
     var isWaitingForUpdate by remember { mutableStateOf(false) }
     var localItems by remember { mutableStateOf(items) }
 
@@ -118,21 +117,15 @@ fun <T> DraggableManagedList(
                 title = itemName(item),
                 description = itemDescription(item),
                 icon = leadingIcon,
+                iconPlaceholder = leadingIcon != null,
                 iconColor = MaterialTheme.colorScheme.primary,
-                content = {
-                    IconButton(onClick = { showDeleteConfirmation = item }) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = stringResource(R.string.delete),
-                            tint = MaterialTheme.colorScheme.error
-                        )
-                    }
-                }
+                content = { trailingContent?.invoke(item) }
             )
         } else {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .zIndex(if (draggedIndex != null) 1f else 0f)
                     .pointerInput(Unit) {
                         detectDragGesturesAfterLongPress(
                             onDragStart = { offset ->
@@ -203,7 +196,8 @@ fun <T> DraggableManagedList(
                             shapes = ListItemDefaults.segmentedShapes(index, localItems.size),
                             colors = ListItemDefaults.segmentedColors(
                                 containerColor = MaterialTheme.colorScheme.surfaceBright,
-                                contentColor = MaterialTheme.colorScheme.onSurface
+                                contentColor = MaterialTheme.colorScheme.onSurface,
+                                leadingContentColor = MaterialTheme.colorScheme.primary
                             ),
                             elevation = ListItemDefaults.elevation(0.dp, 6.dp),
                             interactionSource = interactionSource,
@@ -213,12 +207,8 @@ fun <T> DraggableManagedList(
                                 .graphicsLayer { this.translationY = finalTranslationY },
                             content = { Text(itemName(item)) },
                             supportingContent = { Text(itemDescription(item)) },
-                            leadingContent = { Icon(leadingIcon, null, tint = MaterialTheme.colorScheme.primary) },
-                            trailingContent = {
-                                IconButton(onClick = { showDeleteConfirmation = item }) {
-                                    Icon(Icons.Default.Delete, stringResource(R.string.delete), tint = MaterialTheme.colorScheme.error)
-                                }
-                            }
+                            leadingContent = leadingIcon?.let { icon -> { Icon(icon, null) } },
+                            trailingContent = { trailingContent?.invoke(item) }
                         )
                     }
                 }
@@ -226,30 +216,10 @@ fun <T> DraggableManagedList(
         }
 
         // Bottom Bar (Add button, info text, etc.)
-        Box(modifier = Modifier.fillMaxWidth()) {
-            bottomBarContent()
-        }
-    }
-
-    // Common Delete Dialog
-    showDeleteConfirmation?.let { item ->
-        AlertDialog(
-            onDismissRequest = { showDeleteConfirmation = null },
-            title = { Text(stringResource(R.string.config_confirm_deletion)) },
-            text = { Text(stringResource(R.string.config_confirm_deletion_desc, itemName(item))) },
-            confirmButton = {
-                TextButton(onClick = {
-                    onRemove(item)
-                    showDeleteConfirmation = null
-                }) {
-                    Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteConfirmation = null }) {
-                    Text(stringResource(R.string.cancel))
-                }
+        bottomBarContent?.let { content ->
+            Box(modifier = Modifier.fillMaxWidth()) {
+                content()
             }
-        )
+        }
     }
 }

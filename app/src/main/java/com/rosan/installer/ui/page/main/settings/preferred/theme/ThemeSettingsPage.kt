@@ -263,6 +263,18 @@ fun ThemeSettingsPage(
                             onClick = onClick
                         )
                     }
+                    // Option 3: Floating Bottom Bar
+                    item {
+                        SwitchWidget(
+                            iconPlaceholder = false,
+                            title = stringResource(R.string.theme_settings_use_apple_floating_bar),
+                            description = stringResource(R.string.theme_settings_use_apple_floating_bar_desc),
+                            checked = uiState.useAppleFloatingBar,
+                            onCheckedChange = {
+                                viewModel.dispatch(ThemeSettingsAction.SetUseAppleFloatingBar(it))
+                            }
+                        )
+                    }
                 }
             }
 
@@ -296,7 +308,7 @@ fun ThemeSettingsPage(
                                 ThemeMode.SYSTEM -> stringResource(R.string.theme_settings_theme_mode_system)
                             },
                             onClick = { showThemeModeDialog = true }
-                        ) {}
+                        )
                     }
                     item {
                         BaseWidget(
@@ -304,7 +316,7 @@ fun ThemeSettingsPage(
                             title = stringResource(R.string.theme_settings_palette_style),
                             description = uiState.paletteStyle.displayName,
                             onClick = { showPaletteDialog = true }
-                        ) {}
+                        )
                     }
                     item { ColorSpecSelector(viewModel) }
                     item {

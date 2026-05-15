@@ -36,6 +36,7 @@ import androidx.compose.ui.state.ToggleableState
 @Composable
 fun SwitchWidget(
     icon: ImageVector? = null,
+    iconPlaceholder: Boolean = true,
     title: String,
     description: String? = null,
     enabled: Boolean = true,
@@ -66,6 +67,7 @@ fun SwitchWidget(
             toggleableState = if (checked) ToggleableState.On else ToggleableState.Off
         },
         icon = icon,
+        iconPlaceholder = iconPlaceholder,
         title = title,
         enabled = enabled,
         isError = isError,
