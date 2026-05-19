@@ -4,6 +4,9 @@ package com.rosan.installer.ui.page.main.settings.config.edit
 
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -13,8 +16,11 @@ import androidx.compose.material.icons.twotone.Edit
 import androidx.compose.material.icons.twotone.Memory
 import androidx.compose.material.icons.twotone.Speed
 import androidx.compose.material.icons.twotone.Terminal
+import androidx.compose.material3.DropdownMenuGroup
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.DropdownMenuPopup
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
@@ -30,8 +36,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.PopupProperties
 import com.rosan.installer.R
 import com.rosan.installer.domain.device.provider.DeviceCapabilityProvider
 import com.rosan.installer.domain.settings.model.Authorizer
@@ -40,6 +49,7 @@ import com.rosan.installer.domain.settings.model.InstallMode
 import com.rosan.installer.domain.settings.model.InstallReason
 import com.rosan.installer.domain.settings.model.InstallerMode
 import com.rosan.installer.domain.settings.model.PackageSource
+import com.rosan.installer.domain.settings.model.ToastMode
 import com.rosan.installer.ui.icons.AppIcons
 import com.rosan.installer.ui.page.main.widget.setting.BaseItemContainer
 import com.rosan.installer.ui.page.main.widget.setting.DropDownMenuWidget
@@ -220,16 +230,28 @@ fun DataInstallModeWidget(state: EditViewState, dispatch: (EditViewAction) -> Un
 }
 
 @Composable
-fun DataShowToastWidget(state: EditViewState, dispatch: (EditViewAction) -> Unit) {
-    SwitchWidget(
-        icon = AppIcons.Toast,
-        title = stringResource(id = R.string.config_install_show_toast),
-        description = stringResource(R.string.config_install_show_toast_desc),
-        checked = state.data.showToast,
-        onCheckedChange = {
-            dispatch(EditViewAction.ChangeDataShowToast(it))
-        }
+fun DataToastModeWidget(
+    state: EditViewState,
+    dispatch: (EditViewAction) -> Unit
+) {
+    val currentMode = state.data.toastMode
+    val data = mapOf(
+        ToastMode.Disable to stringResource(R.string.config_toast_mode_disable),
+        ToastMode.BackgroundOnly to stringResource(R.string.config_toast_mode_background_only),
+        ToastMode.Always to stringResource(R.string.config_toast_mode_always)
     )
+
+    DropDownMenuWidget(
+        icon = AppIcons.Toast,
+        title = stringResource(R.string.config_install_show_toast),
+        description = data[currentMode],
+        choice = data.keys.toList().indexOf(currentMode),
+        data = data.values.toList(),
+    ) { index ->
+        data.keys.toList().getOrNull(index)?.let { mode ->
+            dispatch(EditViewAction.ChangeDataToastMode(mode))
+        }
+    }
 }
 
 // Extension to integrate directly with the physics layout engine
@@ -355,37 +377,38 @@ fun SegmentedColumnScope.dataInstallRequesterWidget(
                 isError = isError
             )
         },
-        bottomContent = { bottomShape ->
-            OutlinedTextField(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp, horizontal = 16.dp)
-                    .focusable(),
-                value = packageName,
-                onValueChange = { dispatch(EditViewAction.ChangeDataInstallRequester(it)) },
-                shape = bottomShape, // Explicitly pass the dynamically injected shape
-                label = { Text(text = stringResource(id = R.string.config_install_requester)) },
-                leadingIcon = {
-                    Icon(imageVector = AppIcons.InstallSourceInput, contentDescription = null)
-                },
-                singleLine = true,
-                isError = isPackageNotFound || (isError && packageName.isEmpty()),
-                supportingText = {
-                    if (packageName.isNotEmpty()) {
-                        if (uid != null) {
-                            Text(
-                                text = "UID: $uid",
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        } else {
-                            Text(
-                                text = stringResource(R.string.config_error_package_not_found),
-                                color = MaterialTheme.colorScheme.error
-                            )
-                        }
-                    } else stringResource(R.string.config_error_package_name_empty)
-                }
-            )
+        bottomContent = {
+            BaseItemContainer {
+                OutlinedTextField(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp, horizontal = 16.dp)
+                        .focusable(),
+                    value = packageName,
+                    onValueChange = { dispatch(EditViewAction.ChangeDataInstallRequester(it)) },
+                    label = { Text(text = stringResource(id = R.string.config_install_requester)) },
+                    leadingIcon = {
+                        Icon(imageVector = AppIcons.InstallSourceInput, contentDescription = null)
+                    },
+                    singleLine = true,
+                    isError = isPackageNotFound || (isError && packageName.isEmpty()),
+                    supportingText = {
+                        if (packageName.isNotEmpty()) {
+                            if (uid != null) {
+                                Text(
+                                    text = "UID: $uid",
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            } else {
+                                Text(
+                                    text = stringResource(R.string.config_error_package_not_found),
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        } else stringResource(R.string.config_error_package_name_empty)
+                    }
+                )
+            }
         }
     )
 }
@@ -439,7 +462,7 @@ fun SegmentedColumnScope.dataDeclareInstallerWidget(state: EditViewState, dispat
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun DataInstallerWidget(state: EditViewState, dispatch: (EditViewAction) -> Unit) {
     val stateData = state.data
@@ -450,6 +473,11 @@ fun DataInstallerWidget(state: EditViewState, dispatch: (EditViewAction) -> Unit
     val matchingPackage = remember(currentInstaller, managedPackages) {
         managedPackages.find { it.packageName == currentInstaller }
     }
+
+    val layoutDirection = LocalLayoutDirection.current
+    val leftCutoutOffset = WindowInsets.displayCutout
+        .asPaddingValues()
+        .calculateLeftPadding(layoutDirection)
 
     BaseItemContainer {
         ExposedDropdownMenuBox(
@@ -468,8 +496,6 @@ fun DataInstallerWidget(state: EditViewState, dispatch: (EditViewAction) -> Unit
                 onValueChange = {
                     dispatch(EditViewAction.ChangeDataInstaller(it))
                 },
-                // Removed the shape parameter to use the default OutlinedTextField border,
-                // matching the style of DataNameWidget.
                 label = { Text(text = stringResource(id = R.string.config_installer)) },
                 leadingIcon = {
                     Icon(imageVector = AppIcons.InstallSourceInput, contentDescription = null)
@@ -486,29 +512,40 @@ fun DataInstallerWidget(state: EditViewState, dispatch: (EditViewAction) -> Unit
                 isError = stateData.errorInstaller
             )
 
-            ExposedDropdownMenu(
+            DropdownMenuPopup(
                 expanded = expanded,
-                onDismissRequest = { expanded = false }
+                onDismissRequest = { expanded = false },
+                modifier = Modifier.exposedDropdownSize(),
+                offset = DpOffset(x = leftCutoutOffset, y = 0.dp),
+                properties = PopupProperties(
+                    focusable = true,
+                    clippingEnabled = false
+                )
             ) {
-                if (managedPackages.isEmpty()) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.config_no_managed_packages_to_suggest)) },
-                        onClick = { expanded = false },
-                        enabled = false
-                    )
-                } else {
-                    managedPackages.forEach { item ->
-                        val isSelected = currentInstaller == item.packageName
+                DropdownMenuGroup(
+                    shapes = MenuDefaults.groupShapes()
+                ) {
+                    if (managedPackages.isEmpty()) {
                         DropdownMenuItem(
-                            text = { Text("${item.name} (${item.packageName})") },
-                            onClick = {
-                                dispatch(EditViewAction.ChangeDataInstaller(item.packageName))
-                                expanded = false
-                            },
-                            colors = if (isSelected) MenuDefaults.itemColors(
-                                textColor = MaterialTheme.colorScheme.primary
-                            ) else MenuDefaults.itemColors()
+                            text = { Text(stringResource(R.string.config_no_managed_packages_to_suggest)) },
+                            onClick = { expanded = false },
+                            enabled = false,
+                            shape = MenuDefaults.standaloneItemShape
                         )
+                    } else {
+                        val count = managedPackages.size
+                        managedPackages.forEachIndexed { index, item ->
+                            val isSelected = currentInstaller == item.packageName
+                            DropdownMenuItem(
+                                selected = isSelected,
+                                onClick = {
+                                    dispatch(EditViewAction.ChangeDataInstaller(item.packageName))
+                                    expanded = false
+                                },
+                                text = { Text("${item.name} (${item.packageName})") },
+                                shapes = MenuDefaults.itemShape(index = index, count = count)
+                            )
+                        }
                     }
                 }
             }
