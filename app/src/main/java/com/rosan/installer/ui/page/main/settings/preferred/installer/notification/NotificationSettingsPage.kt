@@ -18,8 +18,6 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.twotone.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.MaterialTheme
@@ -41,10 +39,9 @@ import com.rosan.installer.R
 import com.rosan.installer.domain.device.provider.DeviceCapabilityProvider
 import com.rosan.installer.ui.icons.AppIcons
 import com.rosan.installer.ui.navigation.LocalNavigator
-import com.rosan.installer.ui.page.main.settings.preferred.AutoClearNotificationTimeWidget
-import com.rosan.installer.ui.page.main.widget.setting.AppBackButton
 import com.rosan.installer.ui.page.main.widget.setting.BaseItemContainer
 import com.rosan.installer.ui.page.main.widget.setting.DropDownMenuWidget
+import com.rosan.installer.ui.page.main.widget.setting.ExpressiveBackButton
 import com.rosan.installer.ui.page.main.widget.setting.IntNumberPickerWidget
 import com.rosan.installer.ui.page.main.widget.setting.SegmentedColumn
 import com.rosan.installer.ui.page.main.widget.setting.SwitchWidget
@@ -116,12 +113,7 @@ fun NotificationSettingsPage(
                 },
                 navigationIcon = {
                     Row {
-                        AppBackButton(
-                            onClick = { navigator.pop() },
-                            icon = Icons.AutoMirrored.TwoTone.ArrowBack,
-                            modifier = Modifier.size(36.dp),
-                            containerColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.1f)
-                        )
+                        ExpressiveBackButton { navigator.pop() }
                         Spacer(modifier = Modifier.size(16.dp))
                     }
                 },
@@ -233,4 +225,51 @@ fun NotificationSettingsPage(
             item { Spacer(Modifier.navigationBarsPadding()) }
         }
     }
+}
+
+/**
+ * A DropDownMenuWidget for selecting the auto-clear time for success notifications.
+ */
+@Composable
+private fun AutoClearNotificationTimeWidget(
+    currentValue: Int,
+    onValueChange: (Int) -> Unit
+) {
+    val options = remember { listOf(0, 3, 5, 10, 15, 20, 30) }
+
+    val selectedIndex = remember(currentValue, options) {
+        options.indexOf(currentValue).coerceAtLeast(0)
+    }
+    val currentOption = options.getOrElse(selectedIndex) { 0 }
+
+    val descriptionText = if (currentOption == 0) {
+        stringResource(R.string.installer_settings_auto_clear_time_never_desc)
+    } else {
+        stringResource(
+            R.string.installer_settings_auto_clear_time_seconds_format_desc,
+            currentOption
+        )
+    }
+
+    val dropdownItems = options.map { time ->
+        if (time == 0) {
+            stringResource(R.string.installer_settings_auto_clear_time_never)
+        } else {
+            stringResource(R.string.installer_settings_auto_clear_time_seconds_format, time)
+        }
+    }
+
+    DropDownMenuWidget(
+        icon = AppIcons.Timer,
+        title = stringResource(id = R.string.installer_settings_auto_clear_success_notification),
+        description = descriptionText,
+        choice = selectedIndex,
+        data = dropdownItems,
+        onChoiceChange = { newIndex ->
+            val newValue = options.getOrElse(newIndex) { 0 }
+            if (currentValue != newValue) {
+                onValueChange(newValue)
+            }
+        }
+    )
 }

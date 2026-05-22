@@ -3,6 +3,10 @@
 package com.rosan.installer.ui.page.main.settings.preferred.uninstaller
 
 import android.content.Intent
+import androidx.biometric.BiometricManager
+import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
+import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_WEAK
+import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -18,8 +22,6 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.twotone.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.LargeFlexibleTopAppBar
@@ -42,21 +44,20 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rosan.installer.R
+import com.rosan.installer.data.engine.executor.PackageManagerUtil
 import com.rosan.installer.ui.activity.UninstallerActivity
 import com.rosan.installer.ui.icons.AppIcons
 import com.rosan.installer.ui.navigation.LocalNavigator
-import com.rosan.installer.ui.page.main.settings.preferred.SettingsNavigationItemWidget
-import com.rosan.installer.ui.page.main.settings.preferred.UninstallForAllUsersWidget
-import com.rosan.installer.ui.page.main.settings.preferred.UninstallKeepDataWidget
-import com.rosan.installer.ui.page.main.settings.preferred.UninstallRequireBiometricAuthWidget
-import com.rosan.installer.ui.page.main.settings.preferred.UninstallSystemAppWidget
 import com.rosan.installer.ui.page.main.widget.card.InfoTipCard
 import com.rosan.installer.ui.page.main.widget.dialog.UninstallPackageDialog
-import com.rosan.installer.ui.page.main.widget.setting.AppBackButton
+import com.rosan.installer.ui.page.main.widget.setting.ExpressiveBackButton
+import com.rosan.installer.ui.page.main.widget.setting.NavigationItemWidget
 import com.rosan.installer.ui.page.main.widget.setting.SegmentedColumn
+import com.rosan.installer.ui.page.main.widget.setting.SwitchWidget
 import com.rosan.installer.ui.theme.getMaterial3AppBarColor
 import com.rosan.installer.ui.theme.installerMaterial3BlurEffect
 import com.rosan.installer.ui.theme.rememberMaterial3BlurBackdrop
+import com.rosan.installer.util.hasFlag
 import com.rosan.installer.util.toast
 import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.blur.layerBackdrop
@@ -118,12 +119,7 @@ fun UninstallerGlobalSettingsPage(
                 },
                 navigationIcon = {
                     Row {
-                        AppBackButton(
-                            onClick = { navigator.pop() },
-                            icon = Icons.AutoMirrored.TwoTone.ArrowBack,
-                            modifier = Modifier.size(36.dp),
-                            containerColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.1f)
-                        )
+                        ExpressiveBackButton { navigator.pop() }
                         Spacer(modifier = Modifier.size(16.dp))
                     }
                 },
@@ -153,10 +149,58 @@ fun UninstallerGlobalSettingsPage(
                 SegmentedColumn(
                     title = stringResource(R.string.global)
                 ) {
-                    item { UninstallKeepDataWidget(viewModel) }
-                    item { UninstallForAllUsersWidget(viewModel) }
-                    item { UninstallSystemAppWidget(viewModel) }
-                    item { UninstallRequireBiometricAuthWidget(viewModel) }
+                    item {
+                        SwitchWidget(
+                            icon = AppIcons.Save,
+                            title = stringResource(id = R.string.uninstall_keep_data),
+                            description = stringResource(id = R.string.uninstall_keep_data_desc),
+                            checked = uiState.uninstallFlags.hasFlag(PackageManagerUtil.DELETE_KEEP_DATA),
+                            onCheckedChange = {
+                                viewModel.dispatch(UninstallerSettingsAction.ToggleGlobalUninstallFlag(PackageManagerUtil.DELETE_KEEP_DATA, it))
+                            }
+                        )
+                    }
+                    item {
+                        SwitchWidget(
+                            icon = AppIcons.InstallForAllUsers,
+                            title = stringResource(id = R.string.uninstall_all_users),
+                            description = stringResource(id = R.string.uninstall_all_users_desc),
+                            checked = uiState.uninstallFlags.hasFlag(PackageManagerUtil.DELETE_ALL_USERS),
+                            onCheckedChange = {
+                                viewModel.dispatch(UninstallerSettingsAction.ToggleGlobalUninstallFlag(PackageManagerUtil.DELETE_ALL_USERS, it))
+                            }
+                        )
+                    }
+                    item {
+                        SwitchWidget(
+                            icon = AppIcons.BugReport,
+                            title = stringResource(id = R.string.uninstall_delete_system_app),
+                            description = stringResource(id = R.string.uninstall_delete_system_app_desc),
+                            checked = uiState.uninstallFlags.hasFlag(PackageManagerUtil.DELETE_SYSTEM_APP),
+                            onCheckedChange = {
+                                viewModel.dispatch(
+                                    UninstallerSettingsAction.ToggleGlobalUninstallFlag(
+                                        PackageManagerUtil.DELETE_SYSTEM_APP,
+                                        it
+                                    )
+                                )
+                            }
+                        )
+                    }
+                    if (BiometricManager
+                            .from(context)
+                            .canAuthenticate(BIOMETRIC_WEAK or BIOMETRIC_STRONG or DEVICE_CREDENTIAL) == BiometricManager.BIOMETRIC_SUCCESS
+                    ) item {
+                        SwitchWidget(
+                            icon = AppIcons.BiometricAuth,
+                            title = stringResource(R.string.uninstaller_settings_require_biometric_auth),
+                            description = stringResource(R.string.uninstaller_settings_require_biometric_auth_desc),
+                            checked = uiState.uninstallerRequireBiometricAuth,
+                            onCheckedChange = {
+                                viewModel.dispatch(UninstallerSettingsAction.ChangeBiometricAuth(it))
+                            }
+                        )
+                    }
                 }
             }
 
@@ -166,7 +210,7 @@ fun UninstallerGlobalSettingsPage(
                     title = stringResource(R.string.uninstall_call_uninstaller)
                 ) {
                     item {
-                        SettingsNavigationItemWidget(
+                        NavigationItemWidget(
                             icon = AppIcons.Delete,
                             title = stringResource(R.string.uninstall_call_uninstaller_manually),
                             description = stringResource(R.string.uninstall_call_uninstaller_manually_desc)

@@ -327,7 +327,7 @@
     <string name="installer_install_failed">A telepítés sikertelen</string>
     <string name="installer_install_success">Sikeres telepítés</string>
     <string name="installer_install_complete">Telepítés befejezve</string>
-    <string name="installer_silent_install">Csendes telepítés</string>
+    <string name="installer_move_to_background">Csendes telepítés</string>
     <string name="installer_error_reason">Hiba oka</string>
     <string name="installer_unknown_error">Ismeretlen hiba</string>
     <string name="installer_notification_tap_to_disable">Előtérben megjelenő szolgáltatásértesítés, koppintson a letiltáshoz.</string>
@@ -501,8 +501,8 @@
     <string name="show_dialog_install_extended_menu">Bővített menü megjelenítése</string>
     <string name="show_dialog_install_extended_menu_desc">További lehetőségek megjelenítése a telepítési párbeszédpanelen</string>
     <string name="extended_menu">Bővített menü</string>
-    <string name="auto_silent_install">Automatikus csendes telepítés</string>
-    <string name="auto_silent_install_desc">Automatikus csendes telepítés a telepítési párbeszédpanel indításakor</string>
+    <string name="auto_background_install">Automatikus csendes telepítés</string>
+    <string name="auto_background_install_desc">Automatikus csendes telepítés a telepítési párbeszédpanel indításakor</string>
     <string name="disable_notification_on_dismiss">Párbeszédpanel bezárása</string>
     <string name="close_notification_immediately_on_dialog_dismiss">A párbeszédpanel bezárása csendben kilép</string>
     <string name="close_session_countdown">Visszaszámlálás beállítása</string>

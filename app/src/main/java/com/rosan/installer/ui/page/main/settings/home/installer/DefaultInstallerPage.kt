@@ -24,7 +24,6 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.twotone.ArrowBack
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
@@ -61,12 +60,11 @@ import com.rosan.installer.ui.navigation.LocalNavigator
 import com.rosan.installer.ui.page.main.settings.home.HomePageViewAction
 import com.rosan.installer.ui.page.main.settings.home.HomePageViewEvent
 import com.rosan.installer.ui.page.main.settings.home.HomePageViewModel
-import com.rosan.installer.ui.page.main.settings.preferred.AutoLockInstaller
-import com.rosan.installer.ui.page.main.settings.preferred.DefaultInstaller
 import com.rosan.installer.ui.page.main.widget.card.InfoTipCard
 import com.rosan.installer.ui.page.main.widget.card.TitleTipCard
 import com.rosan.installer.ui.page.main.widget.dialog.ErrorDisplayDialog
-import com.rosan.installer.ui.page.main.widget.setting.AppBackButton
+import com.rosan.installer.ui.page.main.widget.setting.BaseWidget
+import com.rosan.installer.ui.page.main.widget.setting.ExpressiveBackButton
 import com.rosan.installer.ui.page.main.widget.setting.SegmentedColumn
 import com.rosan.installer.ui.page.main.widget.setting.SwitchWidget
 import com.rosan.installer.ui.page.main.widget.snackbar.SwipeableSnackbarHost
@@ -136,12 +134,7 @@ fun DefaultInstallerPage(
                 },
                 navigationIcon = {
                     Row {
-                        AppBackButton(
-                            onClick = { navigator.pop() },
-                            icon = Icons.AutoMirrored.TwoTone.ArrowBack,
-                            modifier = Modifier.size(36.dp),
-                            containerColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.1f)
-                        )
+                        ExpressiveBackButton { navigator.pop() }
                         Spacer(modifier = Modifier.size(16.dp))
                     }
                 },
@@ -185,25 +178,33 @@ fun DefaultInstallerPage(
                     title = stringResource(R.string.basic)
                 ) {
                     item {
-                        AutoLockInstaller(
+                        SwitchWidget(
+                            icon = AppIcons.AutoLockDefault,
+                            title = stringResource(R.string.auto_lock_default_installer),
+                            description = stringResource(R.string.auto_lock_default_installer_desc),
                             checked = uiState.autoLockInstaller,
+                            enabled = uiState.globalAuthorizer != Authorizer.None
+                        ) { viewModel.dispatch(HomePageViewAction.ChangeAutoLockInstaller(it)) }
+                    }
+                    item {
+                        BaseWidget(
+                            icon = AppIcons.LockDefault,
+                            title = stringResource(R.string.lock_default_installer),
+                            description = stringResource(R.string.lock_default_installer_desc),
                             enabled = uiState.globalAuthorizer != Authorizer.None,
-                            onCheckedChange = {
-                                viewModel.dispatch(HomePageViewAction.ChangeAutoLockInstaller(it))
-                            }
+                            onClick = { viewModel.dispatch(HomePageViewAction.SetDefaultInstaller(true)) }
                         )
                     }
                     item {
-                        DefaultInstaller(
-                            lock = true,
-                            enabled = uiState.globalAuthorizer != Authorizer.None
-                        ) { viewModel.dispatch(HomePageViewAction.SetDefaultInstaller(true)) }
-                    }
-                    item {
-                        DefaultInstaller(
-                            lock = false,
-                            enabled = uiState.globalAuthorizer != Authorizer.None
-                        ) { viewModel.dispatch(HomePageViewAction.SetDefaultInstaller(false)) }
+                        BaseWidget(
+                            icon = AppIcons.UnlockDefault,
+                            title =
+                                stringResource(R.string.unlock_default_installer),
+                            description =
+                                stringResource(R.string.unlock_default_installer_desc),
+                            enabled = uiState.globalAuthorizer != Authorizer.None,
+                            onClick = { viewModel.dispatch(HomePageViewAction.SetDefaultInstaller(false)) }
+                        )
                     }
                 }
             }
