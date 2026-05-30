@@ -205,7 +205,7 @@
     <string name="installer_settings_dialog_mode_options">Настройки диалога</string>
     <string name="installer_settings_global_installer">Основные</string>
     <string name="installer_settings_notification_mode_options">Настройки уведомления</string>
-    <string name="installer_move_to_background">Тихая установка</string>
+    <string name="installer_move_to_background">Запуск в фоновом режиме</string>
     <string name="installer_unknown_error">Неизвестная ошибка</string>
     <string name="installer_version">Версия: %1$s (%2$s)</string>
     <string name="installer_version2">%1$s (%2$s)</string>
@@ -646,7 +646,7 @@
     <string name="lab_http_profile_all">Разрешить всё (небезопасно)</string>
     <string name="lab_unstable_features">Нестабильные функции</string>
     <string name="lab_set_install_requester">Задать инициатора установки</string>
-    <string name="lab_set_install_requester_desc">При включении этой функции отображать настройки поля OriginatingUid в профилях</string>
+    <string name="lab_set_install_requester_desc">При включении станет доступна настройка инициатора установки в профилях</string>
     <string name="performance">Производительность</string>
     <string name="uninstaller_settings_desc">Изменить общие настройки деинсталлятора</string>
     <string name="open_source_license_settings_description">Просмотр сторонних библиотек с открытым исходным кодом и их лицензии</string>
@@ -657,7 +657,6 @@
     <string name="export_logs_desc">Отправить журнал событий приложения</string>
     <string name="theme_settings_use_blur">Эффект размытия</string>
     <string name="theme_settings_use_blur_desc">Включить эффект размытия в приложении</string>
-    <string name="theme_settings_use_blur_warning">Эффект размытия может работать нестабильно и вызывать проблемы на Android 11 и более ранних версиях. При возникновении проблем может потребоваться очистка данных приложения. Продолжить?</string>
     <string name="config_authorizer_none_system_app_tips">При использовании в качестве системного установщика большинство указанных опций не требуются.</string>
     <string name="config_auto_delete_zip">Автоудаление zip-файлов</string>
     <string name="config_auto_delete_zip_desc">Удалить архив с содержащимся в нем установочным пакетом.</string>

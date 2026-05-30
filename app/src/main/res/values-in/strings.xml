@@ -390,7 +390,7 @@
     <string name="exception_install_failed_invalid_apk">APK tidak sah (paket rusak). Silakan unduh ulang dan coba lagi</string>
     <string name="exception_install_failed_invalid_uri">URI tidak valid</string>
     <string name="exception_install_failed_insufficient_storage">Penyimpanan penuh, coba kosongkan ruang</string>
-    <string name="exception_install_failed_duplicate_package">Tanda tangan paket telah berubah, pastikan paket Anda aman dan hapus instalasi aplikasi, lalu coba lagi</string>
+    <string name="exception_install_failed_duplicate_package">Aplikasi dengan nama paket yang sama sudah ada</string>
     <string name="exception_install_failed_no_shared_user">File base.apk dengan UID yang cocok tidak dapat ditemukan, silakan unduh dan coba lagi</string>
     <string name="exception_install_failed_update_incompatible">Pembaruan tidak kompatibel, harap hapus instalasi dan coba lagi</string>
     <string name="exception_install_failed_shared_user_incompatible">Tanda tangan paket tidak cocok</string>
@@ -513,7 +513,6 @@
     <string name="export_logs_desc">Ekspor catatan aplikasi</string>
     <string name="theme_settings_use_blur">Aktifkan Blur</string>
     <string name="theme_settings_use_blur_desc">Aktifkan blur untuk aplikasi</string>
-    <string name="theme_settings_use_blur_warning">Efek blur mungkin tidak stabil dan menyebabkan masalah tak terduga pada Android 11 dan di bawahnya. Anda mungkin perlu menghapus data aplikasi jika masalah terjadi. Apakah Anda ingin melanjutkan?</string>
     <string name="config_authorizer_none_system_app_tips">Berjalan sebagai penginstal paket sistem, sebagian besar opsi tidak diperlukan.</string>
     <string name="config_auto_delete_zip">Hapus berkas zip secara otomatis</string>
     <string name="config_auto_delete_zip_desc">Selain menghapus paket instalasi, juga hapus file terkompresi yang berisi paket instalasi.</string>
@@ -830,4 +829,7 @@
     <string name="home_device_info_system">Sistem</string>
     <string name="home_device_info_active_authorizer">Authorizer yang digunakan</string>
     <string name="home_device_info_default_installer">Aktivitas Penginstal Default</string>
+    <string name="installer_settings_dialog_automation_options">Pilihan Otomatisasi</string>
+    <string name="long_click_background_install">Tekan lama untuk memasang di latar belakang</string>
+    <string name="long_click_background_install_desc">Latar belakang saat menekan lama tombol pasang</string>
 </resources>
