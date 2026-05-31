@@ -3,8 +3,8 @@
 package com.rosan.installer.ui.page.main.settings.home
 
 import com.rosan.installer.domain.device.model.ShizukuMode
-import com.rosan.installer.domain.settings.model.Authorizer
-import com.rosan.installer.domain.settings.model.RootMode
+import com.rosan.installer.domain.settings.model.config.Authorizer
+import com.rosan.installer.domain.settings.model.preferences.RootMode
 
 class HomePageViewState(
     val globalAuthorizer: Authorizer = Authorizer.Shizuku,
@@ -25,7 +25,8 @@ class HomePageViewState(
     val userSetLSPosedActive: Boolean = false,
     val autoLockInstaller: Boolean = false,
     val customizeAuthorizer: String = "",
-    val defaultInstaller: String = "Unknown"
+    val defaultInstaller: String = "Unknown",
+    val deviceName: String = ""
 ) {
     val activate: Boolean get() = isDefaultInstaller
 }

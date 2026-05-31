@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -30,6 +31,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -39,8 +42,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rosan.installer.R
 import com.rosan.installer.core.env.DeviceConfig
-import com.rosan.installer.domain.settings.model.Authorizer
-import com.rosan.installer.domain.settings.model.RootMode
+import com.rosan.installer.domain.settings.model.config.Authorizer
+import com.rosan.installer.domain.settings.model.preferences.RootMode
 import com.rosan.installer.ui.navigation.LocalNavigator
 import com.rosan.installer.ui.navigation.Route
 import com.rosan.installer.ui.page.main.settings.home.HomePageViewAction
@@ -83,6 +86,7 @@ fun MiuixHomePage(
 ) {
     val navigator = LocalNavigator.current
     val context = LocalContext.current
+    val uriHandler = LocalUriHandler.current
     val uiState by viewModel.state.collectAsStateWithLifecycle()
     val scrollBehavior = MiuixScrollBehavior()
     val layoutDirection = LocalLayoutDirection.current
@@ -147,7 +151,7 @@ fun MiuixHomePage(
                 Card(modifier = Modifier.padding(vertical = 12.dp)) {
                     BasicComponent(
                         title = stringResource(R.string.home_device_info_model),
-                        summary = DeviceConfig.deviceName
+                        summary = uiState.deviceName
                     )
                     BasicComponent(
                         title = stringResource(R.string.home_device_info_system),
@@ -189,6 +193,24 @@ fun MiuixHomePage(
                     )
                 }
             }
+
+            item {
+                Card(modifier = Modifier.padding(bottom = 12.dp)) {
+                    BasicComponent(
+                        title = stringResource(R.string.home_learn_more_installerx_title),
+                        summary = stringResource(R.string.home_learn_more_installerx_desc),
+                        endActions = {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_link_icon),
+                                contentDescription = null
+                            )
+                        },
+                        onClick = { uriHandler.openUri("https://wxxsfxyzm.github.io/InstallerX-Revived-Website/") }
+                    )
+                }
+            }
+
+            item { Spacer(modifier = Modifier.navigationBarsPadding()) }
         }
     }
 }

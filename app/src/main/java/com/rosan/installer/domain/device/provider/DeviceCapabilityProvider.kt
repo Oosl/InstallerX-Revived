@@ -3,7 +3,7 @@
 package com.rosan.installer.domain.device.provider
 
 import com.rosan.installer.domain.device.model.ShizukuMode
-import com.rosan.installer.domain.settings.model.RootMode
+import com.rosan.installer.domain.settings.model.preferences.RootMode
 import kotlinx.coroutines.flow.StateFlow
 
 interface DeviceCapabilityProvider {
@@ -16,6 +16,8 @@ interface DeviceCapabilityProvider {
     val isMIUI: Boolean
     val isSupportMiIsland: Boolean
     val oplusOSdkVersion: String?
+
+    val deviceName: String
 
     var isLSPosedActive: Boolean
 
