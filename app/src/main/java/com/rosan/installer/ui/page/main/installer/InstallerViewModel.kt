@@ -8,12 +8,15 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.rosan.installer.R
-import com.rosan.installer.domain.engine.model.packageinfo.AppEntity
-import com.rosan.installer.domain.engine.model.source.DataType
-import com.rosan.installer.domain.engine.model.packageinfo.PackageAnalysisResult
+import com.rosan.installer.core.bitmask.addFlag
+import com.rosan.installer.core.bitmask.hasFlag
+import com.rosan.installer.core.bitmask.removeFlag
 import com.rosan.installer.domain.engine.model.install.SessionMode
 import com.rosan.installer.domain.engine.model.install.UninstallFlags
 import com.rosan.installer.domain.engine.model.install.sourcePath
+import com.rosan.installer.domain.engine.model.packageinfo.AppEntity
+import com.rosan.installer.domain.engine.model.packageinfo.PackageAnalysisResult
+import com.rosan.installer.domain.engine.model.source.DataType
 import com.rosan.installer.domain.engine.usecase.GetAppIconColorUseCase
 import com.rosan.installer.domain.engine.usecase.GetAppIconUseCase
 import com.rosan.installer.domain.engine.usecase.GetAppLabelUseCase
@@ -27,9 +30,6 @@ import com.rosan.installer.domain.settings.model.config.InstallMode
 import com.rosan.installer.domain.settings.model.config.InstallerMode
 import com.rosan.installer.domain.settings.repository.AppSettingsRepository
 import com.rosan.installer.domain.settings.repository.BooleanSetting
-import com.rosan.installer.core.bitmask.addFlag
-import com.rosan.installer.core.bitmask.hasFlag
-import com.rosan.installer.core.bitmask.removeFlag
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.BufferOverflow
@@ -46,6 +46,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import kotlin.time.Duration.Companion.milliseconds
 
 class InstallerViewModel(
     private var session: InstallerSessionRepository,
@@ -267,12 +268,14 @@ class InstallerViewModel(
         if (session.config.enableCustomizeUser) loadAvailableUsers(session.config.authorizer)
 
         _localState.update {
+            val validPackages = session.analysisResults.map { res -> res.packageName }.toSet()
+            val analysedIcons = session.analysisResults.toDisplayIconMap()
             it.copy(
                 config = session.config,   // Synchronize the entire ConfigModel to UI state
                 currentPackageName = null,
                 initiatorAppLabel = null,  // Reset label on new session
                 analysisResults = session.analysisResults,
-                displayIcons = it.displayIcons.filterKeys { key -> key in session.analysisResults.map { res -> res.packageName } },
+                displayIcons = it.displayIcons.filterKeys { key -> key in validPackages } + analysedIcons,
                 error = session.error
             )
         }
@@ -298,7 +301,7 @@ class InstallerViewModel(
                         }
                     } else if (loadingStateJob == null || !loadingStateJob!!.isActive) {
                         loadingStateJob = viewModelScope.launch {
-                            delay(200L)
+                            delay(200L.milliseconds)
                             _localState.update {
                                 it.copy(stage = if (progress is ProgressEntity.InstallPreparing) InstallerStage.Preparing(progress.progress) else InstallerStage.Analysing)
                             }
@@ -316,9 +319,13 @@ class InstallerViewModel(
                         originalAnalysisResults = session.analysisResults
                     }
                     // Update state first
-                    _localState.update { it.copy(analysisResults = session.analysisResults) }
-                    // Trigger side effects (like loading icons) after the state is fully updated
-                    session.analysisResults.forEach { result -> loadDisplayIcon(result.packageName) }
+                    val analysedIcons = session.analysisResults.toDisplayIconMap()
+                    _localState.update {
+                        it.copy(
+                            analysisResults = session.analysisResults,
+                            displayIcons = it.displayIcons + analysedIcons
+                        )
+                    }
                 }
 
                 // Pass the current results to the pure mapper
@@ -426,7 +433,11 @@ class InstallerViewModel(
                                 // [Log] Check if ViewModel successfully resolved the entity
                                 Timber.d("ExtractColorTrace: ViewModel getting color for pkg=$newPackageName. Resolved entityToInstall: $entityToInstall")
 
-                                val colorInt = if (newStage is InstallerStage.InstallConfirm && newStage.appIcon != null) {
+                                val analysedResult = _localState.value.analysisResults
+                                    .find { it.packageName == newPackageName }
+                                val colorInt = if (analysedResult != null) {
+                                    analysedResult.seedColor
+                                } else if (newStage is InstallerStage.InstallConfirm && newStage.appIcon != null) {
                                     getAppIconColor(newStage.appIcon)
                                 } else {
                                     getAppIconColor(
@@ -447,7 +458,7 @@ class InstallerViewModel(
                 autoInstallJob?.cancel()
                 if (newStage is InstallerStage.InstallPrepare && session.config.installMode == InstallMode.AutoDialog) {
                     autoInstallJob = viewModelScope.launch {
-                        delay(500)
+                        delay(500.milliseconds)
                         if (_localState.value.stage is InstallerStage.InstallPrepare) install()
                     }
                 }
@@ -499,16 +510,27 @@ class InstallerViewModel(
 
     private fun loadDisplayIcon(packageName: String) {
         if (packageName.isBlank()) return
-        if (_localState.value.displayIcons[packageName] != null || iconJobs[packageName]?.isActive == true) return
+        if (_localState.value.displayIcons[packageName] != null) return
+
+        val analysedResult = _localState.value.analysisResults.find { it.packageName == packageName }
+        if (analysedResult != null) {
+            val analysedIcon = analysedResult.displayIcon?.asImageBitmap()
+            if (analysedIcon != null) {
+                _localState.update { it.copy(displayIcons = it.displayIcons + (packageName to analysedIcon)) }
+            }
+            return
+        }
+
+        if (iconJobs[packageName]?.isActive == true) return
+
+        val rawEntities = _localState.value.analysisResults.find { it.packageName == packageName }?.appEntities?.map { it.app }
+        val entityToInstall = rawEntities?.filterIsInstance<AppEntity.BaseEntity>()?.firstOrNull()
+            ?: rawEntities?.filterIsInstance<AppEntity.ModuleEntity>()?.firstOrNull()
 
         _localState.update { it.copy(displayIcons = it.displayIcons + (packageName to null)) }
 
         iconJobs[packageName]?.cancel()
         iconJobs[packageName] = viewModelScope.launch {
-            val rawEntities = _localState.value.analysisResults.find { it.packageName == packageName }?.appEntities?.map { it.app }
-            val entityToInstall = rawEntities?.filterIsInstance<AppEntity.BaseEntity>()?.firstOrNull()
-                ?: rawEntities?.filterIsInstance<AppEntity.ModuleEntity>()?.firstOrNull()
-
             val loadedIconBitmap = getAppIcon(
                 sessionId = session.id,
                 packageName = packageName,
@@ -518,12 +540,15 @@ class InstallerViewModel(
 
             val finalImageBitmap = loadedIconBitmap?.asImageBitmap()
 
-            _localState.update {
-                if (it.displayIcons[packageName] == null) it.copy(displayIcons = it.displayIcons + (packageName to finalImageBitmap))
-                else it
+            if (finalImageBitmap != null) {
+                _localState.update { it.copy(displayIcons = it.displayIcons + (packageName to finalImageBitmap)) }
             }
         }
     }
+
+    private fun List<PackageAnalysisResult>.toDisplayIconMap() = mapNotNull { result ->
+        result.displayIcon?.asImageBitmap()?.let { result.packageName to it }
+    }.toMap()
 
     private fun toast(message: String) = _uiEvents.tryEmit(InstallerViewEvent.ShowToast(message))
     private fun toast(@StringRes resId: Int) = _uiEvents.tryEmit(InstallerViewEvent.ShowToastRes(resId))
