@@ -3,11 +3,11 @@
 package com.rosan.installer.data.settings.local.room
 
 import androidx.room3.AutoMigration
+import androidx.room3.ColumnTypeConverters
 import androidx.room3.Database
 import androidx.room3.DeleteColumn
 import androidx.room3.Room
 import androidx.room3.RoomDatabase
-import androidx.room3.TypeConverters
 import androidx.room3.migration.AutoMigrationSpec
 import androidx.room3.migration.Migration
 import androidx.sqlite.SQLiteConnection
@@ -20,9 +20,9 @@ import com.rosan.installer.data.settings.local.room.entity.ConfigEntity
 import com.rosan.installer.data.settings.local.room.entity.OperationHistoryEntity
 import com.rosan.installer.data.settings.local.room.entity.converter.AuthorizerConverter
 import com.rosan.installer.data.settings.local.room.entity.converter.DexoptModeConverter
-import com.rosan.installer.data.settings.local.room.entity.converter.InstallRequesterModeConverter
 import com.rosan.installer.data.settings.local.room.entity.converter.InstallModeConverter
 import com.rosan.installer.data.settings.local.room.entity.converter.InstallReasonConverter
+import com.rosan.installer.data.settings.local.room.entity.converter.InstallRequesterModeConverter
 import com.rosan.installer.data.settings.local.room.entity.converter.InstallerModeConverter
 import com.rosan.installer.data.settings.local.room.entity.converter.PackageSourceConverter
 import com.rosan.installer.data.settings.local.room.entity.converter.StringListConverter
@@ -30,7 +30,7 @@ import com.rosan.installer.data.settings.local.room.entity.converter.ToastModeCo
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
 
-const val INSTALLER_ROOM_SCHEMA_VERSION = 16
+const val INSTALLER_ROOM_SCHEMA_VERSION = 17
 
 @Database(
     entities = [AppEntity::class, ConfigEntity::class, OperationHistoryEntity::class],
@@ -49,9 +49,10 @@ const val INSTALLER_ROOM_SCHEMA_VERSION = 16
         AutoMigration(from = 13, to = 14),
         AutoMigration(from = 14, to = 15),
         AutoMigration(from = 15, to = 16),
+        AutoMigration(from = 16, to = 17),
     ]
 )
-@TypeConverters(
+@ColumnTypeConverters(
     AuthorizerConverter::class,
     InstallModeConverter::class,
     InstallRequesterModeConverter::class,

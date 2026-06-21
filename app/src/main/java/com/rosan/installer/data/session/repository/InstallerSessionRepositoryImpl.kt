@@ -3,16 +3,20 @@
 package com.rosan.installer.data.session.repository
 
 import android.app.Activity
+import android.content.IntentSender
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.rosan.installer.domain.engine.model.source.DataEntity
 import com.rosan.installer.domain.engine.model.packageinfo.PackageAnalysisResult
 import com.rosan.installer.domain.session.model.ConfirmationDetails
+import com.rosan.installer.domain.session.model.ConfirmationRequestType
 import com.rosan.installer.domain.session.model.InstallResult
 import com.rosan.installer.domain.session.model.ProgressEntity
 import com.rosan.installer.domain.session.model.SelectInstallEntity
 import com.rosan.installer.domain.session.model.UninstallInfo
+import com.rosan.installer.domain.session.model.UnarchiveErrorInfo
+import com.rosan.installer.domain.session.model.UnarchiveInfo
 import com.rosan.installer.domain.session.repository.InstallerSessionRepository
 import com.rosan.installer.domain.settings.model.config.ConfigModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -32,8 +36,10 @@ class InstallerSessionRepositoryImpl(
     override var config: ConfigModel = ConfigModel.default
     override var data: List<DataEntity> by mutableStateOf(emptyList())
     override var sourceUris: List<String> by mutableStateOf(emptyList())
+    override var referrerUri: String? by mutableStateOf(null)
     override var analysisResults: List<PackageAnalysisResult> by mutableStateOf(emptyList())
     override val progress: MutableSharedFlow<ProgressEntity> = MutableStateFlow(ProgressEntity.Ready)
+    override val toastEvents: MutableSharedFlow<String> = MutableSharedFlow(extraBufferCapacity = 16)
 
     // Action flow for communication with Handlers
     val action: MutableSharedFlow<Action> = MutableSharedFlow(replay = 1, extraBufferCapacity = 1)
@@ -45,6 +51,8 @@ class InstallerSessionRepositoryImpl(
     override var moduleLog: List<String> = emptyList()
     override val uninstallInfo: MutableStateFlow<UninstallInfo?> = MutableStateFlow(null)
     override val confirmationDetails: MutableStateFlow<ConfirmationDetails?> = MutableStateFlow(null)
+    override val unarchiveInfo: MutableStateFlow<UnarchiveInfo?> = MutableStateFlow(null)
+    override val unarchiveErrorInfo: MutableStateFlow<UnarchiveErrorInfo?> = MutableStateFlow(null)
 
     override fun resolveInstall(activity: Activity) {
         Timber.d("[id=$id] resolve() called. Emitting Action.Resolve.")
@@ -61,13 +69,13 @@ class InstallerSessionRepositoryImpl(
         action.tryEmit(Action.Install(triggerAuth))
     }
 
-    override fun installMultiple(entities: List<SelectInstallEntity>) {
+    override fun installMultiple(entities: List<SelectInstallEntity>, triggerAuth: Boolean) {
         Timber.d("[id=$id] installMultiple() called. Queue size: ${entities.size}")
         multiInstallQueue = entities
         multiInstallResults.clear()
         currentMultiInstallIndex = 0
 
-        action.tryEmit(Action.InstallMultiple)
+        action.tryEmit(Action.InstallMultiple(triggerAuth))
     }
 
     override fun resolveUninstall(activity: Activity, packageName: String) {
@@ -83,14 +91,38 @@ class InstallerSessionRepositoryImpl(
         action.tryEmit(Action.Uninstall(packageName))
     }
 
-    override fun resolveConfirmInstall(activity: Activity, sessionId: Int) {
-        Timber.d("[id=$id] resolveConfirmInstall() called for session $sessionId. Emitting Action.ResolveConfirmInstall.")
-        action.tryEmit(Action.ResolveConfirmInstall(activity, sessionId))
+    override fun resolveConfirmInstall(
+        activity: Activity,
+        sessionId: Int,
+        requestType: ConfirmationRequestType
+    ) {
+        Timber.d("[id=$id] resolveConfirmInstall() called for session $sessionId, type=$requestType. Emitting Action.ResolveConfirmInstall.")
+        action.tryEmit(Action.ResolveConfirmInstall(activity, sessionId, requestType))
     }
 
     override fun approveConfirmation(sessionId: Int, granted: Boolean) {
         Timber.d("[id=$id] approveConfirmation() called for session $sessionId, granted: $granted.")
         action.tryEmit(Action.ApproveSession(sessionId, granted))
+    }
+
+    override fun resolveUnarchive(activity: Activity, packageName: String, intentSender: IntentSender) {
+        Timber.d("[id=$id] resolveUnarchive() called for $packageName. Emitting Action.ResolveUnarchive.")
+        action.tryEmit(Action.ResolveUnarchive(activity, packageName, intentSender))
+    }
+
+    override fun startUnarchive() {
+        Timber.d("[id=$id] startUnarchive() called. Emitting Action.StartUnarchive.")
+        action.tryEmit(Action.StartUnarchive)
+    }
+
+    override fun resolveUnarchiveError(activity: Activity, info: UnarchiveErrorInfo) {
+        Timber.d("[id=$id] resolveUnarchiveError() called with status ${info.status}. Emitting Action.ResolveUnarchiveError.")
+        action.tryEmit(Action.ResolveUnarchiveError(activity, info))
+    }
+
+    override fun openUnarchiveErrorAction() {
+        Timber.d("[id=$id] openUnarchiveErrorAction() called. Emitting Action.OpenUnarchiveErrorAction.")
+        action.tryEmit(Action.OpenUnarchiveErrorAction)
     }
 
     override fun reboot(reason: String) {
@@ -117,21 +149,15 @@ class InstallerSessionRepositoryImpl(
             action.tryEmit(Action.Finish)
 
             // 2. Trigger the callback to remove from SessionManager
-            // We run this slightly later or immediately depending on requirements.
-            // Here we run it immediately to ensure Manager is clean.
             onClose()
-
-            // 3. Mark progress as finished (if not already) to satisfy Service collection loop
-            // This acts as a fallback if the Action.Finish handler didn't set Progress.
-            // (Optional, depends on your ProgressHandler logic)
         } else {
             Timber.w("[id=$id] close() called on an already closed instance.")
         }
     }
 
-    sealed class Action {
-        data class ResolveInstall(val activity: Activity) : Action()
-        data object Analyse : Action()
+    sealed interface Action {
+        data class ResolveInstall(val activity: Activity) : Action
+        data object Analyse : Action
 
         /**
          * Install single module/apk
@@ -142,7 +168,7 @@ class InstallerSessionRepositoryImpl(
          * @see com.rosan.installer.ui.page.main.installer.InstallerViewAction.Install
          * @see com.rosan.installer.data.session.handler.ActionHandler.handleSingleInstall
          */
-        data class Install(val triggerAuth: Boolean) : Action()
+        data class Install(val triggerAuth: Boolean) : Action
 
         /**
          * Install multiple module/apk
@@ -151,17 +177,32 @@ class InstallerSessionRepositoryImpl(
          * @see com.rosan.installer.ui.page.main.installer.InstallerViewAction.InstallMultiple
          * @see com.rosan.installer.data.session.handler.ActionHandler.handleMultiInstall
          */
-        data object InstallMultiple : Action()
-        data class ResolveUninstall(val activity: Activity, val packageName: String) : Action()
-        data class Uninstall(val packageName: String) : Action()
-        data class ResolveConfirmInstall(val activity: Activity, val sessionId: Int) : Action()
-        data class ApproveSession(val sessionId: Int, val granted: Boolean) : Action()
+        data class InstallMultiple(val triggerAuth: Boolean) : Action
+        data class ResolveUninstall(val activity: Activity, val packageName: String) : Action
+        data class Uninstall(val packageName: String) : Action
+        data class ResolveConfirmInstall(
+            val activity: Activity,
+            val sessionId: Int,
+            val requestType: ConfirmationRequestType
+        ) : Action
+        data class ApproveSession(val sessionId: Int, val granted: Boolean) : Action
+        data class ResolveUnarchive(
+            val activity: Activity,
+            val packageName: String,
+            val intentSender: IntentSender
+        ) : Action
+        data object StartUnarchive : Action
+        data class ResolveUnarchiveError(
+            val activity: Activity,
+            val info: UnarchiveErrorInfo
+        ) : Action
+        data object OpenUnarchiveErrorAction : Action
 
         /**
          * Action to trigger device reboot after cleanup.
          */
-        data class Reboot(val reason: String) : Action()
-        data object Cancel : Action()
-        data object Finish : Action()
+        data class Reboot(val reason: String) : Action
+        data object Cancel : Action
+        data object Finish : Action
     }
 }

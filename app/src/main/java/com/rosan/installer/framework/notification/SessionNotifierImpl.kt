@@ -48,6 +48,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import kotlin.reflect.KClass
+import kotlin.time.Duration.Companion.milliseconds
 
 class SessionNotifierImpl(
     private val context: Context,
@@ -157,7 +158,7 @@ class SessionNotifierImpl(
             val ticker = flow {
                 while (true) {
                     emit(Unit)
-                    delay(200)
+                    delay(200.milliseconds)
                 }
             }
 
@@ -215,7 +216,7 @@ class SessionNotifierImpl(
 
                         val elapsedTime = System.currentTimeMillis() - sessionStartTime
                         if (elapsedTime < MINIMUM_VISIBILITY_DURATION_MS && progress !is ProgressEntity.Finish && progress !is ProgressEntity.InstallSuccess && progress !is ProgressEntity.InstallCompleted) {
-                            delay(MINIMUM_VISIBILITY_DURATION_MS - elapsedTime)
+                            delay((MINIMUM_VISIBILITY_DURATION_MS - elapsedTime).milliseconds)
                         }
                     } else {
                         setNotificationThrottled(
@@ -272,7 +273,7 @@ class SessionNotifierImpl(
         val currentTime = System.currentTimeMillis()
         val timeSinceLastUpdate = currentTime - lastNotificationUpdateTime
         val isCriticalState =
-            progress is ProgressEntity.InstallSuccess || progress is ProgressEntity.InstallFailed || progress is ProgressEntity.InstallCompleted || progress is ProgressEntity.InstallAnalysedSuccess || progress is ProgressEntity.InstallResolvedFailed || progress is ProgressEntity.InstallAnalysedFailed
+            progress is ProgressEntity.InstallSuccess || progress is ProgressEntity.InstallFailed || progress is ProgressEntity.InstallCompleted || progress is ProgressEntity.InstallAnalysedSuccess || progress is ProgressEntity.InstallResolvedFailed || progress is ProgressEntity.InstallAnalysedFailed || progress is ProgressEntity.InstallWaitingUnknownSource
         val isEnteringInstalling = progress is ProgressEntity.Installing && lastProgressClass != ProgressEntity.Installing::class
         val isDataChanged = progress != lastNotifiedEntity
 
@@ -343,7 +344,7 @@ class SessionNotifierImpl(
                     appOps.setPackageNetworkingEnabled(authorizer = globalAuthorizer, uid = targetUid, enabled = false)
                     isXiaomiNetworkBlocked = true
                     notificationManager.notify(notificationId, notification)
-                    delay(blockInterval.toLong())
+                    delay(blockInterval.toLong().milliseconds)
                 } catch (e: Exception) {
                     Timber.e(e, "Xiaomi magic execution failed")
                     // Fallback to notify normally if Shizuku magic fails, preventing silent UI failures

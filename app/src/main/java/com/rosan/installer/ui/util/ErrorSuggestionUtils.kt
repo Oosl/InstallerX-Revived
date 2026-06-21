@@ -4,6 +4,7 @@ package com.rosan.installer.ui.util
 
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import androidx.annotation.StringRes
@@ -17,6 +18,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rosan.installer.R
 import com.rosan.installer.core.env.DeviceConfig
 import com.rosan.installer.core.device.model.Manufacturer
+import com.rosan.installer.domain.device.model.ShizukuMode
 import com.rosan.installer.domain.device.provider.DeviceCapabilityProvider
 import com.rosan.installer.domain.engine.model.error.InstallErrorType
 import com.rosan.installer.domain.engine.model.install.InstallOption
@@ -50,13 +52,16 @@ fun rememberErrorSuggestions(
     val config = uiState.config
     val capabilityProvider = koinInject<DeviceCapabilityProvider>()
     val hasMiPackageInstaller = capabilityProvider.hasMiPackageInstaller
+    val shizukuMode by capabilityProvider.shizukuModeFlow.collectAsStateWithLifecycle()
     val shizukuIcon = ImageVector.vectorResource(R.drawable.ic_shizuku)
 
-    return remember(error, config) {
+    return remember(error, config, shizukuMode) {
         buildList {
             // Calculate this first so we can use it to suppress unnecessary uninstall suggestions
+            val isRootShizuku = config.authorizer == Authorizer.Shizuku && shizukuMode == ShizukuMode.ROOT
             val canAllowDowngrade = config.authorizer == Authorizer.Root ||
                     (config.authorizer == Authorizer.None && capabilityProvider.isSystemApp) ||
+                    isRootShizuku ||
                     (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE && config.authorizer == Authorizer.Shizuku)
 
             if (error.hasErrorType(InstallErrorType.TEST_ONLY)) {
@@ -261,6 +266,25 @@ fun rememberErrorSuggestions(
                         onClick = {
                             viewModel.updateConfig { it.copy(bypassProfileRestriction = true) }
                             viewModel.dispatch(InstallerViewAction.Install(false))
+                        }
+                    )
+                )
+            }
+
+            val initiatorPackageName = config.initiatorPackageName
+            if (error.hasErrorType(InstallErrorType.MISSING_INSTALL_PERMISSION) &&
+                !initiatorPackageName.isNullOrBlank()
+            ) {
+                add(
+                    ErrorSuggestion(
+                        labelRes = R.string.suggestion_allow_unknown_source,
+                        descriptionRes = R.string.suggestion_allow_unknown_source_desc,
+                        icon = AppIcons.Settings,
+                        onClick = {
+                            val intent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES)
+                                .setData(Uri.parse("package:$initiatorPackageName"))
+                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            runCatching { context.startActivity(intent) }
                         }
                     )
                 )

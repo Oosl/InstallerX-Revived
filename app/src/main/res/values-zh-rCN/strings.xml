@@ -298,6 +298,8 @@
     <string name="authorizer_customization_desc">微调部分授权器的相关参数和偏好</string>
     <string name="config_try_multiple_authorizers_on_install">智能授权</string>
     <string name="config_try_multiple_authorizers_on_install_desc">在配置文件选择的授权器不可用时，依次尝试已启用的授权器。</string>
+    <string name="lab_respect_platform_install_policy">遵守平台安装策略</string>
+    <string name="lab_respect_platform_install_policy_desc">安装前执行 Android 包安装器的来源权限和用户限制检查</string>
     <string name="config_smart_authorizer_fallback_list">回退授权器列表</string>
     <string name="config_smart_authorizer_fallback_list_desc">对回退的授权器进行选择和排序。\n选中的授权顺序：%1$s</string>
     <string name="config_smart_authorizer_fallback_list_tip">至少选择一项，拖动可以排序</string>
@@ -326,6 +328,10 @@
     <string name="config_install_mode_notification">通知栏</string>
     <string name="config_install_mode_auto_notification">通知栏自动</string>
     <string name="config_install_mode_ignore">忽略</string>
+    <string name="config_auto_approve_session">自动批准安装会话</string>
+    <string name="config_auto_approve_session_desc">静默批准目标应用的会话安装请求</string>
+    <string name="config_auto_approve_session_disabled_desc">遵守平台政策启用时不可用</string>
+    <string name="config_auto_approve_session_warning">启用此开关会使该配置的作用域内 app 拥有未经用户明确授权即可静默安装的能力，请谨慎启用。</string>
     <string name="config_install_show_toast">显示 Toast</string>
     <string name="config_install_show_toast_desc">控制安装完成后是否显示 Toast</string>
     <string name="config_toast_mode_disable">从不显示 Toast</string>
@@ -413,6 +419,7 @@
     <string name="config_error_package_name_empty">包名不得为空</string>
     <string name="discard">放弃更改</string>
     <string name="confirm">确认</string>
+    <string name="pre_approve">预批准</string>
     <string name="cancel">取消</string>
     <string name="retry">重试</string>
     <string name="install">安装</string>
@@ -458,6 +465,8 @@
     <string name="installer_resolve_success">解析成功</string>
     <string name="installer_preparing">正在读取文件</string>
     <string name="installer_preparing_desc">正在读取文件，请稍候…</string>
+    <string name="installer_waiting_unknown_source">允许未知来源</string>
+    <string name="installer_waiting_unknown_source_desc">请授予 %1$s “安装未知应用”权限</string>
     <string name="installer_analysing">分析中…</string>
     <string name="installer_analyse_failed">分析失败</string>
     <string name="installer_analyse_success">分析成功</string>
@@ -529,6 +538,8 @@
     <string name="installer_install_app">安装应用</string>
     <string name="installer_install_module">安装模块</string>
     <string name="installer_install_confirm">安装确认</string>
+    <string name="installer_install_pre_approval">安装预批准</string>
+    <string name="installer_permissions_confirm">权限确认</string>
     <string name="installer_installing">安装中…</string>
     <string name="installer_installing_module">安装模块中</string>
     <string name="installer_install_failed">安装失败</string>
@@ -539,6 +550,9 @@
     <string name="installer_unknown_error">未知错误</string>
     <string name="install_confirm_question_update_owner_reminder">此应用通常由 %1$s 接收更新。如果通过其他来源更新，手机未来可能会收到任何来源的更新。应用功能可能会改变。</string>
     <string name="install_confirm_external_request_tip">是否要批准来自 %1$s 的安装请求？</string>
+    <string name="install_confirm_pre_approval_tip">是否允许 %1$s 预批准安装此应用？</string>
+    <string name="install_confirm_permissions_tip">是否批准来自 %1$s 的权限确认请求？</string>
+    <string name="install_confirm_approved_toast">已批准 %1$s 的安装请求</string>
     <string name="installer_channel_name">安装通知</string>
     <string name="installer_channel_name_desc">显示安装的阶段</string>
     <string name="installer_notification_tap_to_disable">前台服务通知，点击以禁用</string>
@@ -569,6 +583,8 @@
     <string name="uninstall_all_users_disabled">已禁用为所有用户卸载</string>
     <string name="uninstall_delete_system_app">卸载系统应用</string>
     <string name="uninstall_delete_system_app_desc">允许为当前用户卸载系统应用</string>
+    <string name="uninstall_archive">卸载归档</string>
+    <string name="uninstall_archive_message">卸载此设备上的归档应用记录</string>
     <string name="uninstall_system_app_disabled">已禁用卸载系统应用</string>
     <string name="uninstall_success_message">卸载成功</string>
     <string name="uninstall_failed_message">卸载失败</string>
@@ -708,6 +724,8 @@
     <string name="exception_uninstall_failed_aborted">卸载过程被用户取消</string>
     <string name="exception_uninstall_failed_device_policy">卸载操作被设备政策禁用</string>
     <string name="exception_uninstall_failed_owner_blocked">卸载操作被所有者禁用</string>
+    <string name="exception_uninstall_failed_used_shared_library">卸载操作被阻止，因为该应用正作为共享库使用</string>
+    <string name="exception_uninstall_failed_app_pinned">卸载操作被阻止，因为该应用已固定</string>
     <string name="exception_package_manager_name_not_found">找不到对应包名的应用</string>
     <string name="exception_shizuku_not_work">请激活 Sui 或 Shizuku，并授予权限</string>
     <string name="exception_dhizuku_not_work">请激活 Dhizuku，并授予权限</string>
@@ -726,6 +744,7 @@
     <string name="old_version_prefix">当前</string>
     <string name="old_version_archived">已归档</string>
     <string name="old_version_uninstalled">已卸载</string>
+    <string name="overwrite_version_prefix">覆盖</string>
     <string name="upgrade_version_prefix">升级</string>
     <string name="downgrade_version_prefix">降级</string>
     <string name="install_choice">安装包选择</string>
@@ -892,6 +911,8 @@
     <string name="suggestion_bypass_blacklist_set_by_user">本次允许安装</string>
     <string name="suggestion_bypass_blacklist_set_by_user_desc">本次允许黑名单内应用安装</string>
     <string name="suggestion_install_anyway_desc">本次允许绕过限制安装</string>
+    <string name="suggestion_allow_unknown_source">允许此来源</string>
+    <string name="suggestion_allow_unknown_source_desc">打开 Android 设置，允许此应用请求安装软件包</string>
     <string name="suggestion_retry_install_desc">重新尝试安装</string>
     <string name="lab_tip">实验室中的功能可能不稳定或存在风险，随时可能被修改或移除，请自行承担使用风险</string>
     <string name="lab_use_hook_mode">使用 BinderWrapper 模式</string>
@@ -957,4 +978,25 @@
     <string name="home_learn_more_title">了解更多</string>
     <string name="home_learn_more_installerx_title">了解 InstallerX Revived</string>
     <string name="home_learn_more_installerx_desc">了解如何配置和使用 InstallerX</string>
+    <string name="unarchive_restore">恢复</string>
+    <string name="unarchive_title">恢复 %1$s？</string>
+    <string name="unarchive_message">%1$s 将恢复这个已归档应用</string>
+    <string name="unarchive_restoring">正在恢复应用</string>
+    <string name="unarchive_failed">恢复失败</string>
+    <string name="unarchive_error_action_required_title">需要继续操作</string>
+    <string name="unarchive_error_action_required_message">恢复此应用前需要完成额外操作</string>
+    <string name="unarchive_error_storage_title">存储空间不足</string>
+    <string name="unarchive_error_storage_message">请至少释放 %1$s 空间，然后重试恢复</string>
+    <string name="unarchive_error_offline_title">没有网络连接</string>
+    <string name="unarchive_error_offline_message">请连接互联网，然后重试恢复。</string>
+    <string name="unarchive_error_installer_disabled_title">%1$s 已停用</string>
+    <string name="unarchive_error_installer_disabled_message">请启用 %1$s 以恢复这个已归档应用</string>
+    <string name="unarchive_error_installer_uninstalled_title">%1$s 不可用</string>
+    <string name="unarchive_error_installer_uninstalled_message">%1$s 已不再安装，无法恢复此应用</string>
+    <string name="unarchive_error_generic_title">无法恢复应用</string>
+    <string name="unarchive_error_generic_message">无法恢复这个已归档应用</string>
+    <string name="unarchive_action_continue">继续</string>
+    <string name="unarchive_action_clear_storage">清理空间</string>
+    <string name="unarchive_action_app_settings">应用设置</string>
+    <string name="installer_result_pending">已有安装任务正在进行，请等待结果后重试。</string>
 </resources>

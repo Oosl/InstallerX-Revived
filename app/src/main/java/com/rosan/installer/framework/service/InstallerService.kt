@@ -18,7 +18,7 @@ import com.rosan.installer.data.session.handler.ActionHandler
 import com.rosan.installer.data.session.handler.BroadcastHandler
 import com.rosan.installer.data.session.handler.ForegroundInfoHandler
 import com.rosan.installer.data.session.handler.ProgressHandler
-import com.rosan.installer.data.session.manager.InstallerSessionManager
+import com.rosan.installer.data.session.manager.InstallerSessionManagerImpl
 import com.rosan.installer.data.session.repository.InstallerSessionRepositoryImpl
 import com.rosan.installer.domain.session.model.ProgressEntity
 import com.rosan.installer.domain.session.repository.InstallerSessionRepository
@@ -38,6 +38,7 @@ class InstallerService : Service() {
     companion object {
         const val EXTRA_ID = "id"
         private const val IDLE_TIMEOUT_MS = 1000L
+        private const val UI_EFFECT_DRAIN_DELAY_MS = 500L
         private const val NOTIFICATION_ID = 1001
         private const val CHANNEL_ID = "installer_background_channel"
     }
@@ -51,13 +52,14 @@ class InstallerService : Service() {
         }
     }
 
-    private val sessionManager: InstallerSessionManager by inject()
+    private val sessionManager: InstallerSessionManagerImpl by inject()
 
     // Lifecycle scope for the Service itself (not specific installers)
     private val serviceScope = CoroutineScope(Dispatchers.Main + Job())
 
     // Map storing scopes for each active session ID
     private val sessionScopes = mutableMapOf<String, CoroutineScope>()
+    private val uiEffectJobs = mutableMapOf<String, Job>()
 
     private var idleTimeoutJob: Job? = null
 
@@ -158,7 +160,8 @@ class InstallerService : Service() {
             )
 
             // Start observing UI effects (Toasts) on the main thread
-            observeUiEffectsForSession(session)
+            uiEffectJobs[id]?.cancel()
+            uiEffectJobs[id] = observeUiEffectsForSession(session)
 
             scope.launch {
                 Timber.d("[id=$id] Starting handlers.")
@@ -243,9 +246,15 @@ class InstallerService : Service() {
      * to check if other installers are running.
      */
     private fun detachSession(id: String) {
+        val uiEffectJob: Job?
         synchronized(sessionScopes) {
             sessionScopes.remove(id)?.cancel()
+            uiEffectJob = uiEffectJobs.remove(id)
             Timber.d("[id=$id] Scope removed and cancelled.")
+        }
+        serviceScope.launch {
+            delay(UI_EFFECT_DRAIN_DELAY_MS)
+            uiEffectJob?.cancel()
         }
 
         // We do NOT remove from SessionManager here.
@@ -272,6 +281,8 @@ class InstallerService : Service() {
         synchronized(sessionScopes) {
             sessionScopes.values.forEach { it.cancel() }
             sessionScopes.clear()
+            uiEffectJobs.values.forEach { it.cancel() }
+            uiEffectJobs.clear()
         }
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
@@ -279,45 +290,54 @@ class InstallerService : Service() {
 
     /**
      * Observes session progress to trigger UI effects like Toasts.
-     * Executed within serviceScope which runs on Dispatchers.Main.
+     * Kept on the service scope briefly after detach so terminal toast events can drain.
      */
-    private fun observeUiEffectsForSession(session: InstallerSessionRepository) {
+    private fun observeUiEffectsForSession(session: InstallerSessionRepository): Job =
         serviceScope.launch {
-            session.progress.collect { progress ->
-                // Disable toast according to user preference
-                if (!session.shouldShowToast()) return@collect
-                when (progress) {
-                    is ProgressEntity.InstallSuccess -> {
-                        toast(R.string.installer_install_success)
+            launch {
+                session.toastEvents.collect { message ->
+                    if (session.shouldShowToast()) {
+                        toast(message)
                     }
+                }
+            }
 
-                    is ProgressEntity.InstallCompleted -> {
-                        val successCount = progress.results.count { it.success }
-                        val totalCount = progress.results.size
-                        toast(R.string.batch_install_result_message, successCount, totalCount)
-                    }
+            launch {
+                session.progress.collect { progress ->
+                    // Disable toast according to user preference
+                    if (!session.shouldShowToast()) return@collect
+                    when (progress) {
+                        is ProgressEntity.InstallSuccess -> {
+                            toast(R.string.installer_install_success)
+                        }
 
-                    is ProgressEntity.UninstallSuccess -> {
-                        toast(R.string.uninstall_success_message)
-                    }
+                        is ProgressEntity.InstallCompleted -> {
+                            val successCount = progress.results.count { it.success }
+                            val totalCount = progress.results.size
+                            toast(R.string.batch_install_result_message, successCount, totalCount)
+                        }
 
-                    is ProgressEntity.InstallFailed,
-                    is ProgressEntity.InstallAnalysedFailed,
-                    is ProgressEntity.InstallResolvedFailed -> {
-                        toast(R.string.installer_install_failed)
-                    }
+                        is ProgressEntity.UninstallSuccess -> {
+                            toast(R.string.uninstall_success_message)
+                        }
 
-                    is ProgressEntity.UninstallFailed -> {
-                        toast(R.string.uninstall_failed_message)
-                    }
+                        is ProgressEntity.InstallFailed,
+                        is ProgressEntity.InstallAnalysedFailed,
+                        is ProgressEntity.InstallResolvedFailed -> {
+                            toast(R.string.installer_install_failed)
+                        }
 
-                    else -> {
-                        // Safely ignore transitional states
+                        is ProgressEntity.UninstallFailed -> {
+                            toast(R.string.uninstall_failed_message)
+                        }
+
+                        else -> {
+                            // Safely ignore transitional states
+                        }
                     }
                 }
             }
         }
-    }
 
     private suspend fun InstallerSessionRepository.shouldShowToast() =
         when (this.config.toastMode) {
