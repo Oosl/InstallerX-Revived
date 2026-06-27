@@ -13,10 +13,13 @@ import com.rosan.installer.data.engine.parser.strategy.ModuleStrategy
 import com.rosan.installer.data.engine.parser.strategy.MultiApkZipStrategy
 import com.rosan.installer.data.engine.parser.strategy.SingleApkStrategy
 import com.rosan.installer.data.engine.parser.strategy.XApkStrategy
+import com.rosan.installer.data.engine.policy.PlatformInstallPolicyChecker
+import com.rosan.installer.data.engine.policy.UnknownSourcePermissionChecker
 import com.rosan.installer.data.engine.repository.AnalyserRepositoryImpl
 import com.rosan.installer.data.engine.repository.AppIconRepositoryImpl
 import com.rosan.installer.data.engine.repository.AppInstallerRepositoryImpl
 import com.rosan.installer.data.engine.repository.ModuleInstallerRepositoryImpl
+import com.rosan.installer.data.engine.provider.InstalledModuleInfoProviderImpl
 import com.rosan.installer.data.engine.signature.CertificateFormatter
 import com.rosan.installer.data.engine.signature.InstalledPackageSignatureReader
 import com.rosan.installer.data.engine.signature.PackageSignatureAnalyzer
@@ -27,6 +30,7 @@ import com.rosan.installer.domain.engine.repository.AppIconRepository
 import com.rosan.installer.domain.engine.repository.AppInstallerRepository
 import com.rosan.installer.domain.engine.repository.ModuleInstallerRepository
 import com.rosan.installer.domain.engine.provider.InstalledAppInfoProvider
+import com.rosan.installer.domain.engine.provider.InstalledModuleInfoProvider
 import com.rosan.installer.domain.engine.provider.InstalledPackageSignatureProvider
 import com.rosan.installer.domain.engine.usecase.AnalyzeInstallStateUseCase
 import com.rosan.installer.domain.engine.usecase.AnalyzePackageUseCase
@@ -67,6 +71,9 @@ val engineModule = module {
     singleOf(::UnifiedContainerAnalyser)
     singleOf(::PackagePreprocessor)
     singleOf(::InstalledAppInfoProviderImpl) { bind<InstalledAppInfoProvider>() }
+    singleOf(::InstalledModuleInfoProviderImpl) { bind<InstalledModuleInfoProvider>() }
+    singleOf(::UnknownSourcePermissionChecker)
+    singleOf(::PlatformInstallPolicyChecker)
 
     // Repositories
     singleOf(::AppIconRepositoryImpl) { bind<AppIconRepository>() }

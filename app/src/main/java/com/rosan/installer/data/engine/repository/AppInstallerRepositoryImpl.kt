@@ -22,13 +22,15 @@ import com.rosan.installer.domain.settings.model.config.ConfigModel
 import com.rosan.installer.domain.settings.repository.AppSettingsRepository
 import com.rosan.installer.domain.settings.repository.BooleanSetting
 import kotlinx.coroutines.flow.first
+import timber.log.Timber
 
 class AppInstallerRepositoryImpl(
     private val context: Context,
     private val reflect: ReflectionProvider,
     private val deviceCapabilityProvider: DeviceCapabilityProvider,
     private val appSettingsRepo: AppSettingsRepository,
-    private val postInstallTaskProvider: PostInstallTaskProvider
+    private val postInstallTaskProvider: PostInstallTaskProvider,
+    private val platformInstallPolicyChecker: PlatformInstallPolicyChecker
 ) : AppInstallerRepository {
     override suspend fun resolveInstallerPackageName(config: ConfigModel): String? =
         executeWithRepo(config) { repo ->
@@ -44,20 +46,41 @@ class AppInstallerRepositoryImpl(
         sharedUserIdBlacklist: List<String>,
         sharedUserIdExemption: List<String>
     ) = executeWithRepo(config) { repo ->
-        val effectiveRespectPlatformInstallPolicy = respectPlatformInstallPolicy ||
+        val requestedRespectPlatformInstallPolicy = respectPlatformInstallPolicy ||
                 appSettingsRepo.getBoolean(BooleanSetting.LabRespectPlatformInstallPolicy).first()
-        if (effectiveRespectPlatformInstallPolicy) {
-            PlatformInstallPolicyChecker(context).check(config)
+        Timber.tag(TAG).d(
+            "doInstallWork: respectPlatformPolicy=%s, requestedByCaller=%s, authorizer=%s, source=%s, sourceUid=%s, confidence=%s",
+            requestedRespectPlatformInstallPolicy,
+            respectPlatformInstallPolicy,
+            config.authorizer,
+            config.initiatorPackageName,
+            config.installSourceUid,
+            config.installSourceConfidence
+        )
+        if (requestedRespectPlatformInstallPolicy) {
+            if (canCheckPlatformInstallPolicy(config)) {
+                Timber.tag(TAG).d("Running platform install policy checker.")
+                platformInstallPolicyChecker.check(config)
+            } else {
+                Timber.tag(TAG).d("Skipping platform policy checker for non-privileged install path.")
+            }
         }
         repo.doInstallWork(
             config,
             entities,
             metadata,
-            effectiveRespectPlatformInstallPolicy,
+            requestedRespectPlatformInstallPolicy,
             blacklist,
             sharedUserIdBlacklist,
             sharedUserIdExemption
         )
+    }
+
+    private fun canCheckPlatformInstallPolicy(config: ConfigModel): Boolean =
+        config.authorizer != Authorizer.None || deviceCapabilityProvider.isSystemApp
+
+    private companion object {
+        const val TAG = "AppInstallerRepository"
     }
 
     override suspend fun doUninstallWork(

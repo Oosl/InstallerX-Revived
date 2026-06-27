@@ -18,21 +18,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.add
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.calculateEndPadding
-import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -61,7 +53,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -75,7 +66,6 @@ import com.rosan.installer.domain.settings.model.preferences.theme.ThemeMode
 import com.rosan.installer.ui.icons.AppIcons
 import com.rosan.installer.ui.navigation.LocalNavigator
 import com.rosan.installer.ui.page.main.widget.card.ColorSwatchPreview
-import com.rosan.installer.ui.page.main.widget.dialog.HideLauncherIconWarningDialog
 import com.rosan.installer.ui.page.main.widget.setting.BaseItemContainer
 import com.rosan.installer.ui.page.main.widget.setting.BaseWidget
 import com.rosan.installer.ui.page.main.widget.setting.ExpressiveBackButton
@@ -160,18 +150,6 @@ fun ThemeSettingsPage(
         )
     }
 
-    HideLauncherIconWarningDialog(
-        show = showHideLauncherIconDialog,
-        onDismiss = { showHideLauncherIconDialog = false },
-        onConfirm = {
-            showHideLauncherIconDialog = false
-            viewModel.dispatch(ThemeSettingsAction.ChangeShowLauncherIcon(false))
-        }
-    )
-
-    val layoutDirection = LocalLayoutDirection.current
-    val horizontalSafeInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal).asPaddingValues()
-
     val backdrop = rememberMaterial3BlurBackdrop(uiState.useBlur)
 
     Scaffold(
@@ -205,12 +183,7 @@ fun ThemeSettingsPage(
             modifier = Modifier
                 .fillMaxSize()
                 .then(backdrop?.let { Modifier.layerBackdrop(it) } ?: Modifier),
-            contentPadding = PaddingValues(
-                start = horizontalSafeInsets.calculateStartPadding(layoutDirection),
-                top = paddingValues.calculateTopPadding(),
-                end = horizontalSafeInsets.calculateEndPadding(layoutDirection),
-                bottom = paddingValues.calculateBottomPadding()
-            )
+            contentPadding = paddingValues
         ) {
             // --- Group 1: UI Style Selection ---
             item {
@@ -439,31 +412,6 @@ fun ThemeSettingsPage(
                     }
                 }
             }
-
-            // --- Group 6: Launcher Icons ---
-            item {
-                SegmentedColumn(
-                    title = stringResource(R.string.theme_settings_launcher_icons)
-                ) {
-                    item {
-                        SwitchWidget(
-                            icon = AppIcons.Launcher,
-                            title = stringResource(R.string.theme_settings_hide_launcher_icon),
-                            description = stringResource(R.string.theme_settings_hide_launcher_icon_desc),
-                            checked = !uiState.showLauncherIcon,
-                            onCheckedChange = { newCheckedState ->
-                                if (newCheckedState) {
-                                    showHideLauncherIconDialog = true
-                                } else {
-                                    viewModel.dispatch(ThemeSettingsAction.ChangeShowLauncherIcon(true))
-                                }
-                            }
-                        )
-                    }
-                }
-            }
-
-            item { Spacer(Modifier.navigationBarsPadding()) }
         }
     }
 }

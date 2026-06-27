@@ -2,15 +2,11 @@
 // Copyright (C) 2023-2026 iamr0s InstallerX Revived contributors
 package com.rosan.installer.ui.activity
 
-import android.Manifest
-import android.app.AppOpsManager
 import android.content.Intent
 import android.content.IntentHidden
 import android.content.pm.PackageInstaller
 import android.content.pm.PackageInstallerHidden
-import android.content.pm.PackageManager
 import android.content.pm.PackageManagerHidden
-import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
 import android.provider.Settings
@@ -29,6 +25,7 @@ import com.rosan.installer.core.app.ActivityContracts.KEY_INSTALLER_ID
 import com.rosan.installer.core.bitmask.hasFlag
 import com.rosan.installer.core.device.model.Level
 import com.rosan.installer.core.env.AppConfig
+import com.rosan.installer.data.engine.policy.UnknownSourcePermissionChecker
 import com.rosan.installer.domain.device.model.PermissionType
 import com.rosan.installer.domain.device.provider.DeviceCapabilityProvider
 import com.rosan.installer.domain.device.provider.PermissionChecker
@@ -38,6 +35,7 @@ import com.rosan.installer.domain.session.model.ProgressEntity
 import com.rosan.installer.domain.session.repository.InstallerSessionManager
 import com.rosan.installer.domain.session.repository.InstallerSessionRepository
 import com.rosan.installer.domain.settings.model.config.Authorizer
+import com.rosan.installer.domain.settings.model.config.ConfigModel
 import com.rosan.installer.domain.settings.provider.ThemeStateProvider
 import com.rosan.installer.domain.settings.repository.AppSettingsRepository
 import com.rosan.installer.domain.settings.repository.BooleanSetting
@@ -79,6 +77,7 @@ class InstallerActivity : ComponentActivity(), KoinComponent {
 
     private val deviceCapabilityProvider: DeviceCapabilityProvider by inject()
     private val permissionChecker: PermissionChecker by inject()
+    private val unknownSourcePermissionChecker: UnknownSourcePermissionChecker by inject()
     private lateinit var permissionRequester: PermissionRequester
 
     // Flag to track if the activity is stopped due to a permission request
@@ -488,7 +487,7 @@ class InstallerActivity : ComponentActivity(), KoinComponent {
         } ?: return
 
         unknownSourceSettingsLaunchedForFailure = true
-        launchUnknownSourceSettings(packageName)
+        launchUnknownSourceSettings(packageName, session.config)
     }
 
     fun launchUnknownSourceSettingsForCurrentSession(): Boolean {
@@ -502,7 +501,7 @@ class InstallerActivity : ComponentActivity(), KoinComponent {
             session.config.initiatorPackageName
         } ?: return false
 
-        launchUnknownSourceSettings(packageName)
+        launchUnknownSourceSettings(packageName, session.config)
         return true
     }
 
@@ -515,49 +514,30 @@ class InstallerActivity : ComponentActivity(), KoinComponent {
         return launchUnknownSourceSettingsForCurrentSession()
     }
 
-    private fun launchUnknownSourceSettings(packageName: String) {
-        val intent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES)
-            .setData("package:$packageName".toUri())
-
-        pendingUnknownSourcePackageName = packageName
-        isRequestingPermission = true
-        runCatching {
-            unknownSourceSettingsLauncher.launch(intent)
-        }.onFailure { error ->
-            pendingUnknownSourcePackageName = null
-            isRequestingPermission = false
-            Timber.e(error, "Failed to launch unknown source settings for $packageName")
-        }
-    }
-
-    @Suppress("DEPRECATION")
-    private fun isUnknownSourceAllowed(packageName: String): Boolean {
-        if (packageName == this.packageName) {
-            return packageManager.canRequestPackageInstalls()
-        }
-
-        val uid = runCatching {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                packageManager.getPackageUid(
-                    packageName,
-                    PackageManager.PackageInfoFlags.of(0)
-                )
-            } else {
-                packageManager.getPackageUid(packageName, 0)
+    private fun launchUnknownSourceSettings(packageName: String, config: ConfigModel) {
+        lifecycleScope.launch {
+            runCatching {
+                unknownSourcePermissionChecker.prepareSettingsToggle(packageName, config)
+            }.onFailure { error ->
+                Timber.w(error, "Failed to prepare unknown source settings for $packageName")
             }
-        }.getOrNull() ?: return false
 
-        val appOps = getSystemService(AppOpsManager::class.java) ?: return false
-        val op = AppOpsManager.permissionToOp(Manifest.permission.REQUEST_INSTALL_PACKAGES)
-            ?: return false
+            val intent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES)
+                .setData("package:$packageName".toUri())
 
-        val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            appOps.unsafeCheckOpNoThrow(op, uid, packageName)
-        } else {
-            appOps.checkOpNoThrow(op, uid, packageName)
+            pendingUnknownSourcePackageName = packageName
+            isRequestingPermission = true
+            runCatching {
+                unknownSourceSettingsLauncher.launch(intent)
+            }.onFailure { error ->
+                pendingUnknownSourcePackageName = null
+                isRequestingPermission = false
+                Timber.e(error, "Failed to launch unknown source settings for $packageName")
+            }
         }
-        return mode == AppOpsManager.MODE_ALLOWED
     }
+
+    private fun isUnknownSourceAllowed(packageName: String) = unknownSourcePermissionChecker.isAllowed(packageName)
 
     private fun Intent.isSystemConfirmAction(): Boolean =
         action == PackageInstallerHidden.ACTION_CONFIRM_INSTALL ||
@@ -665,6 +645,7 @@ class InstallerActivity : ComponentActivity(), KoinComponent {
         }
         Timber.d("$tag: Action: ${intent.action}")
         Timber.d("$tag: Data: ${intent.dataString}")
+        Timber.d("$tag: Type: ${intent.type}")
         Timber.d("$tag: Flags: ${Integer.toHexString(intent.flags)}")
         intent.extras?.let { extras ->
             for (key in extras.keySet()) {

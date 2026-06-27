@@ -9,14 +9,9 @@ import android.content.Context
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsetsSides
-import androidx.compose.foundation.layout.calculateEndPadding
-import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.plus
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -24,7 +19,6 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
@@ -42,7 +36,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
@@ -57,6 +50,7 @@ import com.rosan.installer.ui.icons.AppIcons
 import com.rosan.installer.ui.navigation.LocalNavigator
 import com.rosan.installer.ui.navigation.Route
 import com.rosan.installer.ui.page.main.widget.dialog.ErrorDisplayDialog
+import com.rosan.installer.ui.page.main.widget.dialog.HideLauncherIconWarningDialog
 import com.rosan.installer.ui.page.main.widget.setting.BaseWidget
 import com.rosan.installer.ui.page.main.widget.setting.NavigationItemWidget
 import com.rosan.installer.ui.page.main.widget.setting.SegmentedColumn
@@ -79,8 +73,7 @@ fun PreferredPage(
     useBlur: Boolean,
     viewModel: PreferredViewModel = koinViewModel(),
     title: String,
-    outerPadding: PaddingValues = PaddingValues(0.dp),
-    windowInsetsSides: WindowInsetsSides? = null
+    outerPadding: PaddingValues = PaddingValues(0.dp)
 ) {
     val navigator = LocalNavigator.current
     val context = LocalContext.current
@@ -105,6 +98,7 @@ fun PreferredPage(
     var pendingExportContent by remember { mutableStateOf<String?>(null) }
     var pendingRestorePreview by remember { mutableStateOf<BackupRestorePreview?>(null) }
     var showRestoreConfirmDialog by remember { mutableStateOf(false) }
+    var showHideLauncherIconDialog by remember { mutableStateOf(false) }
     var backupValidationErrorText by remember { mutableStateOf<String?>(null) }
 
     val detailLabel = stringResource(id = R.string.details)
@@ -189,8 +183,6 @@ fun PreferredPage(
         }
     }
 
-    val layoutDirection = LocalLayoutDirection.current
-
     val backdrop = rememberMaterial3BlurBackdrop(useBlur)
 
     Scaffold(
@@ -198,13 +190,9 @@ fun PreferredPage(
             .nestedScroll(scrollBehavior.nestedScrollConnection)
             .fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
-        contentWindowInsets = windowInsetsSides?.let { ScaffoldDefaults.contentWindowInsets.only(it) }
-            ?: ScaffoldDefaults.contentWindowInsets,
         topBar = {
             LargeFlexibleTopAppBar(
                 modifier = Modifier.installerMaterial3BlurEffect(backdrop),
-                windowInsets = windowInsetsSides?.let { TopAppBarDefaults.windowInsets.only(it) }
-                    ?: TopAppBarDefaults.windowInsets,
                 title = {
                     Text(
                         text = title,
@@ -230,16 +218,7 @@ fun PreferredPage(
             modifier = Modifier
                 .fillMaxSize()
                 .then(backdrop?.let { Modifier.layerBackdrop(it) } ?: Modifier),
-            contentPadding = PaddingValues(
-                start = paddingValues.calculateStartPadding(layoutDirection) + outerPadding.calculateStartPadding(
-                    layoutDirection
-                ),
-                top = paddingValues.calculateTopPadding(),
-                end = paddingValues.calculateEndPadding(layoutDirection) + outerPadding.calculateEndPadding(
-                    layoutDirection
-                ),
-                bottom = outerPadding.calculateBottomPadding()
-            )
+            contentPadding = paddingValues + outerPadding
         ) {
             // --- Global Settings Group ---
             item {
@@ -308,6 +287,21 @@ fun PreferredPage(
                             enabled = enabled,
                         ) { viewModel.dispatch(PreferredViewAction.RequestIgnoreBatteryOptimization) }
                     }
+                    item {
+                        SwitchWidget(
+                            icon = AppIcons.Launcher,
+                            title = stringResource(R.string.theme_settings_hide_launcher_icon),
+                            description = stringResource(R.string.theme_settings_hide_launcher_icon_desc),
+                            checked = !uiState.showLauncherIcon,
+                            onCheckedChange = { newCheckedState ->
+                                if (newCheckedState) {
+                                    showHideLauncherIconDialog = true
+                                } else {
+                                    viewModel.dispatch(PreferredViewAction.ChangeShowLauncherIcon(true))
+                                }
+                            }
+                        )
+                    }
                 }
             }
             item {
@@ -329,7 +323,15 @@ fun PreferredPage(
                             title = stringResource(R.string.backup_settings_restore),
                             description = stringResource(R.string.backup_settings_restore_desc),
                             enabled = !uiState.backupBusy,
-                            onClick = { restoreLauncher.launch(arrayOf("application/json", "text/json", "*/*")) }
+                            onClick = {
+                                restoreLauncher.launch(
+                                    arrayOf(
+                                        "application/json",
+                                        "text/json",
+                                        "*/*"
+                                    )
+                                )
+                            }
                         )
                     }
                 }
@@ -361,7 +363,6 @@ fun PreferredPage(
                     }
                 }
             }
-            item { Spacer(Modifier.navigationBarsPadding()) }
         }
     }
 
@@ -427,6 +428,15 @@ fun PreferredPage(
             }
         )
     }
+
+    HideLauncherIconWarningDialog(
+        show = showHideLauncherIconDialog,
+        onDismiss = { showHideLauncherIconDialog = false },
+        onConfirm = {
+            showHideLauncherIconDialog = false
+            viewModel.dispatch(PreferredViewAction.ChangeShowLauncherIcon(false))
+        }
+    )
 }
 
 private fun BackupRestorePreview.formatBackupRestorePreview(context: Context): String =
@@ -442,7 +452,12 @@ private fun BackupRestorePreview.formatBackupRestorePreview(context: Context): S
         )
         if (ignoredSettingCount > 0) {
             append("\n")
-            append(context.getString(R.string.backup_settings_restore_ignored_settings, ignoredSettingCount))
+            append(
+                context.getString(
+                    R.string.backup_settings_restore_ignored_settings,
+                    ignoredSettingCount
+                )
+            )
         }
         if (warnings.isNotEmpty()) {
             append("\n\n")

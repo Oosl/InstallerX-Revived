@@ -2,7 +2,9 @@
 // Copyright (C) 2023-2026 iamr0s, InstallerX Revived contributors
 package com.rosan.installer.framework.privileged.runtime
 
+import android.Manifest
 import android.annotation.SuppressLint
+import android.app.AppOpsManager
 import android.app.IActivityManager
 import android.app.IApplicationThread
 import android.app.ProfilerInfo
@@ -44,6 +46,7 @@ import java.io.IOException
 import java.nio.charset.StandardCharsets
 import android.os.Process as AndroidProcess
 
+@SuppressLint("PrivateApi")
 class DefaultPrivilegedService private constructor(
     private val runtime: PrivilegedRuntime
 ) : BasePrivilegedService(), PrivilegedOperations {
@@ -86,6 +89,10 @@ class DefaultPrivilegedService private constructor(
 
     private val iConnectivityManager: IConnectivityManager by lazy {
         runtime.connectivityManager()
+    }
+
+    private val appOpsManager: AppOpsManager by lazy {
+        runtime.appOpsManager(context, reflect)
     }
 
     override fun delete(paths: Array<out String>) = deletePaths(paths.toList())
@@ -668,7 +675,6 @@ class DefaultPrivilegedService private constructor(
         }
     }
 
-    @SuppressLint("PrivateApi")
     override fun getUsers(): Map<Int, String> {
         val userMap = mutableMapOf<Int, String>()
         try {
@@ -731,7 +737,44 @@ class DefaultPrivilegedService private constructor(
         }
     }
 
-    @SuppressLint("PrivateApi")
+    override fun prepareUnknownSourceAppOp(uid: Int, packageName: String): Int {
+        val op = AppOpsManager.permissionToOp(Manifest.permission.REQUEST_INSTALL_PACKAGES)
+            ?: run {
+                Timber.tag(TAG).w("REQUEST_INSTALL_PACKAGES has no AppOps mapping for $packageName/$uid")
+                return AppOpsManager.MODE_ERRORED
+            }
+
+        Timber.tag(TAG).d("noteOp for request-install AppOps: package=$packageName, uid=$uid, op=$op")
+
+        val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+            appOpsManager.noteOpNoThrow(
+                op,
+                uid,
+                packageName,
+                null,
+                "Started package installation activity"
+            )
+        } else {
+            @Suppress("Deprecation")
+            appOpsManager.noteOpNoThrow(op, uid, packageName)
+        }
+
+        Timber.tag(TAG).d("request-install AppOps noteOp result for $packageName/$uid: mode=$mode")
+        if (mode == AppOpsManager.MODE_DEFAULT) {
+            Timber.tag(TAG).d("Setting request-install AppOps default mode to errored for $packageName/$uid")
+            reflect.getMethod(
+                "setMode",
+                appOpsManager.javaClass,
+                String::class.java,
+                Int::class.javaPrimitiveType!!,
+                String::class.java,
+                Int::class.javaPrimitiveType!!
+            )?.invoke(appOpsManager, op, uid, packageName, AppOpsManager.MODE_ERRORED)
+        }
+
+        return mode
+    }
+
     private fun sendPackageShellCommandOneway(
         binder: IBinder,
         args: Array<String>

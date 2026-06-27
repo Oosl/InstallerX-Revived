@@ -2,6 +2,8 @@
 // Copyright (C) 2026 InstallerX Revived contributors
 package com.rosan.installer.framework.privileged.runtime
 
+import android.annotation.SuppressLint
+import android.app.AppOpsManager
 import android.app.IActivityManager
 import android.content.Context
 import android.content.pm.IPackageManager
@@ -18,6 +20,7 @@ import timber.log.Timber
 
 private const val TAG = "PrivilegedRuntime"
 
+@SuppressLint("PrivateApi")
 internal sealed interface PrivilegedRuntime {
     val name: String
     val canCallSystemRestrictedPreferredApis: Boolean
@@ -35,6 +38,19 @@ internal sealed interface PrivilegedRuntime {
     fun settingsBinder(reflect: ReflectionProvider): IBinder?
 
     fun connectivityManager(): IConnectivityManager
+
+    fun appOpsBinder(): IBinder?
+
+    fun appOpsManager(context: Context, reflect: ReflectionProvider): AppOpsManager {
+        val appOps = context.getSystemService(AppOpsManager::class.java)
+        val binder = appOpsBinder() ?: return appOps
+        val service = Class.forName("com.android.internal.app.IAppOpsService\$Stub")
+            .getMethod("asInterface", IBinder::class.java)
+            .invoke(null, binder)
+
+        reflect.setFieldValue(appOps, "mService", appOps.javaClass, service)
+        return appOps
+    }
 
     data object SystemApp : Direct("SystemApp", canCallSystemRestrictedPreferredApis = false)
 
@@ -74,6 +90,11 @@ internal sealed interface PrivilegedRuntime {
         override fun connectivityManager(): IConnectivityManager {
             Timber.tag(TAG).d("Getting IConnectivityManager in $name mode.")
             return ShizukuHook.hookedConnectivityManager
+        }
+
+        override fun appOpsBinder(): IBinder? {
+            Timber.tag(TAG).d("Getting AppOps Binder in $name mode.")
+            return ShizukuHook.hookedAppOpsBinder
         }
     }
 
@@ -122,6 +143,12 @@ internal sealed interface PrivilegedRuntime {
             val original = ServiceManager.getService(Context.CONNECTIVITY_SERVICE)
             return IConnectivityManager.Stub.asInterface(binderWrapper(original))
         }
+
+        override fun appOpsBinder(): IBinder {
+            Timber.tag(TAG).d("Getting AppOps Binder in $name mode.")
+            val original = ServiceManager.getService(Context.APP_OPS_SERVICE)
+            return binderWrapper(original)
+        }
     }
 
     sealed class Direct(
@@ -163,6 +190,11 @@ internal sealed interface PrivilegedRuntime {
         override fun connectivityManager(): IConnectivityManager {
             Timber.tag(TAG).d("Getting IConnectivityManager in $name mode.")
             return IConnectivityManager.Stub.asInterface(ServiceManager.getService(Context.CONNECTIVITY_SERVICE))
+        }
+
+        override fun appOpsBinder(): IBinder? {
+            Timber.tag(TAG).d("Getting AppOps Binder in $name mode.")
+            return ServiceManager.getService(Context.APP_OPS_SERVICE)
         }
     }
 }
