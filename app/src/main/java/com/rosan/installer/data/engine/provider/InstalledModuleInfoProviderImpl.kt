@@ -6,13 +6,14 @@ import com.rosan.installer.domain.device.model.ShizukuMode
 import com.rosan.installer.domain.device.provider.DeviceCapabilityProvider
 import com.rosan.installer.domain.engine.model.packageinfo.InstalledModuleInfo
 import com.rosan.installer.domain.engine.provider.InstalledModuleInfoProvider
+import com.rosan.installer.domain.privileged.exception.PrivilegedException
 import com.rosan.installer.domain.settings.model.config.Authorizer
 import com.rosan.installer.domain.settings.model.config.ConfigModel
 import com.rosan.installer.domain.settings.model.preferences.RootMode
-import com.rosan.installer.framework.privileged.util.SHELL_ROOT
-import com.rosan.installer.framework.privileged.util.SU_ARGS
-import com.rosan.installer.framework.privileged.util.UserServiceUidMode
-import com.rosan.installer.framework.privileged.util.useUserService
+import com.rosan.installer.framework.privileged.core.infrastructure.process.SHELL_ROOT
+import com.rosan.installer.framework.privileged.core.infrastructure.process.SU_ARGS
+import com.rosan.installer.framework.privileged.core.execution.authorization.requireCustomizeAuthorizer
+import com.rosan.installer.framework.privileged.core.execution.dispatcher.useUserService
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -52,6 +53,8 @@ class InstalledModuleInfoProviderImpl(
                 }
             } catch (e: CancellationException) {
                 throw e
+            } catch (e: PrivilegedException) {
+                throw e
             } catch (e: Exception) {
                 Timber.d(e, "Module list query failed")
                 null
@@ -69,8 +72,8 @@ class InstalledModuleInfoProviderImpl(
         }
 
     private fun executeLocal(config: ConfigModel, command: Array<String>): String? {
-        val shellParts = if (config.authorizer == Authorizer.Customize && config.customizeAuthorizer.isNotBlank()) {
-            config.customizeAuthorizer.trim().split("\\s+".toRegex())
+        val shellParts = if (config.authorizer == Authorizer.Customize) {
+            requireCustomizeAuthorizer(config.customizeAuthorizer).trim().split("\\s+".toRegex())
         } else {
             listOf(SHELL_ROOT, SU_ARGS)
         }
@@ -95,8 +98,7 @@ class InstalledModuleInfoProviderImpl(
         var result: String? = null
         useUserService(
             isSystemApp = capabilityProvider.isSystemApp,
-            authorizer = config.authorizer,
-            uidMode = UserServiceUidMode.SystemIfRoot
+            authorizer = config.authorizer
         ) { userService ->
             result = userService.privileged.execArr(command)
         }
