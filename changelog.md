@@ -1,5 +1,5 @@
+- auto sync upstream (a0482931) (github-actions[bot])
+- feat: add install dialog display preferences (wxxsfxyzm)
+- chore(release): update module update.json for 26.07.e9fef6c [skip ci] (github-actions[bot])
 - auto sync upstream (e9fef6c5) (github-actions[bot])
 - i18n: Translations update from Hosted Weblate (#735) (Weblate (bot))
-- chore(deps): update dependency com.google.devtools.ksp to v2.3.10 (#741) (renovate[bot])
-- fix: use iPackageManager instead of reflecting mPM from context (wxxsfxyzm)
-- fix: prevent background trigger when session is closing (wxxsfxyzm)
