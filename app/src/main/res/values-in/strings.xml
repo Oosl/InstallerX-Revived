@@ -82,8 +82,6 @@
     <string name="installer_settings_auto_clear_time_seconds_format">%d detik</string>
     <string name="basic">Dasar</string>
     <string name="disable_adb_install_verify">Nonaktifkan Verifikasi ADB</string>
-    <string name="auto_lock_default_installer">Atur otomatis sebagai pemasang bawaan</string>
-    <string name="auto_lock_default_installer_desc">Atur aplikasi ini secara otomatis sebagai pemasang saat memulai pemasangan baru</string>
     <string name="lock_default_installer">Atur sebagai pemasang bawaan</string>
     <string name="lock_default_installer_desc">Atur InstallerX sebagai aplikasi bawaan untuk memasang apk</string>
     <string name="lock_default_installer_success">Berhasil diatur sebagai pemasang bawaan</string>
@@ -915,4 +913,7 @@
     <string name="config_declare_installer_system_default_desc">Default ke pihak yang memulai pemasangan</string>
     <string name="config_authorizer_command_desc">Perintah: %1$s</string>
     <string name="dhizuku_unsupported_desc">Dhizuku tidak didukung</string>
+    <string name="self_update_install_success">InstallerX berhasil diperbarui</string>
+    <string name="install_comparison_display_behavior">Perilaku tampilan perbandingan data</string>
+    <string name="install_comparison_show_all">Tampilkan semua</string>
 </resources>

@@ -175,6 +175,8 @@
     <string name="installer_settings_signature_check">Signature checks</string>
     <string name="config_check_app_signature">Check app signatures</string>
     <string name="config_check_app_signature_desc">Analyze APK signatures before installation and compare them with installed apps</string>
+    <string name="config_check_split_package_signatures">Analyze split package signatures</string>
+    <string name="config_check_split_package_signatures_desc">Analyze APK signatures in APKS, APKM, and XAPK packages. This can significantly increase analysis time</string>
     <string name="config_show_signature_info_on_match">Show info for normal signature states</string>
     <string name="config_show_signature_info_on_match_desc">Show signature notices for matching signatures and new installs</string>
     <string name="config_show_signature_details">Show signature details</string>
@@ -243,8 +245,6 @@
     <string name="ignore_battery_optimizations_desc">Useful on ROMs with strict background policies. If the notification gets stuck, try ignoring battery optimization</string>
     <string name="ignore_battery_optimizations_desc_disabled">Already Ignored</string>
     <string name="default_installer">Default Installer</string>
-    <string name="auto_lock_default_installer">Auto set as default installer</string>
-    <string name="auto_lock_default_installer_desc">Automatically set this app as installer when starting a new install</string>
     <string name="lock_default_installer">Set as default installer</string>
     <string name="lock_default_installer_desc">Set InstallerX as the default app to install apks</string>
     <string name="lock_default_installer_success">Successfully set as default installer</string>
@@ -513,6 +513,7 @@
     <string name="installer_install_confirm">Install Confirm</string>
     <string name="installer_install_pre_approval">Install Pre-approval</string>
     <string name="installer_permissions_confirm">Permissions Confirm</string>
+    <string name="installer_writing">Writing…</string>
     <string name="installer_installing">Installing…</string>
     <string name="installer_installing_module">Installing Module</string>
     <string name="installer_install_failed">Install failed</string>

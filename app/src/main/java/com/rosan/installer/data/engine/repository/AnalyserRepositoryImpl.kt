@@ -3,9 +3,11 @@
 package com.rosan.installer.data.engine.repository
 
 import com.rosan.installer.data.engine.parser.FileTypeDetector
+import com.rosan.installer.data.engine.parser.CommonsZipException
 import com.rosan.installer.data.engine.parser.PackagePreprocessor
 import com.rosan.installer.data.engine.parser.UnifiedContainerAnalyser
 import com.rosan.installer.data.engine.signature.PackageSignatureAnalyzer
+import com.rosan.installer.domain.engine.exception.AnalyseException
 import com.rosan.installer.domain.engine.model.AnalyseExtraEntity
 import com.rosan.installer.domain.engine.model.packageinfo.AppEntity
 import com.rosan.installer.domain.engine.model.packageinfo.PackageSignatureAnalysis
@@ -61,7 +63,10 @@ class AnalyserRepositoryImpl(
         }
 
         // Step 2: Group, Deduplicate
-        val processedGroups = packagePreprocessor.process(rawEntities, includeSignature = extra.checkAppSignature)
+        val includeSignature = rawEntities.any { entity ->
+            extra.shouldCheckAppSignatures(entity.sourceType)
+        }
+        val processedGroups = packagePreprocessor.process(rawEntities, includeSignature = includeSignature)
 
         Timber.d("AnalyserRepo: Step 2 Processed. Groups count: ${processedGroups.size}")
         processedGroups.forEach { group ->
@@ -113,7 +118,14 @@ class AnalyserRepositoryImpl(
                 ?.app as? AppEntity.BaseEntity
                 ?: baseEntity
 
-            val signatureStatus = if (extra.checkAppSignature) {
+            val signatureCheckPerformed = selectableEntities
+                .asSequence()
+                .filter { it.selected }
+                .map { it.app }
+                .filter { it is AppEntity.BaseEntity || it is AppEntity.SplitEntity }
+                .any { entity -> extra.shouldCheckAppSignatures(entity.sourceType) }
+
+            val signatureStatus = if (signatureCheckPerformed) {
                 packageSignatureAnalyzer.match(
                     selectedBaseEntity,
                     group.installedInfo
@@ -122,7 +134,7 @@ class AnalyserRepositoryImpl(
                 SignatureMatchStatus.NOT_INSTALLED
             }
 
-            val signatureAnalysis = if (extra.checkAppSignature) {
+            val signatureAnalysis = if (signatureCheckPerformed) {
                 packageSignatureAnalyzer.analyzeSelection(
                     selectableEntities,
                     group.installedInfo
@@ -142,6 +154,7 @@ class AnalyserRepositoryImpl(
                 packageName = group.packageName,
                 appEntities = selectableEntities,
                 installedAppInfo = group.installedInfo,
+                signatureCheckPerformed = signatureCheckPerformed,
                 signatureMatchStatus = signatureStatus,
                 signatureAnalysis = signatureAnalysis,
                 identityStatus = identityStatus,
@@ -161,14 +174,21 @@ class AnalyserRepositoryImpl(
     ): List<AppEntity> =
         try {
             // Detect type efficiently
-            val fileType = fileTypeDetector.detect(data, extra)
-            Timber.d("AnalyserRepo: FileType -> $fileType")
-            if (fileType == DataType.NONE) return emptyList()
-            // Delegate to the Unified Analyzer
-            unifiedContainerAnalyser.analyze(config, data, fileType, extra.copy(dataType = fileType))
+            fileTypeDetector.detectWithArchive(data, extra).use { detected ->
+                val fileType = detected.type
+                Timber.d("AnalyserRepo: FileType -> $fileType")
+                if (fileType == DataType.NONE) return emptyList()
+                unifiedContainerAnalyser.analyzeWithArchive(
+                    config = config,
+                    data = data,
+                    type = fileType,
+                    archive = detected.archive,
+                    extra = extra.copy(dataType = fileType)
+                )
+            }
         } catch (e: Exception) {
             Timber.e(e, "Fatal error analyzing source: ${data.source}")
-            if (e is ZipException) throw e
-            else emptyList()
+            if (e is AnalyseException || e is CommonsZipException || e is ZipException) throw e
+            emptyList()
         }
 }

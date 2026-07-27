@@ -89,8 +89,6 @@
     <string name="ignore_battery_optimizations">バッテリーの最適化を無視</string>
     <string name="ignore_battery_optimizations_desc">厳格なバックグラウンドポリシーを持つ ROM で役立ちます。通知が表示され続ける場合は、「バッテリーの最適化を無視」を有効にしてみてください</string>
     <string name="ignore_battery_optimizations_desc_disabled">すでに無視されています</string>
-    <string name="auto_lock_default_installer">デフォルトのインストーラーとして自動的に設定</string>
-    <string name="auto_lock_default_installer_desc">新規にインストールを開始するときに、このアプリを自動的にインストーラーとして設定します</string>
     <string name="lock_default_installer">デフォルトインストーラーの設定</string>
     <string name="lock_default_installer_desc">InstallerX を APK をインストールするためのデフォルトのアプリとして設定します</string>
     <string name="lock_default_installer_success">デフォルトのインストーラーとして正常に設定されました</string>
@@ -893,4 +891,13 @@
     <string name="installer_signature_warnings">検証に関する警告</string>
     <string name="installer_signature_errors">検証エラー</string>
     <string name="installer_signature_no_certificates">署名証明書が入手できませんでした。</string>
+    <string name="config_smart_authorizer_fallback_list">フォールバック承認者リスト</string>
+    <string name="config_smart_authorizer_fallback_list_desc">代替承認者を選択して並べ替えます。\n選択された承認順序: %1$s</string>
+    <string name="config_auto_approve_session">セッションインストールの自動承認</string>
+    <string name="config_auto_approve_session_desc">対象アプリからのセッションインストール要求をサイレントに承認します</string>
+    <string name="self_update_install_success">InstallerX は正常にアップデートされました</string>
+    <string name="uninstall_archive_message">このデバイスからアーカイブされたアプリをアンインストールします</string>
+    <string name="exception_install_failed_all_authorizers_failed">すべての承認者が失敗しました</string>
+    <string name="exception_install_failed_blocked_by_profile_signature_mismatch">プロファイルは、署名が異なるアプリのインストールをブロックします</string>
+    <string name="exception_install_failed_blocked_by_profile_signature_unknown">プロファイルは、署名を検証できないアプリのインストールをブロックします</string>
 </resources>

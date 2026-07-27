@@ -156,9 +156,9 @@ android {
     }
 }
 
-configurations.all {
+/*configurations.all {
     exclude(group = "androidx.navigationevent", module = "navigationevent-compose")
-}
+}*/
 
 aboutLibraries {
     library {
@@ -175,6 +175,10 @@ room3 {
 }
 
 dependencies {
+    testImplementation(libs.kotlin.test.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
+
+    implementation(libs.commons.compress)
     implementation(libs.androidx.profileinstaller)
     implementation(libs.android.tools.apksig)
     "baselineProfile"(project(":baselineprofile"))
@@ -192,11 +196,10 @@ dependencies {
     implementation(libs.compose.material3)
     implementation(libs.androidx.lifecycle.viewmodel.navigation3)
 
-    implementation(libs.androidx.navigation3.runtime)
-    // implementation(libs.androidx.navigation3.ui)
-    implementation(libs.androidx.navigationevent) {
-        exclude(group = "androidx.navigation", module = "navigationevent-compose")
-    }
+    // implementation(libs.androidx.navigation3.runtime)
+    /*    implementation(libs.androidx.navigationevent) {
+            exclude(group = "androidx.navigation", module = "navigationevent-compose")
+        }*/
 
     implementation(libs.compose.materialIcons)
     // Preview support only for debug builds

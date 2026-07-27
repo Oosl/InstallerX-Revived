@@ -22,6 +22,7 @@ import com.rosan.installer.domain.engine.model.AnalyseExtraEntity
 import com.rosan.installer.domain.engine.model.error.AnalyseErrorType
 import com.rosan.installer.domain.engine.model.error.InstallErrorType
 import com.rosan.installer.domain.engine.model.install.InstallMetadata
+import com.rosan.installer.domain.engine.model.install.InstallPhase
 import com.rosan.installer.domain.engine.model.install.SessionMode
 import com.rosan.installer.domain.engine.model.install.sourcePath
 import com.rosan.installer.domain.engine.model.packageinfo.PackageAnalysisResult
@@ -48,7 +49,6 @@ import com.rosan.installer.domain.settings.repository.BooleanSetting
 import com.rosan.installer.domain.settings.repository.StringSetting
 import com.rosan.installer.framework.auth.safeBiometricAuthOrThrow
 import com.rosan.installer.framework.packageupdate.SelfUpdateRecoveryManager
-import com.rosan.installer.framework.service.AutoLockService
 import com.rosan.installer.util.getErrorMessage
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -88,7 +88,6 @@ class ActionHandler(
     private val appSettingsRepo by inject<AppSettingsRepository>()
     private val shellExecutionProvider by inject<ShellExecutionProvider>()
     private val deviceCapabilityProvider by inject<DeviceCapabilityProvider>()
-    private val autoLockService by inject<AutoLockService>()
     private val selfUpdateRecoveryManager by inject<SelfUpdateRecoveryManager>()
     private val configResolver by inject<ConfigResolver>()
     private val uninstallResolver by inject<UninstallResolver>()
@@ -318,9 +317,6 @@ class ActionHandler(
             session.config = session.config.copy(installMode = InstallMode.Dialog)
         }
 
-        Timber.d("[id=$sessionId] resolve: Requesting AutoLockManager check.")
-        autoLockService.onResolveInstall(session.config.authorizer)
-
         if (session.config.installMode.isNotification) {
             Timber.d("[id=$sessionId] Notification mode detected early. Switching to background.")
             session.background(true)
@@ -347,10 +343,16 @@ class ActionHandler(
         val checkAppSignature = appSettingsRepo.getBoolean(BooleanSetting.CheckAppSignature, true).first()
         Timber.d("[id=$sessionId] App signature checks enabled: $checkAppSignature")
 
+        val checkSplitPackageSignatures = appSettingsRepo
+            .getBoolean(BooleanSetting.CheckSplitPackageSignatures, false)
+            .first()
+        Timber.d("[id=$sessionId] Split package signature checks enabled: $checkSplitPackageSignatures")
+
         val extra = AnalyseExtraEntity(
             cacheDirectory = cacheDirectory,
             isModuleFlashEnabled = isModuleEnabled,
-            checkAppSignature = checkAppSignature
+            checkAppSignature = checkAppSignature,
+            checkSplitPackageSignatures = checkSplitPackageSignatures
         )
 
         val results = analyzePackage(
@@ -750,7 +752,15 @@ class ActionHandler(
                 val total = details.totalProgress
                 val label = details.appLabel.toString()
 
-                session.progress.emit(ProgressEntity.Installing(current, total, label))
+                session.progress.emit(
+                    ProgressEntity.Installing(
+                        current = current,
+                        total = total,
+                        appLabel = label,
+                        writeProgress = 1f,
+                        phase = InstallPhase.INSTALLING
+                    )
+                )
             } else {
                 // DO NOT emit InstallFailed manually here!
                 // The system will abort the session and send an INSTALL_FAILED_ABORTED intent

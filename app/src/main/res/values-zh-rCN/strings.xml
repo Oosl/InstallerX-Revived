@@ -167,6 +167,8 @@
     <string name="installer_settings_signature_check">签名检查</string>
     <string name="config_check_app_signature">检查应用签名</string>
     <string name="config_check_app_signature_desc">安装前分析 APK 签名，并与已安装应用进行对比</string>
+    <string name="config_check_split_package_signatures">分析拆分包签名</string>
+    <string name="config_check_split_package_signatures_desc">分析 APKS、APKM、XAPK 中的 APK 签名，会显著增加分析时间</string>
     <string name="config_show_signature_info_on_match">正常签名状态也显示信息</string>
     <string name="config_show_signature_info_on_match_desc">签名一致或全新安装时，也在安装界面显示签名提示</string>
     <string name="config_show_signature_details">显示签名详情</string>
@@ -235,8 +237,6 @@
     <string name="ignore_battery_optimizations_desc">适用于后台管理严格的 ROM。若安装通知卡住，请尝试忽略电池优化</string>
     <string name="ignore_battery_optimizations_desc_disabled">已被忽略</string>
     <string name="default_installer">默认安装器</string>
-    <string name="auto_lock_default_installer">自动锁定安装器</string>
-    <string name="auto_lock_default_installer_desc">在开始安装时自动将本应用设置为默认安装器</string>
     <string name="lock_default_installer">锁定为默认安装器</string>
     <string name="lock_default_installer_desc">多个授权方式配合效果更佳，少数系统需要配合 Xposed 模块</string>
     <string name="lock_default_installer_success">锁定成功</string>
@@ -497,7 +497,8 @@
     <string name="installer_install_confirm">安装确认</string>
     <string name="installer_install_pre_approval">安装预批准</string>
     <string name="installer_permissions_confirm">权限确认</string>
-    <string name="installer_installing">安装中…</string>
+    <string name="installer_writing">正在写入…</string>
+    <string name="installer_installing">正在安装…</string>
     <string name="installer_installing_module">安装模块中</string>
     <string name="installer_install_failed">安装失败</string>
     <string name="installer_install_success">安装成功</string>
