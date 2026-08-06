@@ -77,6 +77,7 @@ import com.rosan.installer.util.toast
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.blur.layerBackdrop
+import top.yukonga.miuix.kmp.nav.gesture.WindowNavigationEventBridge
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -246,6 +247,7 @@ fun HistoryPage(
                 )
             }
         ) {
+            WindowNavigationEventBridge()
             HistoryRecordDetailContent(
                 record = selectedRecord!!,
                 isSystemApp = state.isSystemApp,

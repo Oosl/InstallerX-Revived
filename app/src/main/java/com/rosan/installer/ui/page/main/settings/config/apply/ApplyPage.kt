@@ -105,6 +105,7 @@ import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
 import top.yukonga.miuix.kmp.blur.layerBackdrop
+import top.yukonga.miuix.kmp.nav.gesture.WindowNavigationEventBridge
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -292,6 +293,7 @@ fun ApplyPage(
     }
 
     if (showBottomSheet) ModalBottomSheet(onDismissRequest = { showBottomSheet = false }) {
+        WindowNavigationEventBridge()
         BottomSheetContent(uiState = uiState, viewModel = viewModel)
     }
 }

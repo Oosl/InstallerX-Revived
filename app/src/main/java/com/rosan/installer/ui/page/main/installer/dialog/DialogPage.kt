@@ -27,6 +27,7 @@ import com.rosan.installer.ui.theme.material.dynamicColorScheme
 import com.rosan.installer.ui.util.WindowBlurEffect
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import top.yukonga.miuix.kmp.nav.gesture.WindowNavigationEventBridge
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -102,6 +103,7 @@ fun DialogPage(
                     containerColor = colorScheme.surfaceContainer,
                     contentColor = colorScheme.onSurface
                 ) {
+                    WindowNavigationEventBridge()
                     val blurRadius = if (sheetState.targetValue == SheetValue.Expanded) 30 else 0
                     AnimatedContent(targetState = blurRadius) { targetState ->
                         WindowBlurEffect(useBlur = useBlur, blurRadius = targetState)
