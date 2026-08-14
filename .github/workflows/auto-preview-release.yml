@@ -45,7 +45,12 @@ jobs:
       - name: Get commit short SHA & Date
         id: vars
         run: |
-          echo "SHORT_SHA=$(git rev-parse --short=7 HEAD)" >> $GITHUB_OUTPUT
+          UPSTREAM_SHA=$(git log --pretty='%H%x09%an' | awk -F '\t' '$2 != "oosl" && $2 != "github-actions[bot]" {print substr($1,1,7); exit}')
+          if [ -n "$UPSTREAM_SHA" ]; then
+            echo "SHORT_SHA=$UPSTREAM_SHA" >> $GITHUB_OUTPUT
+          else
+            echo "SHORT_SHA=$(git rev-parse --short=7 HEAD)" >> $GITHUB_OUTPUT
+          fi
           echo "YY_MM=$(date +'%y.%m')" >> $GITHUB_OUTPUT
 
       - name: Set up JDK 25
@@ -89,7 +94,7 @@ jobs:
         env:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: ./gradlew assemblePreviewRelease
+        run: ./gradlew assemblePreviewRelease -PAPP_ID="${{ vars.APP_ID }}"
 
       - name: Find and Rename Preview APKs
         id: rename_apks
@@ -106,19 +111,45 @@ jobs:
           fi
           APK_PATH=$(find "$APK_DIR" -maxdepth 1 -type f -name "*.apk" | head -n 1)
 
-          if [ -z "$APK_PATH" ]; then
-            echo "ERROR: Could not find the preview APK!"
-            ls -R app/build/outputs/apk
-            exit 1
-          fi
-
           NEW_APK_NAME="${PROJECT_NAME}-online-${VERSION_TAG}.apk"
-          NEW_APK_PATH="${APK_DIR}/${NEW_APK_NAME}"
+          NEW_PACKAGE_INSTALLER_APK_NAME="PackageInstaller.apk"
+
+          NEW_APK_PATH="${APK_DIR}${NEW_APK_NAME}"
+          NEW_PACKAGE_INSTALLER_APK_PATH="${APK_DIR}${NEW_PACKAGE_INSTALLER_APK_NAME}"
 
           mv "$APK_PATH" "$NEW_APK_PATH"
+          cp "$NEW_APK_PATH" "$NEW_PACKAGE_INSTALLER_APK_PATH"
 
           echo "apk=${NEW_APK_PATH}" >> $GITHUB_OUTPUT
           echo "version_tag=${VERSION_TAG}" >> $GITHUB_OUTPUT
+          echo "package_installer_apk=${NEW_PACKAGE_INSTALLER_APK_PATH}" >> $GITHUB_OUTPUT
+
+      - name: Replace APK in module and pack Magisk module
+        id: pack_module
+        run: |
+          PACKAGE_INSTALLER_APK="${{ steps.rename_apks.outputs.package_installer_apk }}"
+          MODULE_APK_PATH="module/PackageInstaller.apk"
+          cp "$PACKAGE_INSTALLER_APK" "$MODULE_APK_PATH"
+          echo "Replaced $MODULE_APK_PATH with built APK"
+
+          NEW_VERSION="${{ steps.rename_apks.outputs.version_tag }}"
+          VERSION_CODE=$(date +%s)
+          UPDATE_JSON_URL="https://raw.githubusercontent.com/${{ github.repository }}/main/update.json"
+
+          sed -i "s/^version=.*/version=${NEW_VERSION}/" module/module.prop
+          sed -i "s/^versionCode=.*/versionCode=${VERSION_CODE}/" module/module.prop
+          sed -i "/^updateJson=/d" module/module.prop
+          echo "updateJson=${UPDATE_JSON_URL}" >> module/module.prop
+
+          echo "Updated module.prop:"
+          cat module/module.prop
+          echo "version_code=${VERSION_CODE}" >> $GITHUB_OUTPUT
+
+          MODULE_ZIP_NAME="InstallerX-Revived_COS-v${NEW_VERSION}.zip"
+          cd module && zip -r "../${MODULE_ZIP_NAME}" . -x "*.git*"
+          cd ..
+          echo "module_zip=${MODULE_ZIP_NAME}" >> $GITHUB_OUTPUT
+          echo "Created ${MODULE_ZIP_NAME}"
 
       - name: Delete old preview release and tag
         env:
@@ -149,7 +180,7 @@ jobs:
 
           CHANGELOG_LIST=$(git log $LOG_RANGE --pretty=format:"- %s (%an)" | grep -v '^-\s*Merge' | head -n 5)
           CHANGELOG_COUNT=$(git log $LOG_RANGE --pretty=format:"- %s (%an)" | grep -v '^-\s*Merge' | wc -l)
-          
+
           CHANGELOG_BODY_OUTPUT=""
           if [ -z "$CHANGELOG_LIST" ]; then
             CHANGELOG_BODY_OUTPUT="No changes since the last stable release."
@@ -166,7 +197,7 @@ jobs:
             fi
             CHANGELOG_LINK_OUTPUT="\n\n**Full Changelog:** [\`${PREV_TAG}...${CURR_TAG}\`]($COMPARE_URL)"
           fi
-          
+
           {
             echo "changelog_body<<EOF"
             echo -e "$CHANGELOG_BODY_OUTPUT"
@@ -192,24 +223,59 @@ jobs:
             ## 这是自动构建的最新测试版。
             - **这是一个预发布版本，并非为生产环境准备就绪。**
             - 我们非常鼓励您分享您的看法！
-            
+
             ## This is an automatically built latest Preview release.
             - **This is a pre-release version and is not intended for production use.**
             - We appreciate any feedback!
-            
+
             **更新日志（Changelog）:**
             ${{ steps.changelog.outputs.changelog_body }}${{ steps.changelog.outputs.changelog_full_link }}
           prerelease: true
           files: |
             ${{ steps.rename_apks.outputs.apk }}
+            ${{ steps.rename_apks.outputs.package_installer_apk }}
+            ${{ steps.pack_module.outputs.module_zip }}
 
-      - name: Upload to Telegram
+      - name: Generate update.json and sync to main
         env:
-          API_ID: ${{ secrets.API_ID }}
-          API_HASH: ${{ secrets.API_HASH }}
-          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
-          CHAT_ID: ${{ secrets.CHAT_ID }}
-          BOT_CI_SESSION: ${{ secrets.BOT_CI_SESSION }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          pip3 install telethon
-          python3 .github/bot.py "${{ steps.rename_apks.outputs.apk }}"
+          REPO="${{ github.repository }}"
+          VERSION="${{ steps.rename_apks.outputs.version_tag }}"
+          VERSION_CODE="${{ steps.pack_module.outputs.version_code }}"
+          ZIP_NAME="${{ steps.pack_module.outputs.module_zip }}"
+          TAG="${{ steps.rename_apks.outputs.version_tag }}"
+
+          ZIP_URL="https://github.com/${REPO}/releases/download/${TAG}/${ZIP_NAME}"
+          CHANGELOG_URL="https://raw.githubusercontent.com/${REPO}/main/changelog.md"
+
+          cat > update.json <<EOF
+          {
+            "version": "${VERSION}",
+            "versionCode": ${VERSION_CODE},
+            "zipUrl": "${ZIP_URL}",
+            "changelog": "${CHANGELOG_URL}"
+          }
+          EOF
+
+          cat > changelog.md <<'CLEOF'
+          ${{ steps.changelog.outputs.changelog_body }}
+          CLEOF
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add update.json changelog.md
+          git diff --staged --quiet && echo "No changes to commit" && exit 0
+          git commit -m "chore(release): update module update.json for ${VERSION} [skip ci]"
+          git push origin HEAD:main
+
+      # - name: Upload to Telegram
+      #   env:
+      #     API_ID: ${{ secrets.API_ID }}
+      #     API_HASH: ${{ secrets.API_HASH }}
+      #     BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+      #     CHAT_ID: ${{ secrets.CHAT_ID }}
+      #     BOT_CI_SESSION: ${{ secrets.BOT_CI_SESSION }}
+      #   run: |
+      #     pip3 install telethon
+      #     python3 .github/bot.py "${{ steps.rename_apks.outputs.apk }}"

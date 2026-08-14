@@ -1,0 +1,97 @@
+name: Sync Upstream
+
+on:
+  schedule:
+    - cron: '18 */7 * * *'
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: sync-upstream-${{ github.repository }}
+      cancel-in-progress: false
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout fork
+        uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.INSTALLER_X_TOKEN }}
+
+      - name: Add upstream remote and fetch
+        run: |
+          git remote add upstream https://github.com/wxxsfxyzm/InstallerX-Revived.git
+          git fetch upstream main
+
+      - name: Check for upstream changes
+        id: check
+        run: |
+          DIFF_COUNT=$(git rev-list --count HEAD..upstream/main)
+          echo "diff_count=${DIFF_COUNT}" >> $GITHUB_OUTPUT
+          if [ "$DIFF_COUNT" -eq 0 ]; then
+            echo "Already up to date with upstream."
+          else
+            echo "Upstream has ${DIFF_COUNT} new commit(s)."
+          fi
+
+      - name: Try merge upstream
+        if: steps.check.outputs.diff_count != '0'
+        id: merge
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git fetch origin main
+          git reset --hard origin/main
+
+          UPSTREAM_SHA=$(git rev-parse --short upstream/main)
+          if git merge upstream/main --no-edit -m "auto sync upstream (${UPSTREAM_SHA})"; then
+            echo "merge_ok=true" >> $GITHUB_OUTPUT
+          else
+            echo "merge_ok=false" >> $GITHUB_OUTPUT
+            git merge --abort
+          fi
+
+      - name: Push merged changes
+        if: steps.check.outputs.diff_count != '0' && steps.merge.outputs.merge_ok == 'true'
+        run: git push origin main
+
+      - name: Open PR for upstream merge conflicts
+        if: steps.check.outputs.diff_count != '0' && steps.merge.outputs.merge_ok == 'false'
+        run: |
+          git checkout main
+          git fetch origin main
+          git reset --hard origin/main
+          git fetch upstream main
+          git reset --hard upstream/main
+
+      - name: Create Pull Request
+        id: cpr
+        if: steps.check.outputs.diff_count != '0' && steps.merge.outputs.merge_ok == 'false'
+        uses: peter-evans/create-pull-request@v8
+        with:
+          # PR 用默认 token；推分支用 PAT（与 checkout 一致），避免分支保护只认 PAT 时推送失败。
+          token: ${{ github.token }}
+          branch-token: ${{ secrets.INSTALLER_X_TOKEN }}
+          branch: upstream-sync/conflicts
+          base: main
+          title: "Upstream Sync - 需手动解决冲突"
+          commit-message: |
+            chore: upstream snapshot for conflict resolution PR
+
+            Sync head matches wxxsfxyzm/InstallerX-Revived main at workflow run.
+          body: |
+            ## 上游同步
+
+            自动合并上游 `wxxsfxyzm/InstallerX-Revived` 的 `main` 到本仓库 `main` 时出现冲突，已打开本 PR 供手动合并。
+
+            **操作方式：**
+            1. 在本地 checkout 本 PR 分支，或直接在 GitHub 上解决冲突
+            2. 解决冲突后合并本 PR 到 `main`
+
+            由 [create-pull-request](https://github.com/peter-evans/create-pull-request) 创建/更新；同一分支名会复用同一条 PR。

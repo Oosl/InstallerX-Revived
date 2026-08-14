@@ -1,0 +1,53 @@
+name: Generate Random Keystore
+
+on:
+  workflow_dispatch:
+
+jobs:
+  generate-keystore:
+    runs-on: ubuntu-latest
+
+    env:
+      KEYSTORE_DIR: keystore
+      KEYSTORE_NAME: carlyu.jks
+      KEY_ALIAS: carlyu
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - run: mkdir -p "${KEYSTORE_DIR}"
+
+      - id: genpass
+        run: |
+          PASS="$(openssl rand -hex 16)"
+          echo "KEYSTORE_PASSWORD=$PASS" >> "$GITHUB_ENV"
+
+      - run: |
+          keytool -genkeypair \
+            -alias "${KEY_ALIAS}" \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -storetype JKS \
+            -keystore "${KEYSTORE_DIR}/${KEYSTORE_NAME}" \
+            -storepass "$KEYSTORE_PASSWORD" \
+            -keypass "$KEYSTORE_PASSWORD" \
+            -dname "CN=CI, OU=Android, O=Auto, L=Build, S=Cloud, C=US"
+
+      - run: |
+          base64 -w 0 "${KEYSTORE_DIR}/${KEYSTORE_NAME}" > \
+            "${KEYSTORE_DIR}/${KEYSTORE_NAME}.base64"
+
+      - run: |
+          cat > "${KEYSTORE_DIR}/keystore.properties" <<EOF
+          storeFileBase64=${KEYSTORE_DIR}/${KEYSTORE_NAME}.base64
+          storeFile=${KEYSTORE_DIR}/${KEYSTORE_NAME}
+          keyAlias=${KEY_ALIAS}
+          storePassword=${KEYSTORE_PASSWORD}
+          keyPassword=${KEYSTORE_PASSWORD}
+          EOF
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: keystore-files
+          path: keystore/

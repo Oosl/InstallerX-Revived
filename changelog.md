@@ -1,0 +1,5 @@
+- auto sync upstream (ac0a6874) (github-actions[bot])
+- refactor: replace custom back bridge with miuix WindowNavigationEventBridge (wxxsfxyzm)
+- chore(deps): update dependency com.google.devtools.ksp to v2.3.11 (#776) (renovate[bot])
+- i18n: Translations update from Hosted Weblate (#769) (Weblate (bot))
+- fix: prevent stale notifications during rapid stage transitions (wxxsfxyzm)
