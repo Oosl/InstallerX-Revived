@@ -49,12 +49,7 @@ Limited support means InstallerX may work, but some features can be unavailable 
 
 When reporting bugs, please reproduce them on the latest Alpha or CI build whenever possible, because issues in Stable may already be fixed.
 
-InstallerX is published in two variants:
-
-- **Online:** supports direct APK download links and online update features. Network permission is only used for installation-related features.
-- **Offline:** requests no network permission. Online-only features will show a clear error instead.
-
-Both variants share the same package name, version code, and signature, so they replace each other instead of installing side by side.
+InstallerX is now published as a single APK. Network access is controlled by an in-app setting. The release filename continues to include `online` only for compatibility with older in-app update clients; it no longer identifies a separate build variant.
 
 ## Building
 
@@ -85,13 +80,13 @@ Do not commit these credentials to this repository.
 For a local debug build:
 
 ```bash
-./gradlew assembleOnlineUnstableDebug assembleOfflineUnstableDebug
+./gradlew assembleUnstableDebug
 ```
 
 For a PR-style test build with a separate application id:
 
 ```bash
-./gradlew assembleOnlinePreviewDebug assembleOfflinePreviewDebug -PAPP_ID="com.rosan.installer.x.revived.test"
+./gradlew assemblePreviewDebug -PAPP_ID="com.rosan.installer.x.revived.test"
 ```
 
 ## Common Questions

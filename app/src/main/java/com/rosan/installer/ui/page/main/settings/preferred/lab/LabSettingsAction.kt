@@ -2,8 +2,6 @@
 // Copyright (C) 2025-2026 InstallerX Revived contributors
 package com.rosan.installer.ui.page.main.settings.preferred.lab
 
-import com.rosan.installer.domain.settings.model.preferences.GithubUpdateChannel
-import com.rosan.installer.domain.settings.model.preferences.HttpProfile
 import com.rosan.installer.domain.settings.model.preferences.RootMode
 import com.rosan.installer.domain.settings.model.preferences.SmartAuthorizerCandidate
 
@@ -11,15 +9,10 @@ sealed interface LabSettingsAction {
     data class LabChangeRootModuleFlash(val enable: Boolean) : LabSettingsAction
     data class LabChangeRootShowModuleArt(val enable: Boolean) : LabSettingsAction
     data class LabChangeRootImplementation(val implementation: RootMode) : LabSettingsAction
-    data class LabChangeHttpProfile(val profile: HttpProfile) : LabSettingsAction
-    data class LabChangeHttpSaveFile(val enable: Boolean) : LabSettingsAction
     data class LabChangeAllowInstallWithoutUserAction(val enable: Boolean) : LabSettingsAction
     data class LabChangeRespectPlatformInstallPolicy(val enable: Boolean) : LabSettingsAction
     data class LabChangeTryMultipleAuthorizersOnInstall(val enable: Boolean) : LabSettingsAction
     data class LabChangeSmartAuthorizerCandidates(
         val candidates: List<SmartAuthorizerCandidate>
     ) : LabSettingsAction
-
-    data class LabChangeGithubUpdateChannel(val channel: GithubUpdateChannel) : LabSettingsAction
-    data class LabChangeCustomGithubProxyUrl(val url: String) : LabSettingsAction
 }

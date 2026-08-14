@@ -124,7 +124,7 @@ class DefaultPrivilegedService private constructor(
     private fun getUpdateOwnerPackageName(packageName: String, userId: Int): String? =
         iPackageManager.getInstallSourceInfo(packageName, userId).updateOwnerPackageName
 
-    override fun delete(paths: Array<out String>) = deletePaths(paths.toList())
+    override fun delete(paths: Array<out String>) = deletePaths(context, paths.toList())
 
     override fun performDexOpt(
         packageName: String,
@@ -731,7 +731,7 @@ class DefaultPrivilegedService private constructor(
             resolvedLabel?.let { putCharSequence("appLabel", it) }
             putString("packageName", packageName)
             putString("installerPackageName", sessionInfo.installerPackageName)
-            putInt("installerUid", sessionInfo.installerUid)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) putInt("installerUid", sessionInfo.installerUid)
             path?.let { putString("resolvedBaseCodePath", it) }
             putBoolean("isUpdate", isUpdate)
             putBoolean("isOwnershipConflict", isOwnershipConflict)
@@ -784,11 +784,15 @@ class DefaultPrivilegedService private constructor(
 
             // The integer 3 actually means FIREWALL_CHAIN_POWERSAVE (Whitelist mode).
             // We must use 9, which represents FIREWALL_CHAIN_OEM_DENY_3 (Blacklist mode).
-            val chain = 9
+            val chain = IConnectivityManager.FIREWALL_CHAIN_OEM_DENY_3
 
             // FIREWALL_RULE_DEFAULT = 0, FIREWALL_RULE_ALLOW = 1, FIREWALL_RULE_DENY = 2
             // For a DENY chain, use DENY (2) to block, and DEFAULT (0) to remove the block.
-            val rule = if (enabled) 0 else 2
+            val rule = if (enabled) {
+                IConnectivityManager.FIREWALL_RULE_DEFAULT
+            } else {
+                IConnectivityManager.FIREWALL_RULE_DENY
+            }
 
             if (!enabled) {
                 // Block network: Ensure the chain is enabled, then apply DENY rule to the UID

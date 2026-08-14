@@ -25,14 +25,10 @@ class LabSettingsViewModel(
             labRootEnableModuleFlash = prefs.labRootEnableModuleFlash,
             labRootShowModuleArt = prefs.labRootShowModuleArt,
             labRootMode = prefs.labRootMode,
-            labHttpProfile = prefs.labHttpProfile,
-            labHttpSaveFile = prefs.labHttpSaveFile,
             labAllowInstallWithoutUserAction = prefs.labInstallWithoutUserAction,
             labRespectPlatformInstallPolicy = prefs.labRespectPlatformInstallPolicy,
             tryMultipleAuthorizersOnInstall = prefs.tryMultipleAuthorizersOnInstall,
-            smartAuthorizerCandidates = prefs.smartAuthorizerCandidates,
-            githubUpdateChannel = prefs.githubUpdateChannel,
-            customGithubProxyUrl = prefs.customGithubProxyUrl
+            smartAuthorizerCandidates = prefs.smartAuthorizerCandidates
         )
     }.stateIn(
         scope = viewModelScope,
@@ -60,20 +56,6 @@ class LabSettingsViewModel(
                 updateSetting(
                     StringSetting.LabRootImplementation,
                     action.implementation.name
-                )
-            }
-
-            is LabSettingsAction.LabChangeHttpProfile -> viewModelScope.launch {
-                updateSetting(
-                    StringSetting.LabHttpProfile,
-                    action.profile.name
-                )
-            }
-
-            is LabSettingsAction.LabChangeHttpSaveFile -> viewModelScope.launch {
-                updateSetting(
-                    BooleanSetting.LabHttpSaveFile,
-                    action.enable
                 )
             }
 
@@ -105,19 +87,6 @@ class LabSettingsViewModel(
                 )
             }
 
-            is LabSettingsAction.LabChangeGithubUpdateChannel -> viewModelScope.launch {
-                updateSetting(
-                    StringSetting.GithubUpdateChannel,
-                    action.channel.name
-                )
-            }
-
-            is LabSettingsAction.LabChangeCustomGithubProxyUrl -> viewModelScope.launch {
-                updateSetting(
-                    StringSetting.CustomGithubProxyUrl,
-                    action.url
-                )
-            }
         }
     }
 }
