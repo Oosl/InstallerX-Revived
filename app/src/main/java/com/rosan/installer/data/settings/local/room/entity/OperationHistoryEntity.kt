@@ -11,8 +11,12 @@ import androidx.room3.PrimaryKey
     tableName = "operation_history",
     indices = [
         Index(value = ["timestamp"]),
-        Index(value = ["package_name"])
-    ]
+        Index(value = ["package_name"]),
+        Index(
+            value = ["operation_session_key", "operation_type", "package_name"],
+            unique = true,
+        ),
+    ],
 )
 data class OperationHistoryEntity(
     @PrimaryKey(autoGenerate = true)
@@ -36,5 +40,6 @@ data class OperationHistoryEntity(
     @ColumnInfo(name = "authorizer") var authorizer: String,
     @ColumnInfo(name = "install_mode") var installMode: String,
     @ColumnInfo(name = "error_summary") var errorSummary: String? = null,
-    @ColumnInfo(name = "error_type") var errorType: String? = null
+    @ColumnInfo(name = "error_type") var errorType: String? = null,
+    @ColumnInfo(name = "operation_session_key") var operationSessionKey: String? = null,
 )

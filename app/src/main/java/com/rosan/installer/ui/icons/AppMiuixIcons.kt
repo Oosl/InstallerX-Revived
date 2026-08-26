@@ -16,6 +16,7 @@ import top.yukonga.miuix.kmp.icon.extended.Info
 import top.yukonga.miuix.kmp.icon.extended.Ok
 import top.yukonga.miuix.kmp.icon.extended.Refresh
 import top.yukonga.miuix.kmp.icon.extended.Settings
+import top.yukonga.miuix.kmp.icon.extended.Tune
 
 object AppMiuixIcons {
     // --- App Icons ---
@@ -24,6 +25,7 @@ object AppMiuixIcons {
     val Refresh = MiuixIcons.Regular.Refresh
     val Ok = MiuixIcons.Regular.Ok
     val Delete = MiuixIcons.Regular.Delete
+    val Tune = MiuixIcons.Regular.Tune
 
     // --- Navigation Icons ---
     val Back = MiuixIcons.Regular.Back
@@ -44,14 +46,14 @@ object AppMiuixIcons {
                     scaleX = 0.85f,
                     scaleY = 0.85f,
                     pivotX = 517.5f, // Center of 1035.0f
-                    pivotY = 517.5f  // Center of 1035.0f
+                    pivotY = 517.5f, // Center of 1035.0f
                 ) {
                     // Layer 2: Original Transform Group
                     group(
                         scaleX = 1.0f,
                         scaleY = -1.0f,
                         translationX = -147.5f,
-                        translationY = 895.25f
+                        translationY = 895.25f,
                     ) {
                         addPath(
                             pathData = listOf(
@@ -95,5 +97,4 @@ object AppMiuixIcons {
         }
 
     private var _closeRegular: ImageVector? = null
-
 }

@@ -98,7 +98,7 @@
             android:launchMode="singleInstance"
             android:theme="@style/Theme.Installer.Translucent">
 
-            <intent-filter android:priority="10">
+            <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <action android:name="android.intent.action.INSTALL_PACKAGE" />
 
@@ -123,7 +123,7 @@
                 <data android:mimeType="*/*" />
             </intent-filter>
 
-            <intent-filter android:priority="10">
+            <intent-filter>
                 <action android:name="android.content.pm.action.CONFIRM_INSTALL" />
                 <action android:name="android.content.pm.action.CONFIRM_PERMISSIONS" />
                 <action android:name="android.content.pm.action.CONFIRM_PRE_APPROVAL" />
@@ -140,7 +140,7 @@
             android:launchMode="singleInstance"
             android:theme="@style/Theme.Installer.Translucent">
 
-            <intent-filter android:priority="10">
+            <intent-filter>
                 <action android:name="android.intent.action.DELETE" />
                 <action android:name="android.intent.action.UNINSTALL_PACKAGE" />
 
@@ -229,10 +229,6 @@
                     android:host="46789" />
             </intent-filter>
         </receiver>
-
-        <meta-data
-            android:name="ScopedStorage"
-            android:value="true" />
 
         <meta-data
             android:name="app_description_title"

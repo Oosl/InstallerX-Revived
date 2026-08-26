@@ -10,8 +10,11 @@ import android.os.Build
 import android.os.Process
 import android.os.SystemClock
 import androidx.annotation.RequiresApi
+import com.rosan.installer.domain.history.usecase.RecordOperationHistoryUseCase
 import com.rosan.installer.domain.packageupdate.model.PendingSelfUpdate
+import com.rosan.installer.domain.packageupdate.model.PendingSelfUpdateHistory
 import com.rosan.installer.domain.packageupdate.repository.SelfUpdateRecoveryRepository
+import com.rosan.installer.domain.packageupdate.usecase.toSuccessfulOperationHistory
 import com.rosan.installer.domain.privileged.model.PostInstallTaskInfo
 import com.rosan.installer.domain.privileged.provider.PostInstallTaskProvider
 import kotlinx.coroutines.CancellationException
@@ -27,12 +30,14 @@ import timber.log.Timber
 class SelfUpdateRecoveryManager(
     context: Context,
     private val recoveryRepository: SelfUpdateRecoveryRepository,
-    private val postInstallTaskProvider: PostInstallTaskProvider
+    private val postInstallTaskProvider: PostInstallTaskProvider,
+    private val recordOperationHistory: RecordOperationHistoryUseCase,
 ) {
     private val appContext = context.applicationContext
     private val sourceDeletionMutex = Mutex()
+    private val completionMutex = Mutex()
 
-    suspend fun arm(sessionId: String): Boolean {
+    suspend fun arm(sessionId: String, history: PendingSelfUpdateHistory? = null): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.CINNAMON_BUN) return false
 
         val packageInfo = runCatching {
@@ -45,7 +50,12 @@ class SelfUpdateRecoveryManager(
         val pendingUpdate = PendingSelfUpdate(
             sessionId = sessionId,
             previousUpdateTime = packageInfo.lastUpdateTime,
-            armedAtElapsed = SystemClock.elapsedRealtime()
+            armedAtElapsed = SystemClock.elapsedRealtime(),
+            history = history?.copy(
+                packageName = appContext.packageName,
+                oldVersionName = packageInfo.versionName,
+                oldVersionCode = packageInfo.longVersionCode,
+            ),
         )
         return try {
             // DataStore edit returns only after the transaction is durably persisted.
@@ -71,20 +81,19 @@ class SelfUpdateRecoveryManager(
         }
     }
 
-    suspend fun consumeCompletionNotice(): Boolean = try {
-        recoveryRepository.consumeCompletionNotice()
-    } catch (error: CancellationException) {
-        throw error
-    } catch (error: Exception) {
-        Timber.w(error, "Failed to consume Android 17 self-update completion notice.")
-        false
+    suspend fun consumeCompletionNotice(): Boolean = completionMutex.withLock {
+        recordCompletedHistory()
+        try {
+            recoveryRepository.consumeCompletionNotice()
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Exception) {
+            Timber.w(error, "Failed to consume Android 17 self-update completion notice.")
+            false
+        }
     }
 
-    suspend fun consumeSystemUiRecovery(
-        launchedFromUid: Int,
-        platformReferrerPackage: String?,
-        intentFlags: Int
-    ): Boolean {
+    suspend fun consumeSystemUiRecovery(launchedFromUid: Int, platformReferrerPackage: String?, intentFlags: Int): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.CINNAMON_BUN) return false
         if (intentFlags and Intent.FLAG_ACTIVITY_CLEAR_TASK == 0) {
             Timber.d("Ignoring Android 17 self-update recovery without FLAG_ACTIVITY_CLEAR_TASK.")
@@ -104,13 +113,13 @@ class SelfUpdateRecoveryManager(
         if (!launchedFromSystemUi && !referredBySystemUi) {
             Timber.w(
                 "Ignoring Android 17 self-update recovery from uid=$launchedFromUid, " +
-                        "packages=$launchedFromPackages, platformReferrer=$platformReferrerPackage."
+                    "packages=$launchedFromPackages, platformReferrer=$platformReferrerPackage.",
             )
             return false
         }
         Timber.d(
             "Accepted Android 17 self-update recovery source: uid=$launchedFromUid, " +
-                    "packages=$launchedFromPackages, platformReferrer=$platformReferrerPackage."
+                "packages=$launchedFromPackages, platformReferrer=$platformReferrerPackage.",
         )
 
         val pendingUpdate = readPendingUpdate()
@@ -122,7 +131,7 @@ class SelfUpdateRecoveryManager(
             clearPendingUpdate()
             Timber.w(
                 "Discarded expired Android 17 self-update recovery for session " +
-                        "${pendingUpdate.sessionId}."
+                    "${pendingUpdate.sessionId}.",
             )
             return consumeRecentPackageUpdateExit()
         }
@@ -140,7 +149,7 @@ class SelfUpdateRecoveryManager(
         }
         if (packageInfo.lastUpdateTime == pendingUpdate.previousUpdateTime) {
             Timber.w(
-                "Ignoring Android 17 self-update recovery because package lastUpdateTime did not change."
+                "Ignoring Android 17 self-update recovery because package lastUpdateTime did not change.",
             )
             return false
         }
@@ -168,8 +177,8 @@ class SelfUpdateRecoveryManager(
                     info = PostInstallTaskInfo(
                         packageName = appContext.packageName,
                         enableAutoDelete = true,
-                        deletePaths = deletion.paths
-                    )
+                        deletePaths = deletion.paths,
+                    ),
                 )
             }
             Timber.i("Requested deletion of persisted self-update source paths: ${deletion.paths}")
@@ -186,6 +195,48 @@ class SelfUpdateRecoveryManager(
             throw error
         } catch (error: Exception) {
             Timber.w(error, "Failed to clear completed self-update source deletion.")
+        }
+    }
+
+    private suspend fun recordCompletedHistory() {
+        val history = try {
+            recoveryRepository.getCompletedHistory()
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Exception) {
+            Timber.w(error, "Unable to read completed self-update history.")
+            return
+        } ?: return
+
+        val packageInfo = runCatching {
+            appContext.packageManager.getPackageInfo(appContext.packageName, 0)
+        }.getOrNull()
+        val installerPackageName = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            runCatching {
+                appContext.packageManager
+                    .getInstallSourceInfo(appContext.packageName)
+                    .installingPackageName
+            }.getOrNull()
+        } else {
+            null
+        }
+
+        try {
+            recordOperationHistory(
+                history.toSuccessfulOperationHistory(
+                    actualNewVersionName = packageInfo?.versionName ?: history.newVersionName,
+                    actualNewVersionCode = packageInfo?.longVersionCode ?: history.newVersionCode,
+                    installerPackageName = installerPackageName,
+                ),
+            )
+            recoveryRepository.clearCompletedHistory()
+            Timber.i("Recorded recovered Android 17 self-update history.")
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Exception) {
+            // Keep the completed draft so the next SettingsActivity start can retry. The history
+            // table's operation-session unique key makes a retry safe after a partial completion.
+            Timber.w(error, "Failed to record recovered Android 17 self-update history.")
         }
     }
 
@@ -219,8 +270,8 @@ class SelfUpdateRecoveryManager(
 
         val packageUpdateExit = exitReasons.any { exitInfo ->
             exitInfo.reason == ApplicationExitInfo.REASON_PACKAGE_UPDATED &&
-                    packageUpdateTime >= exitInfo.timestamp &&
-                    packageUpdateTime - exitInfo.timestamp <= RECOVERY_TIMEOUT_MILLIS
+                packageUpdateTime >= exitInfo.timestamp &&
+                packageUpdateTime - exitInfo.timestamp <= RECOVERY_TIMEOUT_MILLIS
         }
         if (packageUpdateExit) {
             markRecoveryCompleted()
