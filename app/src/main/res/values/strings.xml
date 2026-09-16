@@ -20,11 +20,10 @@
     <string name="working_status_none_authorizer_desc">Do not make use of any privilege, Unknown Sources permission is required to install apps</string>
     <string name="working_status_not_default_installer_click_details">Click to view details</string>
     <string name="working_status_default_installer_tip">Set this app as the default package installer to take over most installation requests. Note that the following cases cannot be intercepted:\n- OEM restricts modifying the default installer\n- The initiator specifies a target Component\n- The initiator uses a Session Install</string>
-    <string name="setting_lsposed_module_title">Vector Module Enabled</string>
-    <string name="setting_lsposed_module_desc">Enable this if you have forced the default installer takeover via a third-party Vector module. This disables internal status checking, and the home page will constantly show as Activated</string>
+    <string name="setting_lsposed_module_title">Xposed Module Enabled</string>
+    <string name="setting_lsposed_module_desc">Enable this if you have forced the default installer takeover via a third-party Xposed module. This disables internal status checking, and the home page will constantly show as "Activated"</string>
     <string name="home_stat_authorizers">Available Privileges</string>
     <string name="home_stat_profiles">Profiles</string>
-    <string name="home_label_lsp" translatable="false">LSPosed</string>
     <string name="home_label_lsp_link">Looking for a module?</string>
     <string name="home_lsp_inxlocker_title" translatable="false">InxLocker</string>
     <string name="shizuku_not_authorized">Please grant permission to access Sui or Shizuku</string>
@@ -221,6 +220,7 @@
     <string name="installer_settings_auto_clear_time_seconds_format">%d seconds</string>
     <string name="installer_settings_auto_clear_time_seconds_format_desc">Clear install success notification after %d seconds</string>
     <string name="basic">Basic</string>
+    <string name="advanced">Advanced</string>
     <string name="network_settings">Network settings</string>
     <string name="network_settings_internet_access_enabled_desc">The app can access the internet</string>
     <string name="network_settings_internet_access_disabled_desc">The app cannot access the internet</string>
@@ -242,6 +242,7 @@
     <string name="backup_settings_validation_duplicate_profile_id">Duplicate profile id: %1$s</string>
     <string name="backup_settings_validation_invalid_profile_field">Invalid profile field: %1$s</string>
     <string name="backup_settings_validation_duplicate_scope_package">Duplicate scope package: %1$s</string>
+    <string name="backup_settings_validation_duplicate_unknown_scope">Duplicate Unknown scope.</string>
     <string name="backup_settings_validation_invalid_history_field">Invalid history field: %1$s</string>
     <string name="backup_settings_validation_future_app_version">This backup was created by a newer app version: %1$s.</string>
     <string name="backup_settings_validation_future_room_schema">This backup uses a newer database schema: %1$s. Current schema is %2$s.</string>
@@ -286,6 +287,9 @@
     <string name="config_status_inactive">Inactive</string>
     <string name="config_name">Profile name</string>
     <string name="config_scope">Scope</string>
+    <string name="config_scope_unknown">Unknown</string>
+    <string name="config_scope_apps">Applications</string>
+    <string name="config_scope_unknown_group">Unknown scope</string>
     <string name="config_description">Profile description</string>
     <string name="authorizer_customization">Authorizer Tweaks</string>
     <string name="authorizer_customization_desc">Fine-tune options for supported authorizers</string>
@@ -456,6 +460,7 @@
     <string name="sort_by_selected_first">Selected go first</string>
     <string name="sort_by_show_system_app">Display system app</string>
     <string name="sort_by_show_package_name">Display package name</string>
+    <string name="sort_by_show_unknown_scope">Show unknown scope</string>
     <string name="auth_to_continue_work">Please authenticate to confirm this operation</string>
     <string name="auth_summary_install">You are doing an install operation, To continue, please confirm this action using your device authentication</string>
     <string name="auth_summary_uninstall">You are doing an uninstall operation, To continue, please confirm this action using your device authentication</string>
