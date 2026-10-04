@@ -1,0 +1,5 @@
+- auto sync upstream (816ea541) (github-actions[bot])
+- ci: add PR target validation and workflow controls (#841) (wxxsfxyzm)
+- i18n: Translations update from Hosted Weblate (#830) (Weblate (bot))
+- feat: check Oplus OS SDK compatibility before installation (wxxsfxyzm)
+- fix(deps): update all non-major dependencies (#836) (renovate[bot])
