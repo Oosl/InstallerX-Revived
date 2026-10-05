@@ -1,5 +1,5 @@
+- auto sync upstream (cb9a24de) (github-actions[bot])
+- fix: Remove XZMemoryLimit (#850) (AlexLiuDev233)
+- chore(release): update module update.json for 26.10.a4ffcb4 [skip ci] (github-actions[bot])
 - i18n: Translations update from Hosted Weblate (#846) (Weblate (bot))
 - feat: support xz compression modules (#848) (AlexLiuDev233)
-- refactor: separate wallpaper seed color from manual seed color (#839) (布丁小才)
-- ci: upload mapping after build (#845) (AlexLiuDev233)
-- ci: add edited to pull_request types in pr-check (wxxsfxyzm)
