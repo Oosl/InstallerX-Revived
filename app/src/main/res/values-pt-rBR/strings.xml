@@ -921,9 +921,7 @@
     <string name="expand_temporary_settings_by_default">Expandir o painel por padrão</string>
     <string name="expand_temporary_settings_by_default_desc">Expandir as configurações temporárias ao abrir a caixa de diálogo de instalação</string>
     <string name="self_update_install_success">O InstallerX Revived foi atualizado com sucesso</string>
-    <string name="config_check_split_package_signatures_desc">Analisar as assinaturas de APK em pacotes APKS, APKM e XAPK. Isso pode aumentar significativamente o tempo de análise</string>
     <string name="installer_writing">Gravando…</string>
-    <string name="config_check_split_package_signatures">Analisar assinaturas de pacotes divididos</string>
     <string name="network_access">Acesso à rede</string>
     <string name="allow_internet_access">Permitir acesso à internet</string>
     <string name="allow_internet_access_desc">Permitir que o InstallerX Revived verifique se há atualizações e baixe APKs a partir de links da internet</string>
@@ -991,4 +989,6 @@
     <string name="lab_enable_abi_override_desc">Tentar instalar bibliotecas nativas dentro da mesma família de arquitetura. Requer suporte do sistema</string>
     <string name="lab_try_different_architecture">Outras arquiteturas</string>
     <string name="lab_try_different_architecture_desc">Tentar também instalar bibliotecas nativas de outras famílias de arquitetura</string>
+    <string name="theme_settings_use_amoled">Fundo AMOLED</string>
+    <string name="theme_settings_use_amoled_desc">Use um fundo preto puro nas telas de configurações no modo escuro</string>
 </resources>

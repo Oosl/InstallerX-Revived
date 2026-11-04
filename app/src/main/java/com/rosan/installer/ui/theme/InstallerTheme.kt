@@ -87,6 +87,7 @@ fun InstallerTheme(
     useDynamicColor: Boolean,
     useMiuixMonet: Boolean,
     seedColor: Color,
+    useAmoled: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     val preservedContent = remember {
@@ -117,8 +118,19 @@ fun InstallerTheme(
         )
     }
 
+    // Only callers that opt in use AMOLED backgrounds, and only in dark mode.
+    val colorScheme = if (useAmoled && isDark) {
+        baseColorScheme.copy(
+            background = Color.Black,
+            surface = Color.Black,
+            surfaceContainer = Color.Black,
+        )
+    } else {
+        baseColorScheme
+    }
+
     // 2. Wrap it with smooth transitions
-    val animatedColorScheme = baseColorScheme.animateAsState()
+    val animatedColorScheme = colorScheme.animateAsState()
 
     CompositionLocalProvider(
         LocalIsDark provides isDark,
@@ -145,7 +157,13 @@ fun InstallerTheme(
                 paletteStyle = paletteStyle,
                 colorSpec = colorSpec,
             ) {
-                preservedContent(content)
+                val colors = MiuixTheme.colorScheme
+                // Keep the controller's dynamic-color mode and the card palette intact.
+                MiuixTheme(
+                    colors = if (useAmoled && isDark) colors.copy(surface = Color.Black) else colors,
+                ) {
+                    preservedContent(content)
+                }
             }
         } else {
             InstallerMaterialExpressiveTheme(
@@ -233,18 +251,19 @@ fun InstallerMiuixTheme(
             PaletteStyle.Cmf -> MiuixPaletteStyle.Cmf
         }
 
-        val colorSpecVersion = when (paletteStyle.effectiveSpec(colorSpec)) {
-            ThemeColorSpec.SPEC_2026 -> MiuixColorSpec.Spec2026
-            ThemeColorSpec.SPEC_2025 -> MiuixColorSpec.Spec2025
+        // Pass the saved preference; Miuix resolves palette support and forces SPEC_2026 for Cmf.
+        // SPEC_2026 is only an effective spec in our UI, so fall back to the default preference.
+        val preferredColorSpec = when (colorSpec) {
             ThemeColorSpec.SPEC_2021 -> MiuixColorSpec.Spec2021
+            else -> MiuixColorSpec.Spec2025
         }
 
-        remember(colorSchemeMode, keyColor, paletteStyle, colorSpecVersion, darkTheme) {
+        remember(colorSchemeMode, keyColor, paletteStyle, preferredColorSpec, darkTheme) {
             ThemeController(
                 colorSchemeMode = colorSchemeMode,
                 keyColor = keyColor,
                 paletteStyle = style,
-                colorSpec = colorSpecVersion,
+                colorSpec = preferredColorSpec,
                 isDark = darkTheme,
             )
         }
