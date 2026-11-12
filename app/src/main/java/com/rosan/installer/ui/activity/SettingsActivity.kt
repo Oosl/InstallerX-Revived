@@ -15,6 +15,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
@@ -23,6 +24,7 @@ import com.rosan.installer.domain.settings.model.preferences.ThemeState
 import com.rosan.installer.domain.settings.provider.ThemeStateProvider
 import com.rosan.installer.framework.packageupdate.SelfUpdateRecoveryManager
 import com.rosan.installer.ui.navigation.InstallerNavContainer
+import com.rosan.installer.ui.page.miuix.widgets.InstallerMiuixComponentHost
 import com.rosan.installer.ui.theme.InstallerTheme
 import com.rosan.installer.ui.theme.LocalWindowLayoutInfo
 import com.rosan.installer.ui.theme.rememberWindowLayoutInfo
@@ -76,6 +78,7 @@ class SettingsActivity :
             ) {
                 InstallerTheme(
                     useMiuix = uiState.useMiuix,
+                    useMiuixOs4 = uiState.useMiuixOs4,
                     themeMode = uiState.themeMode,
                     paletteStyle = uiState.paletteStyle,
                     colorSpec = uiState.colorSpec,
@@ -84,18 +87,30 @@ class SettingsActivity :
                     seedColor = androidx.compose.ui.graphics.Color(uiState.seedColor),
                     useAmoled = uiState.useAmoled,
                 ) {
-                    val backgroundColor =
-                        if (uiState.useMiuix) {
+                    // Keep the host in every UI family and Miuix style, even though only Miuix uses it.
+                    // The host's Scaffold composes content in a SubcomposeLayout; making it conditional
+                    // forces the navigation tree to move out of a subcomposition disposed in the same
+                    // frame, which crashes with "Could not resolve state for movable content".
+                    InstallerMiuixComponentHost(
+                        useOs4 = InstallerTheme.useMiuixOs4,
+                        useBlur = uiState.useMiuix && uiState.useBlur,
+                        modifier = Modifier.fillMaxSize(),
+                        // The Box below paints the themed background, so skip the Scaffold's overdraw.
+                        containerColor = Color.Transparent,
+                    ) { scope ->
+                        val backgroundColor = if (uiState.useMiuix) {
                             MiuixTheme.colorScheme.surface
                         } else {
                             MaterialTheme.colorScheme.surfaceContainer
                         }
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(backgroundColor),
-                    ) {
-                        InstallerNavContainer(uiState)
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(backgroundColor)
+                                .then(scope.pageBackdropModifier),
+                        ) {
+                            InstallerNavContainer(uiState)
+                        }
                     }
                 }
             }
